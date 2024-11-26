@@ -1,9 +1,8 @@
 import xml.etree.ElementTree as ET
 
-STEPXML_NS = {
-    'step' : 'http://www.stibosystems.com/step',
-    'outputtemplate' : 'http://www.stibosystems.com/step/outputtemplate'
-}
+from . import STEPXML_NS
+
+
 
 class Parser:
     
@@ -26,7 +25,16 @@ class Parser:
     def parse(self, root):
         assert root.tag == 'STEP-ProductInformation'
         self._root = root
-        self.assets = self._parse_item_list('Assets', 'Asset', _parse_asset)
+        self.assets = self._parse_item_list(
+            'Assets', 'Asset', _parse_asset)
+        self.products = self._parse_item_list(
+            'Products', 'product', _parse_product)
+        self.delete_assets = self._parse_item_list(
+            'DeleteAssets', 'DeleteAsset', _parse_delete_asset
+        )
+        self.delete_products = self._parse_item_list(
+            'DeleteProducts', 'DeleteProduct', _parse_delete_product
+        )
         return
     
     def _parse_item_list(self, list_name, item_name, parse_fct):
@@ -40,15 +48,66 @@ class Parser:
         return result
     
     
-def _parse_asset(element):
-    asset = {}
+def _parse_element(
+        element, attributes = [], texts = [], 
+        specials = {}, conversions={}):
+    result = {}
+    for attr_name in attributes:
+        result[attr_name] = element.get(attr_name)
     for child in element:
         key = child.tag
-        if key in ('Name', 'KeyValue'):
-            asset[key] = child.text
-        elif key == "Values":
-            asset[key] = _parse_values(child)
-    return asset
+        if key in texts:
+            result[key] = child.text
+        elif key in specials:
+            result[key] = specials[key](child)
+        if key in conversions:
+            conv_fct, default = conversions[key]
+            if result[key]:
+                result[key] = conv_fct(result[key])
+            elif default is not None:
+                result[key] = default
+    return result
+
+def _parse_leaf_element(element, name=None, attributes = []):
+    result = {}
+    for attr_name in attributes:
+        result[attr_name] = element.get(attr_name)
+    if name is None:
+        name = element.tag
+    result[name] = element.text
+    return result
+        
+    
+def _parse_asset(element):
+    return _parse_element(
+        element,
+        texts= ('Name', 'KeyValue'),
+        specials= {"Values" : _parse_values}
+    )
+    
+def _parse_delete_asset(element):
+    return _parse_element(
+        element,
+        attributes=("ID",)
+    )
+
+def _parse_product(element):
+    return _parse_element(
+        element,
+        attributes = ("ID", "ParentId", "UserTypeID"),
+        texts = ("Name",),
+        specials = {
+            "Values" : _parse_values,
+            "AssetCrossReference": _parse_asset_reference,
+            "DeleteAssetCrossReference": _parse_asset_reference
+            }
+    )
+    
+def _parse_delete_product(element):
+    return _parse_element(
+        element,
+        attributes=("ID",)
+    )
 
 def _parse_values(element):
     values = {}
@@ -66,12 +125,20 @@ def _parse_values(element):
     return values
                 
 def _parse_value(element):
-    value = {'value' : element.text}
-    lov_id = element.get("ID")
-    if lov_id is not None:
-        value['ID'] = lov_id
-    return          
-        
+    return _parse_leaf_element(
+        element,
+        name = "value",
+        attributes = ("ID",))           
+    
+def _parse_asset_reference(element):
+    return _parse_element(
+        element,
+        attributes=("AssetID", "Changed", "Type"),
+        conversions= {
+            "Changed" : (bool, False)
+        }
+    )
+
     
     
     
