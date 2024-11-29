@@ -1,3 +1,5 @@
 pip
 setuptools
 requests
+requests-openapi
+wheel

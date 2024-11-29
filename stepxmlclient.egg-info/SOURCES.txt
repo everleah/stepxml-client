@@ -1,0 +1,13 @@
+setup.py
+stepxmlclient/__init__.py
+stepxmlclient/client.py
+stepxmlclient/creator.py
+stepxmlclient/parser.py
+stepxmlclient.egg-info/PKG-INFO
+stepxmlclient.egg-info/SOURCES.txt
+stepxmlclient.egg-info/dependency_links.txt
+stepxmlclient.egg-info/requires.txt
+stepxmlclient.egg-info/top_level.txt
+stepxmlclient/model/__init__.py
+stepxmlclient/model/asset.py
+stepxmlclient/model/product.py

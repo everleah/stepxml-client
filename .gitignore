@@ -50,3 +50,6 @@ Thumbs.db
 
 # virtual env
 .venv/
+
+# no build files
+build/
