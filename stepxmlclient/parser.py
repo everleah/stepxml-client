@@ -54,15 +54,24 @@ def _parse_element(
     result = {}
     for attr_name in attributes:
         result[attr_name] = element.get(attr_name)
+    # Apply conversions to attributes after parsing
+    for attr_name in attributes:
+        if attr_name in conversions:
+            conv_fct, default = conversions[attr_name]
+            if result[attr_name]:
+                result[attr_name] = conv_fct(result[attr_name])
+            elif default is not None:
+                result[attr_name] = default
     for child in element:
         key = child.tag
         if key in texts:
             result[key] = child.text
         elif key in specials:
             result[key] = specials[key](child)
+        # Apply conversions to child elements
         if key in conversions:
             conv_fct, default = conversions[key]
-            if result[key]:
+            if result.get(key):
                 result[key] = conv_fct(result[key])
             elif default is not None:
                 result[key] = default

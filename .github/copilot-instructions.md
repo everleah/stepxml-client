@@ -43,11 +43,17 @@ Parser functions follow strict naming: `_parse_<element_name>()` for element-spe
 ### XML Element Creation Pattern
 When adding XML elements, always specify the tag name: `ET.SubElement(parent, tag_name)` 
 
-### Method Call Pattern  
-Ensure all method calls include parentheses: `self._get_attributes()` not `self._get_attributes`
+### Attribute Conversion Pattern
+The parser supports conversions for both attributes and child elements. Use `conversions` parameter to transform data types during parsing.
 
-### Loop Variable Pattern
-In loops over collections, use the iteration variable: `for obj in objs: obj.method()` not `objs.method()`
+### Child Data Handling Pattern
+`BaseObject._add_children()` handles multiple data types:
+- Objects with `to_element()` method (other BaseObject instances)
+- Dictionaries (converted to XML elements with attributes)
+- Lists (processes each item individually)
+
+### Creator Naming Pattern
+Use explicit mapping between XML element names and object attributes to avoid naming conflicts.
 
 ### REST Client Configuration
 The client integrates with STEP REST API v2 via `requests-openapi`:

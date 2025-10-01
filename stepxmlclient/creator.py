@@ -34,11 +34,17 @@ class Creator:
             rules = ET.SubElement(self.root, 'ReplacementRules')
             self._build_element_list(
                 rules, "Products", self.product_replacement_rules)
-        # others
-        for name in ("Assets", "Products", "DeletedAssets", "DeletedProducts"):
-            values = getattr(self, name.lower())
+        # others - map XML element names to attribute names
+        element_mapping = {
+            "Assets": "assets",
+            "Products": "products", 
+            "DeletedAssets": "deletedassets",
+            "DeletedProducts": "deletedproducts"
+        }
+        for xml_name, attr_name in element_mapping.items():
+            values = getattr(self, attr_name)
             if values:
-                self._build_element_list(self.root, name, values)
+                self._build_element_list(self.root, xml_name, values)
         return
         
     def _build_element_list(self, parent, 

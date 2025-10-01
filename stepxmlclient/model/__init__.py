@@ -59,8 +59,32 @@ class BaseObject:
             for name in self._CHILDREN_NAMES:
                 child = self._data.get(name)
                 if child is not None:
-                    child.to_element(element)
+                    # Handle different child data types
+                    if hasattr(child, 'to_element'):
+                        # BaseObject instance
+                        child.to_element(element)
+                    elif isinstance(child, dict):
+                        # Dictionary data (like AssetCrossReference)
+                        self._add_dict_child(element, name, child)
+                    elif isinstance(child, list):
+                        # List of items
+                        for item in child:
+                            if hasattr(item, 'to_element'):
+                                item.to_element(element)
+                            elif isinstance(item, dict):
+                                self._add_dict_child(element, name, item)
         return
+    
+    def _add_dict_child(self, parent, tag_name, data):
+        """Add a child element from dictionary data"""
+        import xml.etree.ElementTree as ET
+        child_element = ET.SubElement(parent, tag_name)
+        
+        # Add attributes from dictionary
+        for key, value in data.items():
+            if value is not None:
+                child_element.set(key, str(value))
+        return child_element
         
 
 
