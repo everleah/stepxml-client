@@ -45,7 +45,7 @@ class Parser:
                 result = parse_fct(item)
                 if result is not None:
                    results.append(result)
-        return result
+        return results
     
     
 def _parse_element(
