@@ -4,11 +4,11 @@
 This is a reusable Python client module for integrating with Stibo Systems STEP MDM (Master Data Management) using standard STEP-XML protocol. The module provides a ready-to-use client for other software projects to communicate with STEP systems via standard Outbound Integration Endpoint (OIEP) and Inbound Integration Endpoint (IIEP).
 
 ## Architecture
-The module provides a complete STEP-XML integration layer with clear separation of concerns:
-- **`stepxmlclient/client.py`**: REST API client for STEP OIEP/IIEP endpoints using `requests-openapi`
-- **`stepxmlclient/parser.py`**: STEP-XML parser conforming to `STEP.xsd` schema for inbound data
-- **`stepxmlclient/creator.py`**: STEP-XML document generator for outbound integration
-- **`stepxmlclient/model/`**: Data model classes (`Asset`, `Product`, `BaseObject`) representing STEP entities
+The module provides focused STEP-XML processing for core MDM entities in early development:
+- **`stepxmlclient/client.py`**: REST API client wrapper using `requests-openapi` - handles configuration only
+- **`stepxmlclient/parser.py`**: STEP-XML parser for Products, Assets, and their relationships
+- **`stepxmlclient/creator.py`**: STEP-XML document generator for Products, Assets, and Product Replacement Rules
+- **`stepxmlclient/model/`**: Core model classes - `Asset`, `Product`, `ProductReplacementRule`
 - **`STEP.xsd`**: Official STEP-XML schema (8500+ lines) - the authoritative reference for validation
 
 ## Critical Patterns & Conventions
@@ -33,6 +33,7 @@ class Product(BaseObject):
     _TEXT_NAMES = ("Name",)   # Child text elements
     _CHILDREN_NAMES = ("Values", "AssetCrossReference", "DeleteAssetCrossReference")
 ```
+Note: `AssetCrossReference` and `DeleteAssetCrossReference` handle the critical product-to-asset relationships.
 
 ### Parser Function Naming
 Parser functions follow strict naming: `_parse_<element_name>()` for element-specific parsers, using lowercase with underscores.
@@ -67,20 +68,19 @@ client = StiboStepRestClient(
 - **Dependencies**: Install via `pip install -r requirements.txt`
 - **Testing**: Use `test.py` as the main test runner (connects to demo STEP server)
 
-### STEP-XML Schema Compliance
-- **`STEP.xsd`**: The authoritative STEP-XML schema defining all valid structures and relationships
-- Use this XSD to validate generated XML output before sending to STEP IIEP
-- Reference the schema when adding new parser functions to ensure correctness
-- The schema covers all STEP entities: Products, Assets, Classifications, Attributes, etc.
+### Current Development Focus
+- **Core Entity Support**: Products and Assets with their relationships - covers primary MDM use cases
+- **Product-Asset Relations**: Handles `AssetCrossReference` and `DeleteAssetCrossReference` for linking products to assets
+- **Essential Operations**: Create, parse, and delete operations for Products and Assets
+- **Strategic Scope**: Early development stage focused on most important STEP entities
+- **Future Expansion**: Use `STEP.xsd` as reference when adding Classifications, Entities, or other STEP objects
 
 ### STEP REST API v2 Integration
-- **REST API v2**: Primary communication method using HTTP operations (GET, PUT, POST, PATCH, DELETE)
-- **OIEP (Outbound Integration Endpoint)**: For retrieving data from STEP as STEP-XML via `/outbound-integration-endpoints/{id}/invoke`
-- **IIEP (Inbound Integration Endpoint)**: For sending data to STEP as STEP-XML
-- **Core Resources**: Assets (`/assets/{id}`), Products (`/products/{id}`), Entities (`/entities/{id}`), Classifications (`/classifications/{id}`) with full CRUD operations
-- **Key Operations**: Attribute values (`/{resource}/{id}/values/{attributeId}`), References (`/{resource}/{id}/references/{referenceTypeId}`), Approval workflows (`/{resource}/{id}/approve`)
-- **OpenAPI Specification**: Complete API definition in `openapi.json` - client caches specs with `cache_openapi=True`
-- **Context & Workspace**: All requests require context parameter, default to "Main" workspace
+- **Client Wrapper**: `StiboStepRestClient` is a configuration wrapper around `requests-openapi` client
+- **No Direct API Methods**: Client does not expose specific REST operations - users must call `client.client` to access underlying API
+- **OpenAPI Integration**: Loads STEP REST API v2 specification from `/specification/openapi.json` endpoint
+- **Configuration Only**: Handles authentication, SSL settings, proxy configuration, and OpenAPI spec caching
+- **Usage Pattern**: `client = StiboStepRestClient(...); api_response = client.client.some_operation(...)`
 
 ## Testing & Debugging
 
