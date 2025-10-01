@@ -48,11 +48,16 @@ Ensure all method calls include parentheses: `self._get_attributes()` not `self.
 ### Loop Variable Pattern
 In loops over collections, use the iteration variable: `for obj in objs: obj.method()` not `objs.method()`
 
-### Authorization Pattern
-The client uses composition-based authorization via `__Authorisation` base class:
+### REST Client Configuration
+The client integrates with STEP REST API v2 via `requests-openapi`:
 ```python
-auth = BasicAuthorisation('username', 'password')
-client = StiboStepRestClient(base_url, auth, cache_openapi=True)
+auth = BasicAuthorisation('username', 'password')  
+client = StiboStepRestClient(
+    'https://server.com/restapiv2',  # REST API v2 endpoint
+    auth, 
+    cache_openapi=True,              # Cache openapi.json locally
+    nocert=True                      # For development environments
+)
 ```
 
 ## Development Workflows
@@ -68,10 +73,14 @@ client = StiboStepRestClient(base_url, auth, cache_openapi=True)
 - Reference the schema when adding new parser functions to ensure correctness
 - The schema covers all STEP entities: Products, Assets, Classifications, Attributes, etc.
 
-### STEP Integration Endpoints
-- **OIEP (Outbound Integration Endpoint)**: For retrieving data from STEP as STEP-XML
+### STEP REST API v2 Integration
+- **REST API v2**: Primary communication method using HTTP operations (GET, PUT, POST, PATCH, DELETE)
+- **OIEP (Outbound Integration Endpoint)**: For retrieving data from STEP as STEP-XML via `/outbound-integration-endpoints/{id}/invoke`
 - **IIEP (Inbound Integration Endpoint)**: For sending data to STEP as STEP-XML
-- **OpenAPI Integration**: Client caches OpenAPI specs (`openapi.json`) - use `cache_openapi=True`
+- **Core Resources**: Assets (`/assets/{id}`), Products (`/products/{id}`), Entities (`/entities/{id}`), Classifications (`/classifications/{id}`) with full CRUD operations
+- **Key Operations**: Attribute values (`/{resource}/{id}/values/{attributeId}`), References (`/{resource}/{id}/references/{referenceTypeId}`), Approval workflows (`/{resource}/{id}/approve`)
+- **OpenAPI Specification**: Complete API definition in `openapi.json` - client caches specs with `cache_openapi=True`
+- **Context & Workspace**: All requests require context parameter, default to "Main" workspace
 
 ## Testing & Debugging
 
