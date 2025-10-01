@@ -77,14 +77,39 @@ class BaseObject:
     
     def _add_dict_child(self, parent, tag_name, data):
         """Add a child element from dictionary data"""
-        import xml.etree.ElementTree as ET
         child_element = ET.SubElement(parent, tag_name)
         
-        # Add attributes from dictionary
-        for key, value in data.items():
-            if value is not None:
-                child_element.set(key, str(value))
+        # Handle special case for Values (nested structure)
+        if tag_name == "Values" and isinstance(data, dict):
+            for attribute_id, value_data in data.items():
+                if isinstance(value_data, list):
+                    # MultiValue
+                    multi_value_elem = ET.SubElement(child_element, "MultiValue", AttributeID=attribute_id)
+                    for item in value_data:
+                        self._add_value_element(multi_value_elem, item)
+                else:
+                    # Single Value
+                    self._add_value_element(child_element, value_data, attribute_id)
+        else:
+            # Simple dictionary - add all as attributes
+            for key, value in data.items():
+                if value is not None:
+                    child_element.set(key, str(value))
         return child_element
+    
+    def _add_value_element(self, parent, value_data, attribute_id=None):
+        """Add a Value element from parsed value data"""
+        if isinstance(value_data, dict):
+            attribs = {}
+            if attribute_id:
+                attribs["AttributeID"] = attribute_id
+            if "ID" in value_data:
+                attribs["ID"] = value_data["ID"]
+            
+            value_elem = ET.SubElement(parent, "Value", attribs)
+            if "value" in value_data:
+                value_elem.text = str(value_data["value"])
+        return value_elem
         
 
 

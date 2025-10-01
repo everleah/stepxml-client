@@ -58,7 +58,7 @@ def _parse_element(
     for attr_name in attributes:
         if attr_name in conversions:
             conv_fct, default = conversions[attr_name]
-            if result[attr_name]:
+            if result[attr_name] is not None:
                 result[attr_name] = conv_fct(result[attr_name])
             elif default is not None:
                 result[attr_name] = default
@@ -90,6 +90,7 @@ def _parse_leaf_element(element, name=None, attributes = []):
 def _parse_asset(element):
     return _parse_element(
         element,
+        attributes=("ID",),
         texts= ('Name', 'KeyValue'),
         specials= {"Values" : _parse_values}
     )
