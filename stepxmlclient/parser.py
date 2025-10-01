@@ -28,7 +28,7 @@ class Parser:
         self.assets = self._parse_item_list(
             'Assets', 'Asset', _parse_asset)
         self.products = self._parse_item_list(
-            'Products', 'product', _parse_product)
+            'Products', 'Product', _parse_product)
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
         )

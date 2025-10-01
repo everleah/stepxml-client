@@ -20,7 +20,7 @@ class StiboStepRestClient:
         # build location base
         location_base = location_base.lower()
         if not location_base.startswith('http'):
-            location_base = '%s://%s' % ('https', base_url)
+            location_base = '%s://%s' % ('https', location_base)
         if location_base.endswith('/'):
             location_base = location_base[:-1]
         # create client

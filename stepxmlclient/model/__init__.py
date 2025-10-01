@@ -22,7 +22,7 @@ class BaseObject:
             element = ET.SubElement(
                 parent=parent,
                 tag=self._TAG_NAME,
-                attrib=self._get_attributes
+                attrib=self._get_attributes()
             )
         value = self._get_value()
         if value:
@@ -50,7 +50,7 @@ class BaseObject:
             for name in self._TEXT_NAMES:
                 value = self._data.get(name)
                 if value is not None:
-                    child = ET.SubElement(element)
+                    child = ET.SubElement(element, name)
                     child.text = value
         return
     

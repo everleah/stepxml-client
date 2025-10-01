@@ -46,7 +46,7 @@ class Creator:
                             objs : list[BaseObject]):
         list_element = ET.SubElement(parent, list_name)
         for obj in objs:
-            objs.to_element(list_element)
+            obj.to_element(list_element)
         return
             
         

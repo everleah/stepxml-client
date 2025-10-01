@@ -37,10 +37,16 @@ class Product(BaseObject):
 ### Parser Function Naming
 Parser functions follow strict naming: `_parse_<element_name>()` for element-specific parsers, using lowercase with underscores.
 
-## Known Issues & Fix Patterns
+## Critical Patterns & Fix Guidelines
 
-### Critical Bug in `_parse_item_list()`
-The method returns `result` instead of `results` (line 48 in parser.py), causing only the last parsed item to be returned. Always return the accumulated list.
+### XML Element Creation Pattern
+When adding XML elements, always specify the tag name: `ET.SubElement(parent, tag_name)` 
+
+### Method Call Pattern  
+Ensure all method calls include parentheses: `self._get_attributes()` not `self._get_attributes`
+
+### Loop Variable Pattern
+In loops over collections, use the iteration variable: `for obj in objs: obj.method()` not `objs.method()`
 
 ### Authorization Pattern
 The client uses composition-based authorization via `__Authorisation` base class:
