@@ -1,0 +1,26 @@
+<STEP-ProductInformation ContextID="DemoContext" WorkspaceID="Main">
+  <Products>
+    <Product ID="P001" ParentId="" UserTypeID="TypeA">
+      <Name>Product One</Name>
+      <Values>
+        <Value AttributeID="Attr1" ID="V1">SingleValueWithID</Value>
+        <Value AttributeID="Attr2">SingleValueNoID</Value>
+        <MultiValue AttributeID="Attr3">
+          <Value>ID1</Value>
+          <Value>ID2</Value>
+        </MultiValue>
+      </Values>
+    </Product>
+    <Product ID="P002" ParentId="" UserTypeID="TypeA">
+      <Name>Product Two</Name>
+      <Values>
+        <Value AttributeID="Attr1" ID="V2">SingleValueWithID</Value>
+        <Value AttributeID="Attr2">SingleValueNoID</Value>
+        <MultiValue AttributeID="Attr3">
+          <Value>ID3</Value>
+          <Value>ID4</Value>
+        </MultiValue>
+      </Values>
+    </Product>
+  </Products>
+</STEP-ProductInformation>

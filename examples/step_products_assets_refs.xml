@@ -1,0 +1,62 @@
+<STEP-ProductInformation ContextID="DemoContext" WorkspaceID="Main">
+  <Products>
+    <Product ID="P001" ParentId="" UserTypeID="TypeA">
+      <Name>Product One</Name>
+      <Values>
+        <Value AttributeID="Attr1" ID="V1">SingleValueWithID</Value>
+        <Value AttributeID="Attr2">SingleValueNoID</Value>
+        <MultiValue AttributeID="Attr3">
+          <Value>ID1</Value>
+          <Value>ID2</Value>
+        </MultiValue>
+      </Values>
+      <AssetCrossReference>
+        <AssetID>A001</AssetID>
+        <Type>Image</Type>
+        <Changed>true</Changed>
+      </AssetCrossReference>
+    </Product>
+    <Product ID="P002" ParentId="" UserTypeID="TypeA">
+      <Name>Product Two</Name>
+      <Values>
+        <Value AttributeID="Attr1" ID="V2">SingleValueWithID</Value>
+        <Value AttributeID="Attr2">SingleValueNoID</Value>
+        <MultiValue AttributeID="Attr3">
+          <Value>ID3</Value>
+          <Value>ID4</Value>
+        </MultiValue>
+      </Values>
+      <AssetCrossReference>
+        <AssetID>A002</AssetID>
+        <Type>Image</Type>
+        <Changed>false</Changed>
+      </AssetCrossReference>
+    </Product>
+  </Products>
+  <Assets>
+    <Asset ID="A001">
+      <Name>Asset One</Name>
+      <KeyValue>Key1</KeyValue>
+      <Values>
+        <Value AttributeID="AttrA" ID="VA1">SingleValueWithID</Value>
+        <Value AttributeID="AttrB">SingleValueNoID</Value>
+        <MultiValue AttributeID="AttrC">
+          <Value>AssetVal1</Value>
+          <Value>AssetVal2</Value>
+        </MultiValue>
+      </Values>
+    </Asset>
+    <Asset ID="A002">
+      <Name>Asset Two</Name>
+      <KeyValue>Key2</KeyValue>
+      <Values>
+        <Value AttributeID="AttrA" ID="VA2">SingleValueWithID</Value>
+        <Value AttributeID="AttrB">SingleValueNoID</Value>
+        <MultiValue AttributeID="AttrC">
+          <Value>AssetVal3</Value>
+          <Value>AssetVal4</Value>
+        </MultiValue>
+      </Values>
+    </Asset>
+  </Assets>
+</STEP-ProductInformation>
