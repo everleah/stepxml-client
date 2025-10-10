@@ -1,8 +1,0 @@
-Metadata-Version: 2.1
-Name: stepxmlclient
-Version: 0.1
-Summary: STEP-XML Client
-Author: Claudius Hansch
-Author-email: claudius.hansch@hoerl-im.de
-Requires-Dist: requests-openapi
-Requires-Dist: requests
