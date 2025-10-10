@@ -1,27 +1,29 @@
+
 import xml.etree.ElementTree as ET
+from typing import Any, Dict, List, Optional, Union
 
 class BaseObject:
-    _GROUP_NAME = None
-    _TAG_NAME = None
-    _ATTRIBUTE_NAMES = None
-    _TEXT_NAMES = None
-    _VALUE_NAME = None
-    _CHILDREN_NAMES = None
-    
-    def __init__(self, data):
-        self._data = data
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: Optional[str] = None
+    _ATTRIBUTE_NAMES: Optional[List[str]] = None
+    _TEXT_NAMES: Optional[List[str]] = None
+    _VALUE_NAME: Optional[str] = None
+    _CHILDREN_NAMES: Optional[List[str]] = None
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self._data: Dict[str, Any] = data
         return
     
-    def to_element(self, parent=None):
+    def to_element(self, parent: Optional[ET.Element] = None) -> ET.Element:
         if parent is None:
             element = ET.Element(
-                tag = self._TAG_NAME,
+                tag=self._TAG_NAME if self._TAG_NAME else "",
                 attrib=self._get_attributes()
             )
         else:
             element = ET.SubElement(
                 parent=parent,
-                tag=self._TAG_NAME,
+                tag=self._TAG_NAME if self._TAG_NAME else "",
                 attrib=self._get_attributes()
             )
         value = self._get_value()
@@ -31,30 +33,32 @@ class BaseObject:
         self._add_children(element)
         return element
     
-    def _get_value(self):
+    def _get_value(self) -> Optional[str]:
         if self._VALUE_NAME:
-            return self._data.get(self._VALUE_NAME)    
-        return
+            val = self._data.get(self._VALUE_NAME)
+            if val is not None:
+                return str(val)
+        return None
     
-    def _get_attributes(self):
-        attributes = {}
+    def _get_attributes(self) -> Dict[str, str]:
+        attributes: Dict[str, str] = {}
         if self._ATTRIBUTE_NAMES:
             for name in self._ATTRIBUTE_NAMES:
                 value = self._data.get(name)
                 if value is not None:
-                    attributes[name] = value
+                    attributes[name] = str(value)
         return attributes
     
-    def _add_texts(self, element):
+    def _add_texts(self, element: ET.Element) -> None:
         if self._TEXT_NAMES:
             for name in self._TEXT_NAMES:
                 value = self._data.get(name)
                 if value is not None:
                     child = ET.SubElement(element, name)
-                    child.text = value
+                    child.text = str(value)
         return
     
-    def _add_children(self, element):
+    def _add_children(self, element: ET.Element) -> None:
         if self._CHILDREN_NAMES:
             for name in self._CHILDREN_NAMES:
                 child = self._data.get(name)
@@ -75,10 +79,10 @@ class BaseObject:
                                 self._add_dict_child(element, name, item)
         return
     
-    def _add_dict_child(self, parent, tag_name, data):
+    def _add_dict_child(self, parent: ET.Element, tag_name: str, data: Dict[str, Any]) -> ET.Element:
         """Add a child element from dictionary data"""
         child_element = ET.SubElement(parent, tag_name)
-        
+
         # Handle special case for Values (nested structure)
         if tag_name == "Values" and isinstance(data, dict):
             for attribute_id, value_data in data.items():
@@ -97,15 +101,16 @@ class BaseObject:
                     child_element.set(key, str(value))
         return child_element
     
-    def _add_value_element(self, parent, value_data, attribute_id=None):
+    def _add_value_element(self, parent: ET.Element, value_data: Any, attribute_id: Optional[str] = None) -> Optional[ET.Element]:
         """Add a Value element from parsed value data"""
+        value_elem: Optional[ET.Element] = None
         if isinstance(value_data, dict):
-            attribs = {}
+            attribs: Dict[str, str] = {}
             if attribute_id:
                 attribs["AttributeID"] = attribute_id
             if "ID" in value_data:
-                attribs["ID"] = value_data["ID"]
-            
+                attribs["ID"] = str(value_data["ID"])
+
             value_elem = ET.SubElement(parent, "Value", attribs)
             if "value" in value_data:
                 value_elem.text = str(value_data["value"])

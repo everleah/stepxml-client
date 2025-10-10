@@ -1,5 +1,6 @@
-import xml.etree.ElementTree as ET
 
+import xml.etree.ElementTree as ET
+from typing import Any, Callable, List
 from . import STEPXML_NS
 
 
@@ -37,8 +38,12 @@ class Parser:
         )
         return
     
-    def _parse_item_list(self, list_name, item_name, parse_fct):
-        results = []
+    from typing import Any, Callable, List
+
+    def _parse_item_list(self, list_name: str, item_name: str, parse_fct: Callable[[Any], Any]) -> List[Any]:
+        results: List[Any] = []
+        if self._root is None:
+            return results
         item_list = self._root.find(list_name, STEPXML_NS)
         if item_list is not None:
             for item in item_list.findall(item_name, STEPXML_NS):

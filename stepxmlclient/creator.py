@@ -1,27 +1,26 @@
-import xml.etree.ElementTree as ET
 
+import xml.etree.ElementTree as ET
+from typing import List, Optional
 from . import STEPXML_NS
 from .model import BaseObject
 
 class Creator:
-    
     def __init__(
-            self, 
-            context_id : str, 
-            workspace_id : str = 'Main' ):
-        self.context_id = context_id
-        self.workspace_id = workspace_id
-        self.root = None
-        self.tree = None
-        self.products = []
-        self.assets = []
-        self.deletedproducts = []
-        self.deletedassets = []
-        self.product_replacement_rules = []
-        
+            self,
+            context_id: str,
+            workspace_id: str = 'Main') -> None:
+        self.context_id: str = context_id
+        self.workspace_id: str = workspace_id
+        self.root: Optional[ET.Element] = None
+        self.tree: Optional[ET.ElementTree] = None
+        self.products: List[BaseObject] = []
+        self.assets: List[BaseObject] = []
+        self.deletedproducts: List[BaseObject] = []
+        self.deletedassets: List[BaseObject] = []
+        self.product_replacement_rules: List[BaseObject] = []
         return
     
-    def build(self):
+    def build(self) -> None:
         self.root = ET.Element(
             tag='STEP-ProductInformation',
             attrib={
@@ -47,24 +46,26 @@ class Creator:
                 self._build_element_list(self.root, xml_name, values)
         return
         
-    def _build_element_list(self, parent, 
-                            list_name : str, 
-                            objs : list[BaseObject]):
+    def _build_element_list(self, parent: ET.Element,
+                            list_name: str,
+                            objs: List[BaseObject]) -> None:
         list_element = ET.SubElement(parent, list_name)
         for obj in objs:
             obj.to_element(list_element)
         return
             
         
-    def add(self, obj : BaseObject):
-        list_attr = getattr(self, obj._GROUP_NAME, None)
-        if list_attr is not None:
+    def add(self, obj: BaseObject) -> bool:
+        if obj._GROUP_NAME is None:
+            return False
+        list_attr = getattr(self, obj._GROUP_NAME)
+        if isinstance(list_attr, list):
             list_attr.append(obj)
             return True
         return False
     
-    def add_list(self, obj_list : list[BaseObject]):
-        not_added = []
+    def add_list(self, obj_list: List[BaseObject]) -> List[BaseObject]:
+        not_added: List[BaseObject] = []
         for obj in obj_list:
             if not self.add(obj):
                 not_added.append(obj)
