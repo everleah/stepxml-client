@@ -1,29 +1,26 @@
-
 import xml.etree.ElementTree as ET
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 from . import STEPXML_NS
-
-
 
 class Parser:
     
     def __init__(self):
         self._tree = None
-        self._root = None
-        self.products = None
-        self.assets = None
-        self.delete_products = None
-        self.delete_assets = None
+        self._root: Optional[ET.Element] = None
+        self.products: List[dict] = []
+        self.assets: List[dict] = []
+        self.delete_products: List[dict] = []
+        self.delete_assets: List[dict] = []
         return
 
-    def parse_file(self, file_path):
+    def parse_file(self, file_path: str):
         self._tree = ET.parse(file_path)
         return self.parse(self._tree.getroot())
 
-    def parse_str(self, xml_str):
+    def parse_str(self, xml_str: str):
         return self.parse(ET.fromstring(xml_str))
 
-    def parse(self, root):
+    def parse(self, root: ET.Element):
         assert root.tag == 'STEP-ProductInformation'
         self._root = root
         self.assets = self._parse_item_list(
@@ -37,10 +34,12 @@ class Parser:
             'DeleteProducts', 'DeleteProduct', _parse_delete_product
         )
         return
-    
-    from typing import Any, Callable, List
 
-    def _parse_item_list(self, list_name: str, item_name: str, parse_fct: Callable[[Any], Any]) -> List[Any]:
+    def _parse_item_list(self, 
+                         list_name: str, 
+                         item_name: str, 
+                         parse_fct: Callable[[Any], Any]
+                         ) -> List[Any]:
         results: List[Any] = []
         if self._root is None:
             return results
