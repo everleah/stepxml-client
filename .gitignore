@@ -171,6 +171,9 @@ Thumbs.db
 nocert
 openapi_cache.json
 
+# PyPI config
+.pypirc
+
 # Development certificates and keys
 *.pem
 *.key
