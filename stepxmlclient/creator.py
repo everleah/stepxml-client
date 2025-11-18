@@ -71,6 +71,18 @@ class Creator:
                 not_added.append(obj)
         return not_added
 
+    def to_bytes(self, encoding: str = 'utf-8') -> bytes:
+        if self.root is None:
+            raise RuntimeError("XML tree not built yet. Call build() first.")
+        return ET.tostring(
+            self.root,
+            encoding=encoding,
+            xml_declaration=True
+        )  
+    
+    def to_string(self, encoding: str = 'utf-8') -> str:
+        return self.to_bytes(encoding).decode(encoding)
         
+     
         
     
