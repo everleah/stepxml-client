@@ -1,3 +1,4 @@
+import requests
 import requests_openapi as roa
 import logging
 import os
@@ -27,12 +28,13 @@ class StiboStepRestClient:
         self.__create_client(location_base, openapi_file, cache_openapi)
         # set server
         self.client.set_server(roa.Server(url=location_base))
-        # no ssl verify?
-        if nocert or os.path.exists('nocert'):
-            self.client.requestor.verify=False
-        # proxies
-        if type(proxies) is dict:
-            self.client.requestor.proxies.update(proxies)
+        if isinstance(self.client.requestor, requests.Session):
+            # no ssl verify?
+            if nocert or os.path.exists('nocert'):
+                self.client.requestor.verify=False
+            # proxies
+            if isinstance(proxies, dict):
+                self.client.requestor.proxies.update(proxies)
         self.proxies = proxies
         # authorisation (Always after creating client!)
         authorisation.adapt_client(self.client)
