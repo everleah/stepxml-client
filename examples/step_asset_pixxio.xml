@@ -1,0 +1,12 @@
+<STEP-ProductInformation ContextID="DemoContext" WorkspaceID="Main">
+  <Assets>
+    <Asset ID="A001">
+      <Name>hoerl_Teams_Hintergrund_welle</Name>
+      <KeyValue>A001</KeyValue>
+      <Values>
+        <Value AttributeID="AT_PixxioID">1908841755</Value>
+        <Value AttributeID="AT_Artikelnummer">12345</Value>
+      </Values>
+    </Asset>
+  </Assets>
+</STEP-ProductInformation>
