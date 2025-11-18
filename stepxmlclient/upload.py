@@ -70,7 +70,7 @@ class AssetUploader:
         Upload a binary file to STEP as an asset binary.
         
         Args:
-            file_path: Path to the file to upload
+            file_path: Path to the file to upload or URL of the file to transfer
             asset_id: ID of the asset in STEP to associate with this binary
             filename: Optional custom filename (defaults to original filename)
             mime_type: Optional MIME type (will be detected if not provided)
@@ -85,31 +85,58 @@ class AssetUploader:
             ValueError: If asset_id is empty
             Exception: If the upload fails
         """
-        file_path = Path(file_path)
-        
-        if not file_path.exists():
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
-        if not asset_id:
-            raise ValueError("asset_id cannot be empty")
-        
-        # Use original filename if not provided
-        if filename is None:
-            filename = file_path.name
-        
-        # Detect MIME type if not provided
-        if mime_type is None:
-            mime_type = self._detect_mime_type(file_path)
-        
-        with open(file_path, 'rb') as file_handle:
-            return self.upload_stream(
-                file_handle,
-                asset_id,
-                filename,
-                mime_type,
-                context_id,
-                workspace_id
-            )
+        import tempfile
+        import requests
+
+        # Check if file_path is a URL
+        file_path_str = str(file_path)
+        is_url = file_path_str.startswith('http://') or file_path_str.startswith('https://')
+
+        if is_url:
+            # Download file to temp location
+            response = requests.get(file_path_str, stream=True)
+            if response.status_code != 200:
+                raise FileNotFoundError(f"Could not download file from URL: {file_path_str}")
+            # Use filename from URL if not provided
+            if filename is None:
+                filename = Path(file_path_str).name or 'downloaded_file'
+            # Detect MIME type if not provided
+            if mime_type is None:
+                mime_type = response.headers.get('Content-Type', 'application/octet-stream')
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    tmp_file.write(chunk)
+                tmp_file_path = Path(tmp_file.name)
+            with open(tmp_file_path, 'rb') as file_handle:
+                result = self.upload_stream(
+                    file_handle,
+                    asset_id,
+                    filename,
+                    mime_type,
+                    context_id,
+                    workspace_id
+                )
+            os.unlink(tmp_file_path)
+            return result
+        else:
+            file_path = Path(file_path)
+            if not file_path.exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+            if not asset_id:
+                raise ValueError("asset_id cannot be empty")
+            if filename is None:
+                filename = file_path.name
+            if mime_type is None:
+                mime_type = self._detect_mime_type(file_path)
+            with open(file_path, 'rb') as file_handle:
+                return self.upload_stream(
+                    file_handle,
+                    asset_id,
+                    filename,
+                    mime_type,
+                    context_id,
+                    workspace_id
+                )
     
     def upload_stream(
         self,
