@@ -22,11 +22,12 @@ class Creator:
     
     def build(self) -> None:
         self.root = ET.Element(
-            tag='STEP-ProductInformation',
-            attrib={
-                "ContextID" : self.context_id,
-                "WorkspaceID" : self.workspace_id
-            })
+            'STEP-ProductInformation',
+            {
+                "ContextID": self.context_id,
+                "WorkspaceID": self.workspace_id
+            }
+        )
         self.tree = ET.ElementTree(self.root)
         # product replacement rules
         if self.product_replacement_rules:

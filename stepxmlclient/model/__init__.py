@@ -21,11 +21,11 @@ class BaseObject:
                 attrib=self._get_attributes()
             )
         else:
-            element = ET.SubElement(
-                parent=parent,
-                tag=self._TAG_NAME if self._TAG_NAME else "",
-                attrib=self._get_attributes()
-            )
+                element = ET.SubElement(
+                    parent,
+                    self._TAG_NAME if self._TAG_NAME else "",
+                    self._get_attributes()
+                )
         value = self._get_value()
         if value:
             element.text = value
