@@ -18,6 +18,7 @@ This module provides a ready-to-use client for software projects to communicate 
 - ✅ **STEP-XML Generation**: Create XML documents for Products, Assets, and Product Replacement Rules
 - ✅ **Product-Asset Relations**: Handle `AssetCrossReference` and `DeleteAssetCrossReference`  
 - ✅ **REST API Integration**: Configure and authenticate with STEP REST API v2
+- ✅ **Asset Binary Upload**: Upload files (images, documents) to STEP assets via REST API
 - ✅ **Schema Validation**: Reference implementation against official `STEP.xsd`
 
 ### Supported Entities
@@ -54,6 +55,49 @@ client = StiboStepRestClient(
 
 # Access underlying requests-openapi client
 response = client.client.some_operation(...)
+```
+
+### Asset Binary Upload
+
+```python
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+from stepxmlclient.upload import AssetUploader
+
+# Create client
+auth = BasicAuthorisation('username', 'password')
+client = StiboStepRestClient(
+    'https://your-step-server.com/restapiv2',
+    auth,
+    nocert=True
+)
+
+# Create uploader
+uploader = AssetUploader(client)
+
+# Upload local file to asset
+result = uploader.upload_file(
+    file_path='product_image.jpg',
+    asset_id='ASSET_001',
+    filename='product_image.jpg',  # Optional
+    context_id='Context1',
+    workspace_id='Main'            # Optional
+)
+print(f"Upload successful: {result['asset_id']}")
+
+# Upload from URL
+result = uploader.upload_file(
+    file_path='https://example.com/image.jpg',
+    asset_id='ASSET_002',
+    context_id='Context1'
+)
+
+# Download asset content
+content = uploader.get_content(
+    asset_id='ASSET_001',
+    context_id='Context1'
+)
+with open('downloaded.jpg', 'wb') as f:
+    f.write(content)
 ```
 
 ### XML Parsing
@@ -124,6 +168,7 @@ stepxmlclient/
 ├── client.py               # REST API client wrapper  
 ├── parser.py               # STEP-XML parsing engine
 ├── creator.py              # STEP-XML document generator
+├── upload.py               # Asset binary upload/download
 └── model/
     ├── __init__.py         # BaseObject class
     ├── product.py          # Product and ProductReplacementRule

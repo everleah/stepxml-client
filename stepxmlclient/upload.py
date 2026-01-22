@@ -164,46 +164,48 @@ class AssetUploader:
         Raises:
             Exception: If the upload fails
         """
-        # Prepare multipart form data
-        files = {
-            'file': (filename, file_stream, mime_type)
-        }
-        
-        # Prepare parameters
+        # Prepare query parameters according to STEP REST API v2 spec
         params = {
-            'assetId': asset_id,
-            'contextId': context_id
+            'fileName': filename,
+            'context': context_id
         }
         
         if workspace_id:
-            params['workspaceId'] = workspace_id
+            params['workspace'] = workspace_id
         
-        # Use the underlying requests-openapi client
-        # The actual endpoint path depends on the OpenAPI specification
-        # Common pattern: POST /assets/{assetId}/binary or /assets/binary
+        # Read binary data from stream
+        binary_data = file_stream.read()
+        
+        # Use the correct REST API v2 endpoint: PUT /assets/{id}/content
+        # Binary content is sent as application/octet-stream in request body
         try:
-            response = self.client.client.post(
-                '/assets/binary',
+            # Access the underlying requests Session from requests-openapi client
+            endpoint = f'/assets/{asset_id}/content'
+            response = self.client.client.requestor.put(
+                f'{self.client.client.server.url}{endpoint}',
                 params=params,
-                files=files
+                data=binary_data,
+                headers={'Content-Type': mime_type}
             )
+            response.raise_for_status()
             return {
                 'success': True,
                 'asset_id': asset_id,
                 'filename': filename,
-                'response': response
+                'mime_type': mime_type,
+                'status_code': response.status_code
             }
         except Exception as e:
             raise Exception(f"Failed to upload asset binary: {str(e)}") from e
     
-    def delete_binary(
+    def get_content(
         self,
         asset_id: str,
         context_id: str = "Context1",
         workspace_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    ) -> bytes:
         """
-        Delete a binary file from a STEP asset.
+        Download binary content from a STEP asset.
         
         Args:
             asset_id: ID of the asset in STEP
@@ -211,31 +213,28 @@ class AssetUploader:
             workspace_id: Optional workspace ID
             
         Returns:
-            Dictionary with deletion response details
+            Binary content as bytes
             
         Raises:
-            Exception: If the deletion fails
+            Exception: If the download fails
         """
         params = {
-            'assetId': asset_id,
-            'contextId': context_id
+            'context': context_id
         }
         
         if workspace_id:
-            params['workspaceId'] = workspace_id
+            params['workspace'] = workspace_id
         
         try:
-            response = self.client.client.delete(
-                '/assets/binary',
+            endpoint = f'/assets/{asset_id}/content'
+            response = self.client.client.requestor.get(
+                f'{self.client.client.server.url}{endpoint}',
                 params=params
             )
-            return {
-                'success': True,
-                'asset_id': asset_id,
-                'response': response
-            }
+            response.raise_for_status()
+            return response.content
         except Exception as e:
-            raise Exception(f"Failed to delete asset binary: {str(e)}") from e
+            raise Exception(f"Failed to download asset content: {str(e)}") from e
     
     @staticmethod
     def _detect_mime_type(file_path: Path) -> str:
