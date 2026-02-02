@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 3 Complete  
-**Coverage:** ~20% of STEP-XML schema
+**Current Version:** Phase 4 Complete  
+**Coverage:** ~30% of STEP-XML schema
 
 ---
 
@@ -27,6 +27,13 @@
   - Child elements: `KeyValue` (multiple), `ParentKeyValue` (multiple), nested `Classification`
   - Child structures: `MetaData`
   - All classification relations fully parsed ✓
+
+- **Entities** - Full support (Phase 4) ✅
+  - Attributes parsed: `ID`, `ParentID`, `UserTypeID`, `QualifierID`, `Changed`, `Republished`, `Selected`, `Referenced`
+  - Child text: `Name`
+  - Child elements: `KeyValue` (multiple), `ParentKeyValue` (multiple), nested `Entity`
+  - Child structures: `MetaData`
+  - All entity relations fully parsed (20 types total) ✓
 
 ### Deletion Operations
 - **DeleteAsset** - Fully supported
@@ -108,6 +115,40 @@
   - Unlimited nesting depth
   - All attributes and relations preserved in nested items
 
+### Entity Relations (Phase 4)
+- ✅ **ProductCrossReference** (in entities) - Complete support
+  - Attributes parsed: `ProductID`, `Changed`, `Type`, `QualifierID`, `MountLocation`
+  - Handles standard, delete, suppressed, and delete-suppressed variants
+  - Children parsed: `KeyValue` (multiple), `MetaData`
+
+- ✅ **ClassificationCrossReference** (in entities) - Complete support
+  - Attributes parsed: `ClassificationID`, `Changed`, `Type`, `QualifierID`
+  - Handles all 4 variants
+
+- ✅ **EntityCrossReference** (in entities) - Complete support
+  - Attributes parsed: `EntityID`, `Changed`, `Type`, `QualifierID`
+  - Handles all 4 variants (entity-to-entity relations)
+
+- ✅ **AssetCrossReference** (in entities) - Complete support
+  - Attributes parsed: `AssetID`, `Changed`, `Type`, `QualifierID`
+  - Handles all 4 variants
+
+- ✅ **ContextCrossReference** (in entities) - Complete support
+  - Attributes parsed: `ContextID`, `Changed`, `Type`, `QualifierID`
+  - Handles standard and suppressed variants
+  - Children parsed: `KeyValue` (multiple), `MetaData`
+
+- ✅ **WorkspaceCrossReference** (in entities) - Complete support
+  - Attributes parsed: `WorkspaceID`, `Changed`, `Type`, `QualifierID`
+  - Handles standard and suppressed variants
+  - Children parsed: `KeyValue` (multiple), `MetaData`
+
+### Nested Entities (Phase 4)
+- ✅ **Entity nesting** - Complete support
+  - Hierarchical entity parsing
+  - Unlimited nesting depth
+  - All attributes and relations preserved in nested items
+
 ---
 
 ### Entity Cross-References (Product-to-Entity)
@@ -125,14 +166,14 @@
 
 ## ❌ Not Yet Implemented
 
-### Core Entity Types (Medium Priority - Phase 3 started)
+### Core Entity Types (COMPLETED ✅)
 - **Classifications** - ✅ COMPLETED (Phase 3)
   - Full hierarchical support with all relation types
   - See "Fully Implemented" section above
 
-- **Entities** - ❌ NOT PARSED
-  - Generic MDM objects with flexible structure
-  - Status: **Next in Phase 3 roadmap**
+- **Entities** - ✅ COMPLETED (Phase 4)
+  - Full hierarchical support with 20 relation types (Product, Classification, Entity, Asset, Context, Workspace - each with standard and suppressed variants)
+  - See "Fully Implemented" section above
 
 ### Attribute System (High Priority)
 - **Attributes** - Property definitions
