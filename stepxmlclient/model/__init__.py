@@ -115,6 +115,25 @@ class BaseObject:
             if "value" in value_data:
                 value_elem.text = str(value_data["value"])
         return value_elem
-        
 
 
+# Export model classes
+from .product import Product, ProductReplacementRule
+from .asset import Asset
+from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference
+from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
+
+__all__ = [
+    'BaseObject',
+    'Product',
+    'ProductReplacementRule',
+    'Asset',
+    'DeleteAsset',
+    'DeleteProduct',
+    'DeleteAssetCrossReference',
+    'DeleteProductCrossReference',
+    'AssetCrossReference',
+    'ProductCrossReference',
+    'ClassificationCrossReference',
+    'EntityCrossReference',
+]
