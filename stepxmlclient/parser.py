@@ -48,6 +48,7 @@ class Parser:
         self.list_of_values: List[dict] = []
         self.user_types: List[dict] = []
         self.contexts: List[dict] = []
+        self.link_types: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
         return
@@ -91,6 +92,9 @@ class Parser:
         )
         self.contexts = self._parse_item_list(
             'ContextList', 'Context', _parse_context
+        )
+        self.link_types = self._parse_item_list(
+            'EdgeTypes', 'LinkType', _parse_link_type
         )
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
@@ -1163,3 +1167,20 @@ def _parse_context(element: ET.Element) -> dict:
         result["DimensionPointLink"] = dim_point_links
     
     return result
+
+def _parse_link_type(element: ET.Element) -> dict:
+    """Parse LinkType element (cross-reference type definition).
+    
+    Note: In STEP XML, LinkType elements appear within other structures
+    to indicate which link types (CA=Classification-to-Attribute or 
+    PA=Product-to-Attribute) are valid for an attribute.
+    
+    Attributes (1 total):
+    - LinkTypeID (required): Either "CA" or "PA"
+      - CA: Classification-to-Attribute link type
+      - PA: Product-to-Attribute link type
+    """
+    return _parse_element(
+        element,
+        attributes=("LinkTypeID",)
+    )
