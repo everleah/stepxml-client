@@ -8,6 +8,31 @@ def _str_to_bool(value: str) -> bool:
     return value.lower() == 'true'
 
 
+def _get_local_tag(element: ET.Element) -> str:
+    """Extract local tag name from potentially namespaced tag.
+    
+    Handles both namespaced tags (e.g., '{http://...}Value') and 
+    unnamespaced tags (e.g., 'Value').
+    """
+    tag = element.tag
+    if '}' in tag:
+        return tag.split('}', 1)[1]
+    return tag
+
+
+def _get_namespace_from_tag(tag: str) -> Optional[str]:
+    """Extract namespace URL from a namespaced tag.
+    
+    Handles both namespaced tags (e.g., '{http://...}Value') and 
+    unnamespaced tags (e.g., 'Value').
+    Returns None if tag is unnamespaced.
+    """
+    if not tag or '}' not in tag:
+        return None
+    # Extract namespace from {namespace}localname format
+    return tag[1:tag.index('}')]
+
+
 class Parser:
     
     def __init__(self):
@@ -35,7 +60,9 @@ class Parser:
         return self.parse(ET.fromstring(xml_str))
 
     def parse(self, root: ET.Element):
-        assert root.tag == 'STEP-ProductInformation'
+        # Handle both namespaced and unnamespaced root elements
+        local_tag = _get_local_tag(root)
+        assert local_tag == 'STEP-ProductInformation', f"Expected STEP-ProductInformation, got {local_tag}"
         self._root = root
         self.assets = self._parse_item_list(
             'Assets', 'Asset', _parse_asset)
@@ -81,12 +108,38 @@ class Parser:
         results: List[Any] = []
         if self._root is None:
             return results
+        
+        # Try to find the item list by local tag name, ignoring namespace
+        item_list = None
+        
+        # First try with explicit namespace (for prefixed XML like step:Products)
         item_list = self._root.find(list_name, STEPXML_NS)
+        
+        # If not found, search by local tag name (handles default namespaces)
+        if item_list is None:
+            for child in self._root:
+                if _get_local_tag(child) == list_name:
+                    item_list = child
+                    break
+        
         if item_list is not None:
-            for item in item_list.findall(item_name, STEPXML_NS):
+            # Collect items, trying both namespace-aware and namespace-agnostic approaches
+            items = []
+            
+            # Try with explicit namespace first
+            items = list(item_list.findall(item_name, STEPXML_NS))
+            
+            # If no results, search by local tag name for each child
+            if not items:
+                for child in item_list:
+                    if _get_local_tag(child) == item_name:
+                        items.append(child)
+            
+            for item in items:
                 result = parse_fct(item)
                 if result is not None:
                    results.append(result)
+        
         return results
     
     
@@ -105,7 +158,10 @@ def _parse_element(
             elif default is not None:
                 result[attr_name] = default
     for child in element:
-        key = child.tag
+        # Use local tag name to handle both namespaced and unnamespaced XML
+        local_tag = _get_local_tag(child)
+        key = local_tag
+        
         if key in texts:
             result[key] = child.text
         elif key in specials:
@@ -177,18 +233,20 @@ def _parse_product(element):
     
     # Process cross-references, aggregating multiples into lists
     for child in element:
-        if child.tag in cross_ref_types:
-            parser_func = cross_ref_types[child.tag]
+        # Use local tag name to handle both namespaced and unnamespaced XML
+        local_tag = _get_local_tag(child)
+        if local_tag in cross_ref_types:
+            parser_func = cross_ref_types[local_tag]
             parsed = parser_func(child)
             
-            if child.tag in result:
+            if local_tag in result:
                 # Multiple elements of same type - convert to list
-                if not isinstance(result[child.tag], list):
-                    result[child.tag] = [result[child.tag]]
-                result[child.tag].append(parsed)
+                if not isinstance(result[local_tag], list):
+                    result[local_tag] = [result[local_tag]]
+                result[local_tag].append(parsed)
             else:
                 # First element of this type
-                result[child.tag] = parsed
+                result[local_tag] = parsed
     
     return result
     
@@ -203,11 +261,15 @@ def _parse_values(element):
     for child in element:
         attribute_id = child.get('AttributeID')
         if attribute_id is not None:
-            if child.tag == "Value":
+            local_tag = _get_local_tag(child)
+            if local_tag == "Value":
                 values[attribute_id] = _parse_value(child)
-            elif child.tag == "MultiValue":
+            elif local_tag == "MultiValue":
                 multi_value_list = []
                 for sub_child in child.findall('Value'):
+                    multi_value_list.append(_parse_value(sub_child))
+                # Also check for namespaced Value elements
+                for sub_child in child.findall('{http://www.stibosystems.com/step}Value'):
                     multi_value_list.append(_parse_value(sub_child))
                 if multi_value_list:
                     values[attribute_id] = multi_value_list
