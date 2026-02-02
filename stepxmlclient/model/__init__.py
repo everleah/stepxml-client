@@ -1,6 +1,6 @@
 
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, Type
 
 class BaseObject:
     _GROUP_NAME: Optional[str] = None
@@ -123,7 +123,37 @@ from .asset import Asset
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
+def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
+    """Get model class by its class name as string (case-insensitive).
+    
+    Args:
+        class_name: The name of the model class (e.g., 'Product', 'Asset')
+        
+    Returns:
+        The model class type, or None if not found. All returned types are 
+        subclasses of BaseObject.
+        
+    Example:
+        >>> ProductClass = get_model_class('Product')
+        >>> product = ProductClass({"ID": "P001", "Name": "Test"})
+    """
+    model_classes = {
+        'product': Product,
+        'productreplacementrule': ProductReplacementRule,
+        'asset': Asset,
+        'deleteasset': DeleteAsset,
+        'deleteproduct': DeleteProduct,
+        'deleteassetcrossreference': DeleteAssetCrossReference,
+        'deleteproductcrossreference': DeleteProductCrossReference,
+        'assetcrossreference': AssetCrossReference,
+        'productcrossreference': ProductCrossReference,
+        'classificationcrossreference': ClassificationCrossReference,
+        'entitycrossreference': EntityCrossReference,
+    }
+    return model_classes.get(class_name.lower(), None)
+
 __all__ = [
+    'get_model_class',
     'BaseObject',
     'Product',
     'ProductReplacementRule',

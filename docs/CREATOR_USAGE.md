@@ -7,12 +7,13 @@ A practical guide to using the `stepxml-client` Creator for building STEP-XML do
 ## Table of Contents
 
 1. [Basic Setup](#basic-setup)
-2. [Creating Products](#creating-products)
-3. [Creating Assets](#creating-assets)
-4. [Managing Relations](#managing-relations)
-5. [Deletion Operations](#deletion-operations)
-6. [Advanced Examples](#advanced-examples)
-7. [Exporting XML](#exporting-xml)
+2. [Dynamic Class Loading](#dynamic-class-loading)
+3. [Creating Products](#creating-products)
+4. [Creating Assets](#creating-assets)
+5. [Managing Relations](#managing-relations)
+6. [Deletion Operations](#deletion-operations)
+7. [Advanced Examples](#advanced-examples)
+8. [Exporting XML](#exporting-xml)
 
 ---
 
@@ -48,7 +49,159 @@ xml_bytes = creator.to_bytes()
 ```
 
 ---
+## Dynamic Class Loading
 
+### Get Model Class by Name
+
+The `get_model_class()` utility function allows you to dynamically load model classes by their name as a string. This is useful when the class type is determined at runtime or comes from configuration/API calls.
+
+```python
+from stepxmlclient.model import get_model_class
+
+# Get class by name (case-insensitive)
+ProductClass = get_model_class('Product')
+AssetClass = get_model_class('Asset')
+DeleteClass = get_model_class('DeleteProduct')
+
+# Returns None if class not found
+UnknownClass = get_model_class('UnknownType')  # Returns None
+```
+
+### Create Instances Dynamically
+
+```python
+# Get the class
+ProductClass = get_model_class('Product')
+
+# Create instance
+if ProductClass is not None:
+    product = ProductClass({
+        "ID": "P001",
+        "Name": "Dynamic Product"
+    })
+    creator.add(product)
+else:
+    print("Product class not found")
+```
+
+### All Available Classes
+
+```python
+available_classes = [
+    'Product',
+    'ProductReplacementRule',
+    'Asset',
+    'DeleteAsset',
+    'DeleteProduct',
+    'DeleteAssetCrossReference',
+    'DeleteProductCrossReference',
+    'AssetCrossReference',
+    'ProductCrossReference',
+    'ClassificationCrossReference',
+    'EntityCrossReference'
+]
+
+# Create all classes dynamically
+instances = {}
+for class_name in available_classes:
+    cls = get_model_class(class_name)
+    if cls is not None:
+        instances[class_name] = cls
+```
+
+### Dynamic Type from Configuration
+
+```python
+import json
+
+# Configuration defining what to create
+config = {
+    "type": "Product",
+    "data": {
+        "ID": "P001",
+        "Name": "Configured Product"
+    }
+}
+
+# Load class dynamically
+ModelClass = get_model_class(config['type'])
+if ModelClass:
+    obj = ModelClass(config['data'])
+    creator.add(obj)
+    creator.build()
+else:
+    raise ValueError(f"Unknown type: {config['type']}")
+```
+
+### Factory Pattern with Dynamic Classes
+
+```python
+def create_model_object(class_name: str, data: dict):
+    """Factory function to create model objects dynamically"""
+    ModelClass = get_model_class(class_name)
+    
+    if ModelClass is None:
+        raise ValueError(f"Unknown model class: {class_name}")
+    
+    return ModelClass(data)
+
+# Usage
+product = create_model_object('Product', {"ID": "P001", "Name": "Test"})
+asset = create_model_object('Asset', {"ID": "A001", "Name": "Image"})
+delete = create_model_object('DeleteProduct', {"ID": "OLD-001"})
+
+creator.add(product)
+creator.add(asset)
+creator.add(delete)
+creator.build()
+```
+
+### Bulk Creation from List
+
+```python
+# Data from API or configuration
+items = [
+    {"type": "Product", "data": {"ID": "P001", "Name": "Product 1"}},
+    {"type": "Product", "data": {"ID": "P002", "Name": "Product 2"}},
+    {"type": "Asset", "data": {"ID": "A001", "Name": "Asset 1"}},
+    {"type": "Asset", "data": {"ID": "A002", "Name": "Asset 2"}},
+]
+
+creator = Creator(context_id="BulkImport")
+
+for item in items:
+    ModelClass = get_model_class(item['type'])
+    if ModelClass:
+        obj = ModelClass(item['data'])
+        creator.add(obj)
+    else:
+        print(f"Skipped unknown type: {item['type']}")
+
+creator.build()
+print(creator.to_string())
+```
+
+### Error Handling
+
+```python
+def safe_create_object(class_name: str, data: dict, default_type: str = 'Product'):
+    """Create object with fallback to default type"""
+    ModelClass = get_model_class(class_name)
+    
+    if ModelClass is None:
+        print(f"Warning: Unknown type '{class_name}', using '{default_type}'")
+        ModelClass = get_model_class(default_type)
+        
+        if ModelClass is None:
+            raise ValueError(f"Default type '{default_type}' also not found")
+    
+    return ModelClass(data)
+
+# Usage with automatic fallback
+obj = safe_create_object('InvalidType', {"ID": "1"})  # Falls back to Product
+```
+
+---
 ## Creating Products
 
 ### Simple Product
