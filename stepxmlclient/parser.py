@@ -17,6 +17,9 @@ class Parser:
         self.assets: List[dict] = []
         self.classifications: List[dict] = []
         self.entities: List[dict] = []
+        self.attributes: List[dict] = []
+        self.attribute_groups: List[dict] = []
+        self.list_of_values_groups: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
         return
@@ -40,6 +43,15 @@ class Parser:
         )
         self.entities = self._parse_item_list(
             'Entities', 'Entity', _parse_entity
+        )
+        self.attributes = self._parse_item_list(
+            'Attributes', 'Attribute', _parse_attribute
+        )
+        self.attribute_groups = self._parse_item_list(
+            'AttributeGroups', 'AttributeGroup', _parse_attribute_group
+        )
+        self.list_of_values_groups = self._parse_item_list(
+            'ListOfValuesGroupList', 'ListOfValuesGroup', _parse_list_of_values_group
         )
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
@@ -551,4 +563,188 @@ def _parse_workspace_cross_reference(element):
     if key_values:
         result["KeyValue"] = key_values
     
-    return result    
+    return result
+
+
+def _parse_attribute(element: ET.Element) -> dict:
+    """Parse Attribute element with ID, names, validation/LOV link, and metadata.
+    
+    Attributes:
+    - ID, DefaultUnitID, ProductMode (Normal/Property), CryptographicKeyID
+    - HierarchicalFiltering, ClassificationHierarchicalFiltering, ExternallyMaintained
+    - FullTextIndexed, MultiValued, Mandatory, Derived
+    - Selected (default True), Referenced (default False), Changed, Deleted
+    
+    Children:
+    - Name (text), Validation OR ListOfValueLink
+    - ValueTemplate/UnitTemplate (multiple), DimensionLink (multiple)
+    - MetaData, AttributeGroupLink (multiple), UserTypeLink (multiple)
+    - LinkType (multiple), ValueFilter, CurrentTasks
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "DefaultUnitID", "ProductMode", "CryptographicKeyID",
+                   "HierarchicalFiltering", "ClassificationHierarchicalFiltering",
+                   "ExternallyMaintained", "FullTextIndexed", "MultiValued",
+                   "Mandatory", "Derived", "Selected", "Referenced", "Changed", "Deleted"),
+        texts=("Name",),
+        conversions={
+            "HierarchicalFiltering": (_str_to_bool, False),
+            "ClassificationHierarchicalFiltering": (_str_to_bool, False),
+            "ExternallyMaintained": (_str_to_bool, False),
+            "FullTextIndexed": (_str_to_bool, False),
+            "MultiValued": (_str_to_bool, False),
+            "Mandatory": (_str_to_bool, False),
+            "Derived": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse Validation or ListOfValueLink (choice)
+    for child in element:
+        if child.tag.endswith("Validation"):
+            result["Validation"] = child.attrib.get("Base", "")
+        elif child.tag.endswith("ListOfValueLink"):
+            result["ListOfValueLink"] = child.attrib.get("LOVID", "")
+    
+    # Parse DimensionLink elements (multiple)
+    dim_links = []
+    for child in element:
+        if child.tag.endswith("DimensionLink"):
+            dim_links.append(child.attrib.get("DimensionID", ""))
+    if dim_links:
+        result["DimensionLink"] = dim_links
+    
+    # Parse MetaData
+    for child in element:
+        if child.tag.endswith("MetaData"):
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse AttributeGroupLink elements (multiple)
+    attr_group_links = []
+    for child in element:
+        if child.tag.endswith("AttributeGroupLink"):
+            attr_group_links.append(child.attrib.get("AttributeGroupID", ""))
+    if attr_group_links:
+        result["AttributeGroupLink"] = attr_group_links
+    
+    # Parse UserTypeLink elements (multiple)
+    user_type_links = []
+    for child in element:
+        if child.tag.endswith("UserTypeLink"):
+            user_type_links.append(child.attrib.get("UserTypeID", ""))
+    if user_type_links:
+        result["UserTypeLink"] = user_type_links
+    
+    # Parse LinkType elements (multiple)
+    link_types = []
+    for child in element:
+        if child.tag.endswith("LinkType"):
+            link_types.append(child.attrib.get("ID", ""))
+    if link_types:
+        result["LinkType"] = link_types
+    
+    return result
+
+
+def _parse_attribute_group(element: ET.Element) -> dict:
+    """Parse AttributeGroup element with ID, ParentID, names, and nested groups.
+    
+    Attributes:
+    - ID, ParentID
+    - ShowInWorkbench (default True), ExcludeFromProfiling
+    - Referenced (default False), ManuallySorted (default False)
+    - Selected (default True), Changed (default False), Deleted (default False)
+    
+    Children:
+    - Name (text), MetaData, Configuration
+    - AttributeSequence, nested AttributeGroup (multiple)
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "ParentID", "ShowInWorkbench", "ExcludeFromProfiling",
+                   "Referenced", "ManuallySorted", "Selected", "Changed", "Deleted"),
+        texts=("Name",),
+        conversions={
+            "ShowInWorkbench": (_str_to_bool, True),
+            "ExcludeFromProfiling": (_str_to_bool, False),
+            "Referenced": (_str_to_bool, False),
+            "ManuallySorted": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse MetaData
+    for child in element:
+        if child.tag.endswith("MetaData"):
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse Configuration (encoded view definition)
+    for child in element:
+        if child.tag.endswith("Configuration") and child.text:
+            result["Configuration"] = child.text
+            break
+    
+    # Parse nested AttributeGroup elements (hierarchical)
+    nested_groups = []
+    for child in element:
+        if child.tag.endswith("AttributeGroup"):
+            nested_groups.append(_parse_attribute_group(child))
+    if nested_groups:
+        result["AttributeGroup"] = nested_groups
+    
+    return result
+
+
+def _parse_list_of_values_group(element: ET.Element) -> dict:
+    """Parse ListOfValuesGroup element with ID, ParentID, names, and nested groups.
+    
+    Attributes:
+    - ID, ParentID
+    - Selected (default True), Referenced (default False), Changed (default False)
+    
+    Children:
+    - Name (text), MetaData
+    - AttributeGroupLink (multiple), nested ListOfValuesGroup (multiple)
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "ParentID", "Selected", "Referenced", "Changed"),
+        texts=("Name",),
+        conversions={
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse MetaData
+    for child in element:
+        if child.tag.endswith("MetaData"):
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse AttributeGroupLink elements (multiple)
+    attr_group_links = []
+    for child in element:
+        if child.tag.endswith("AttributeGroupLink"):
+            attr_group_links.append(child.attrib.get("AttributeGroupID", ""))
+    if attr_group_links:
+        result["AttributeGroupLink"] = attr_group_links
+    
+    # Parse nested ListOfValuesGroup elements (hierarchical)
+    nested_groups = []
+    for child in element:
+        if child.tag.endswith("ListOfValuesGroup"):
+            nested_groups.append(_parse_list_of_values_group(child))
+    if nested_groups:
+        result["ListOfValuesGroup"] = nested_groups
+    
+    return result
