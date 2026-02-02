@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='stepxmlclient',
-      version='0.2',
+      version='0.3',
       description='STEP-XML Client',
       author='Claudius Hansch',
       author_email='claudius.hansch@hoerl-im.de',
