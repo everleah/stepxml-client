@@ -1,0 +1,741 @@
+# STEP XML Creator - Usage Guide
+
+A practical guide to using the `stepxml-client` Creator for building STEP-XML documents with Products, Assets, and their relationships.
+
+---
+
+## Table of Contents
+
+1. [Basic Setup](#basic-setup)
+2. [Creating Products](#creating-products)
+3. [Creating Assets](#creating-assets)
+4. [Managing Relations](#managing-relations)
+5. [Deletion Operations](#deletion-operations)
+6. [Advanced Examples](#advanced-examples)
+7. [Exporting XML](#exporting-xml)
+
+---
+
+## Basic Setup
+
+### Import the Required Classes
+
+```python
+from stepxmlclient.creator import Creator
+from stepxmlclient.model import Product, Asset
+from stepxmlclient.model import (
+    AssetCrossReference, ProductCrossReference,
+    ClassificationCrossReference, EntityCrossReference,
+    DeleteAsset, DeleteProduct,
+    DeleteAssetCrossReference, DeleteProductCrossReference
+)
+```
+
+### Create a Creator Instance
+
+```python
+# Initialize with required context ID
+creator = Creator(context_id="MyContext", workspace_id="Main")
+
+# Build the XML structure
+creator.build()
+
+# Export as string
+xml_string = creator.to_string()
+
+# Or export as bytes
+xml_bytes = creator.to_bytes()
+```
+
+---
+
+## Creating Products
+
+### Simple Product
+
+```python
+creator = Creator(context_id="ProductImport")
+
+# Create a basic product
+product = Product({
+    "ID": "SKU-001",
+    "Name": "Laptop Computer"
+})
+
+creator.add(product)
+creator.build()
+print(creator.to_string())
+```
+
+**Output:**
+```xml
+<?xml version='1.0' encoding='utf-8'?>
+<STEP-ProductInformation ContextID="ProductImport" WorkspaceID="Main">
+    <Products>
+        <Product ID="SKU-001">
+            <Name>Laptop Computer</Name>
+        </Product>
+    </Products>
+</STEP-ProductInformation>
+```
+
+### Product with Hierarchy
+
+```python
+# Parent product
+parent = Product({
+    "ID": "LAPTOP-FAMILY",
+    "Name": "Laptop Family"
+})
+
+# Child product
+child = Product({
+    "ID": "SKU-001",
+    "ParentId": "LAPTOP-FAMILY",
+    "UserTypeID": "Article",
+    "Name": "Laptop Model A"
+})
+
+creator.add(parent)
+creator.add(child)
+creator.build()
+```
+
+### Product with Values (Attributes)
+
+```python
+product = Product({
+    "ID": "SKU-001",
+    "Name": "Laptop Computer",
+    "Values": {
+        "Manufacturer": {
+            "value": "TechCorp"
+        },
+        "Weight": {
+            "ID": "kg",
+            "value": "2.5"
+        },
+        "Color": [  # Multi-value
+            {"value": "Silver"},
+            {"value": "Black"}
+        ]
+    }
+})
+
+creator.add(product)
+creator.build()
+```
+
+### Batch Add Products
+
+```python
+products = [
+    Product({"ID": "P001", "Name": "Product 1"}),
+    Product({"ID": "P002", "Name": "Product 2"}),
+    Product({"ID": "P003", "Name": "Product 3"})
+]
+
+not_added = creator.add_list(products)
+if not_added:
+    print(f"Failed to add: {not_added}")
+
+creator.build()
+```
+
+---
+
+## Creating Assets
+
+### Simple Asset
+
+```python
+# Create an asset
+asset = Asset({
+    "ID": "IMG-001",
+    "Name": "Product Front View",
+    "KeyValue": "laptop-front.jpg"
+})
+
+creator.add(asset)
+creator.build()
+```
+
+**Output:**
+```xml
+<?xml version='1.0' encoding='utf-8'?>
+<STEP-ProductInformation ContextID="..." WorkspaceID="Main">
+    <Assets>
+        <Asset ID="IMG-001">
+            <Name>Product Front View</Name>
+            <KeyValue>laptop-front.jpg</KeyValue>
+        </Asset>
+    </Assets>
+</STEP-ProductInformation>
+```
+
+### Asset with Values
+
+```python
+asset = Asset({
+    "ID": "IMG-001",
+    "Name": "Product Image",
+    "KeyValue": "laptop.jpg",
+    "Values": {
+        "FileSize": {"value": "2048000"},
+        "MimeType": {"value": "image/jpeg"},
+        "Resolution": {"value": "1920x1080"}
+    }
+})
+
+creator.add(asset)
+creator.build()
+```
+
+### Multiple Assets
+
+```python
+assets = [
+    Asset({"ID": "IMG-001", "Name": "Front View"}),
+    Asset({"ID": "IMG-002", "Name": "Side View"}),
+    Asset({"ID": "IMG-003", "Name": "Back View"})
+]
+
+creator.add_list(assets)
+creator.build()
+```
+
+---
+
+## Managing Relations
+
+### Add Asset to Product (Quick Style)
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Link asset using parameters
+product.add_asset_reference(
+    asset_id="IMG-001",
+    type_="MainImage",
+    qualifier_id="EN"
+)
+
+creator.add(product)
+creator.build()
+```
+
+### Add Asset to Product (Object Style)
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Create reference object with full control
+asset_ref = AssetCrossReference({
+    "AssetID": "IMG-001",
+    "Type": "MainImage",
+    "QualifierID": "EN"
+})
+
+# Add using object
+product.add_asset_reference(ref_object=asset_ref)
+
+creator.add(product)
+creator.build()
+```
+
+**Output:**
+```xml
+<Product ID="P001">
+    <Name>Laptop</Name>
+    <AssetCrossReference AssetID="IMG-001" Type="MainImage" QualifierID="EN"/>
+</Product>
+```
+
+### Multiple Asset References
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Add multiple assets
+product.add_asset_reference(asset_id="IMG-001", type_="MainImage")
+product.add_asset_reference(asset_id="IMG-002", type_="DetailImage")
+product.add_asset_reference(asset_id="IMG-003", type_="DetailImage")
+
+creator.add(product)
+creator.build()
+```
+
+### Product-to-Product Relations
+
+```python
+# Related products
+product = Product({"ID": "SKU-001", "Name": "Laptop"})
+
+# Parent relationship
+product.add_product_reference(
+    product_id="LAPTOP-FAMILY",
+    type_="Parent",
+    mount_location="/1"
+)
+
+# Related products
+product.add_product_reference(
+    product_id="MOUSE-001",
+    type_="Related"
+)
+
+product.add_product_reference(
+    product_id="KEYBOARD-001",
+    type_="Related"
+)
+
+creator.add(product)
+creator.build()
+```
+
+### Classification References
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Categorize product
+product.add_classification_reference(
+    classification_id="Electronics",
+    type_="Belongs",
+    qualifier_id="Default"
+)
+
+product.add_classification_reference(
+    classification_id="Computers",
+    mount_location="/1"
+)
+
+creator.add(product)
+creator.build()
+```
+
+### Entity References
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Link to entities
+product.add_entity_reference(
+    entity_id="VENDOR-001",
+    type_="Supplier",
+    qualifier_id="Primary"
+)
+
+product.add_entity_reference(
+    entity_id="BRAND-001",
+    type_="Brand"
+)
+
+creator.add(product)
+creator.build()
+```
+
+### Asset with Product References
+
+```python
+# Asset can reference products too
+asset = Asset({
+    "ID": "IMG-001",
+    "Name": "Component Image"
+})
+
+asset.add_product_reference(
+    product_id="COMPONENT-001",
+    type_="ShowsProduct"
+)
+
+creator.add(asset)
+creator.build()
+```
+
+---
+
+## Deletion Operations
+
+### Delete Product (Move to Recycle Bin)
+
+```python
+creator = Creator(context_id="DeleteProducts")
+
+# Create delete instruction
+delete_product = DeleteProduct({
+    "ID": "OLD-SKU-001"
+})
+
+creator.add(delete_product)
+creator.build()
+```
+
+**Output:**
+```xml
+<STEP-ProductInformation ContextID="DeleteProducts" WorkspaceID="Main">
+    <DeletedProducts>
+        <DeleteProduct ID="OLD-SKU-001"/>
+    </DeletedProducts>
+</STEP-ProductInformation>
+```
+
+### Delete Asset
+
+```python
+delete_asset = DeleteAsset({
+    "ID": "OLD-IMG-001"
+})
+
+creator.add(delete_asset)
+creator.build()
+```
+
+### Sever Asset Link from Product
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Remove asset reference while keeping product
+product.delete_asset_reference(
+    asset_id="IMG-001",
+    type_="OldImage"
+)
+
+creator.add(product)
+creator.build()
+```
+
+**Output:**
+```xml
+<Product ID="P001">
+    <Name>Laptop</Name>
+    <DeleteAssetCrossReference AssetID="IMG-001" Type="OldImage"/>
+</Product>
+```
+
+### Sever Product Link
+
+```python
+product = Product({"ID": "P001", "Name": "Laptop"})
+
+# Remove relationship while keeping both products
+product.delete_product_reference(
+    product_id="OLD-BUNDLE-001",
+    type_="BundledWith"
+)
+
+creator.add(product)
+creator.build()
+```
+
+### Batch Delete Products
+
+```python
+deletes = [
+    DeleteProduct({"ID": "OLD-001"}),
+    DeleteProduct({"ID": "OLD-002"}),
+    DeleteProduct({"ID": "OLD-003"})
+]
+
+creator.add_list(deletes)
+creator.build()
+```
+
+---
+
+## Advanced Examples
+
+### Complete E-Commerce Product
+
+```python
+creator = Creator(context_id="ECommerceSync")
+
+# Create main product
+product = Product({
+    "ID": "LAPTOP-PRO-2024",
+    "ParentId": "LAPTOP-FAMILY",
+    "UserTypeID": "Article",
+    "Name": "Laptop Pro 2024",
+    "Values": {
+        "Description": {"value": "Professional laptop for developers"},
+        "Price": {"value": "1299.99"},
+        "Currency": {"value": "USD"},
+        "Weight": {"ID": "kg", "value": "1.8"},
+        "Available": {"value": "true"},
+        "Colors": [
+            {"value": "Space Gray"},
+            {"value": "Silver"},
+            {"value": "Gold"}
+        ]
+    }
+})
+
+# Add images
+product.add_asset_reference(asset_id="LAPTOP-MAIN", type_="MainImage", qualifier_id="EN")
+product.add_asset_reference(asset_id="LAPTOP-DETAIL1", type_="DetailImage")
+product.add_asset_reference(asset_id="LAPTOP-DETAIL2", type_="DetailImage")
+
+# Add related products
+product.add_product_reference(
+    product_id="LAPTOP-CASE",
+    type_="Accessory",
+    mount_location="/accessories/1"
+)
+product.add_product_reference(
+    product_id="LAPTOP-BAG",
+    type_="Accessory"
+)
+
+# Categorize
+product.add_classification_reference(
+    classification_id="Electronics/Computers/Laptops",
+    type_="Belongs"
+)
+
+# Link to vendor
+product.add_entity_reference(
+    entity_id="VENDOR-TechCorp",
+    type_="Supplier"
+)
+
+creator.add(product)
+
+# Create accompanying assets
+images = [
+    Asset({"ID": "LAPTOP-MAIN", "Name": "Main Product Image"}),
+    Asset({"ID": "LAPTOP-DETAIL1", "Name": "Detail View 1"}),
+    Asset({"ID": "LAPTOP-DETAIL2", "Name": "Detail View 2"})
+]
+
+creator.add_list(images)
+creator.build()
+
+print(creator.to_string())
+```
+
+### Product Update with Changes
+
+```python
+creator = Creator(context_id="ProductUpdate")
+
+# Update existing product
+product = Product({
+    "ID": "SKU-001",
+    "Name": "Updated Product Name",
+    "Values": {
+        "Price": {"value": "99.99"},  # New price
+        "Status": {"value": "Active"}
+    }
+})
+
+# Remove old image
+product.delete_asset_reference(asset_id="OLD-IMG", type_="MainImage")
+
+# Add new images
+product.add_asset_reference(asset_id="NEW-IMG-1", type_="MainImage")
+product.add_asset_reference(asset_id="NEW-IMG-2", type_="ThumbnailImage")
+
+# Update classification
+product.delete_product_reference(product_id="OLD-BUNDLE")
+product.add_product_reference(product_id="NEW-BUNDLE", type_="BundledWith")
+
+creator.add(product)
+creator.build()
+```
+
+### Multi-Language Product
+
+```python
+product = Product({
+    "ID": "P001",
+    "Name": "Default Name",
+    "Values": {
+        "Description": {
+            "value": "English description"
+        },
+        "LocalizedName": [
+            {"value": "English Name", "QualifierID": "EN"},
+            {"value": "Nom Français", "QualifierID": "FR"},
+            {"value": "Nombre Español", "QualifierID": "ES"}
+        ]
+    }
+})
+
+# Asset references for different languages
+product.add_asset_reference(
+    asset_id="IMG-EN",
+    type_="MainImage",
+    qualifier_id="EN"
+)
+product.add_asset_reference(
+    asset_id="IMG-FR",
+    type_="MainImage",
+    qualifier_id="FR"
+)
+
+creator.add(product)
+creator.build()
+```
+
+---
+
+## Exporting XML
+
+### Export to String
+
+```python
+creator = Creator(context_id="Export")
+creator.add(Product({"ID": "P001", "Name": "Test"}))
+creator.build()
+
+xml_string = creator.to_string()
+print(xml_string)
+```
+
+### Export to Bytes
+
+```python
+xml_bytes = creator.to_bytes()
+with open("output.xml", "wb") as f:
+    f.write(xml_bytes)
+```
+
+### Export with Custom Encoding
+
+```python
+# UTF-16 encoding
+xml_bytes = creator.to_bytes(encoding='utf-16')
+
+# Latin-1 encoding
+xml_bytes = creator.to_bytes(encoding='iso-8859-1')
+```
+
+### Pretty Print
+
+```python
+import xml.dom.minidom as minidom
+
+xml_string = creator.to_string()
+dom = minidom.parseString(xml_string)
+pretty_xml = dom.toprettyxml(indent="  ")
+print(pretty_xml)
+```
+
+---
+
+## Common Patterns
+
+### Builder Pattern
+
+```python
+creator = Creator(context_id="MyContext")
+
+# Add items
+product = Product({"ID": "P001", "Name": "Product"})
+product.add_asset_reference(asset_id="A001")
+creator.add(product)
+
+asset = Asset({"ID": "A001", "Name": "Image"})
+creator.add(asset)
+
+# Build and export
+creator.build()
+xml = creator.to_string()
+```
+
+### Error Handling
+
+```python
+# Check if items were added successfully
+not_added = creator.add_list([product1, product2, product3])
+
+if not_added:
+    print(f"Warning: Failed to add {len(not_added)} items")
+    for item in not_added:
+        print(f"  - {item._TAG_NAME}")
+```
+
+### Dynamic Product Creation
+
+```python
+def create_product_from_dict(data):
+    """Create product from dictionary"""
+    product = Product({
+        "ID": data.get("sku"),
+        "Name": data.get("name"),
+        "Values": data.get("attributes", {})
+    })
+    
+    # Add images
+    for img in data.get("images", []):
+        product.add_asset_reference(
+            asset_id=img["id"],
+            type_=img.get("type", "Image")
+        )
+    
+    return product
+
+# Usage
+product_data = {
+    "sku": "P001",
+    "name": "Product Name",
+    "attributes": {"Color": {"value": "Red"}},
+    "images": [
+        {"id": "IMG-001", "type": "MainImage"},
+        {"id": "IMG-002", "type": "DetailImage"}
+    ]
+}
+
+product = create_product_from_dict(product_data)
+creator.add(product)
+creator.build()
+```
+
+---
+
+## Tips & Best Practices
+
+1. **Always call `creator.build()` before exporting** - This constructs the XML tree
+2. **Use parameters for simple cases** - Faster than creating objects
+3. **Use objects for complex relations** - More control over attributes
+4. **Initialize Creator once** - Add multiple items to the same Creator
+5. **Batch operations** - Use `add_list()` for multiple items
+6. **Validate IDs** - Ensure Product/Asset IDs are unique
+7. **Use meaningful Types** - "MainImage", "DetailImage", "Parent", "Related", etc.
+8. **Document QualifierID values** - E.g., "EN", "FR", "DE" for languages
+9. **Check return values** - `add_list()` returns items that weren't added
+10. **Test XML output** - Validate against STEP.xsd schema
+
+---
+
+## Troubleshooting
+
+### XML Not Generated
+```python
+# Wrong: Forgot to call build()
+xml = creator.to_string()  # Empty!
+
+# Correct:
+creator.build()
+xml = creator.to_string()  # Valid XML
+```
+
+### Relations Not Appearing
+```python
+# Make sure references exist in target system
+product.add_asset_reference(asset_id="NONEXISTENT")  # Will create XML,
+# but import may fail if asset doesn't exist in STEP
+
+# Best practice: Create assets first
+creator.add(asset)
+creator.add(product)
+```
+
+### Encoding Issues
+```python
+# If you need specific encoding:
+xml_bytes = creator.to_bytes(encoding='utf-8')
+with open("output.xml", "wb") as f:
+    f.write(xml_bytes)
+```
