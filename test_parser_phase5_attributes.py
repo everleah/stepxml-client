@@ -12,12 +12,12 @@ def test_parse_single_attribute():
     """Test parsing a single attribute with basic properties."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes>
+        <AttributeList>
             <Attribute ID="Description" ProductMode="Property" MultiValued="false" ExternallyMaintained="true">
                 <Name>Description</Name>
             </Attribute>
-        </Attributes>
-        <AttributeGroups/>
+        </AttributeList>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -47,13 +47,13 @@ def test_parse_attribute_with_validation():
     """Test parsing attribute with Validation element."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes>
+        <AttributeList>
             <Attribute ID="Size" MultiValued="false">
                 <Name>Size</Name>
                 <Validation Base="Text"/>
             </Attribute>
-        </Attributes>
-        <AttributeGroups/>
+        </AttributeList>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -81,13 +81,13 @@ def test_parse_attribute_with_lov():
     """Test parsing attribute with ListOfValueLink."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes>
+        <AttributeList>
             <Attribute ID="Status" MultiValued="false">
                 <Name>Status</Name>
                 <ListOfValueLink LOVID="StatusLOV"/>
             </Attribute>
-        </Attributes>
-        <AttributeGroups/>
+        </AttributeList>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -114,7 +114,7 @@ def test_parse_attribute_with_links():
     """Test parsing attribute with various link elements."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes>
+        <AttributeList>
             <Attribute ID="Color" MultiValued="true">
                 <Name>Color</Name>
                 <Validation Base="Text"/>
@@ -125,8 +125,8 @@ def test_parse_attribute_with_links():
                 <DimensionLink DimensionID="Language"/>
                 <DimensionLink DimensionID="Context"/>
             </Attribute>
-        </Attributes>
-        <AttributeGroups/>
+        </AttributeList>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -163,12 +163,12 @@ def test_parse_single_attribute_group():
     """Test parsing single attribute group."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups>
+        <AttributeList/>
+        <AttributeGroupList>
             <AttributeGroup ID="BasicInfo" ShowInWorkbench="true" ManuallySorted="false">
                 <Name>Basic Information</Name>
             </AttributeGroup>
-        </AttributeGroups>
+        </AttributeGroupList>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -198,8 +198,8 @@ def test_parse_nested_attribute_groups():
     """Test parsing hierarchical attribute groups."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups>
+        <AttributeList/>
+        <AttributeGroupList>
             <AttributeGroup ID="Parent">
                 <Name>Parent Group</Name>
                 <AttributeGroup ID="Child1">
@@ -209,7 +209,7 @@ def test_parse_nested_attribute_groups():
                     <Name>Child 2</Name>
                 </AttributeGroup>
             </AttributeGroup>
-        </AttributeGroups>
+        </AttributeGroupList>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -241,8 +241,8 @@ def test_parse_attribute_group_with_metadata():
     """Test parsing attribute group with metadata."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups>
+        <AttributeList/>
+        <AttributeGroupList>
             <AttributeGroup ID="Details">
                 <Name>Details</Name>
                 <MetaData>
@@ -253,7 +253,7 @@ def test_parse_attribute_group_with_metadata():
                     </MultiValue>
                 </MetaData>
             </AttributeGroup>
-        </AttributeGroups>
+        </AttributeGroupList>
         <ListOfValuesGroupList/>
         <Products/>
         <Assets/>
@@ -281,8 +281,8 @@ def test_parse_single_lov_group():
     """Test parsing single ListOfValuesGroup."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList>
             <ListOfValuesGroup ID="Colors">
                 <Name xml:lang="en">Color Groups</Name>
@@ -314,8 +314,8 @@ def test_parse_nested_lov_groups():
     """Test parsing hierarchical ListOfValuesGroups."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList>
             <ListOfValuesGroup ID="Root">
                 <Name>Root Group</Name>
@@ -355,8 +355,8 @@ def test_parse_lov_group_with_links():
     """Test parsing LOV group with attribute group links."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList>
             <ListOfValuesGroup ID="Status">
                 <Name>Status Values</Name>
@@ -390,7 +390,7 @@ def test_parse_complex_attribute_system():
     """Test complex attribute system with all three element types."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes>
+        <AttributeList>
             <Attribute ID="Dimension" MultiValued="true" Mandatory="true">
                 <Name xml:lang="en">Dimension</Name>
                 <Validation Base="Number"/>
@@ -400,15 +400,15 @@ def test_parse_complex_attribute_system():
                 <Name xml:lang="en">Color</Name>
                 <ListOfValueLink LOVID="ColorLOV"/>
             </Attribute>
-        </Attributes>
-        <AttributeGroups>
+        </AttributeList>
+        <AttributeGroupList>
             <AttributeGroup ID="Physical">
                 <Name>Physical Properties</Name>
                 <AttributeGroup ID="Dimensions">
                     <Name>Dimensions</Name>
                 </AttributeGroup>
             </AttributeGroup>
-        </AttributeGroups>
+        </AttributeGroupList>
         <ListOfValuesGroupList>
             <ListOfValuesGroup ID="Visual" ParentID="Main">
                 <Name>Visual Properties</Name>

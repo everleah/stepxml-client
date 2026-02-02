@@ -21,6 +21,8 @@ class Parser:
         self.attribute_groups: List[dict] = []
         self.list_of_values_groups: List[dict] = []
         self.list_of_values: List[dict] = []
+        self.user_types: List[dict] = []
+        self.contexts: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
         return
@@ -46,16 +48,22 @@ class Parser:
             'Entities', 'Entity', _parse_entity
         )
         self.attributes = self._parse_item_list(
-            'Attributes', 'Attribute', _parse_attribute
+            'AttributeList', 'Attribute', _parse_attribute
         )
         self.attribute_groups = self._parse_item_list(
-            'AttributeGroups', 'AttributeGroup', _parse_attribute_group
+            'AttributeGroupList', 'AttributeGroup', _parse_attribute_group
         )
         self.list_of_values_groups = self._parse_item_list(
             'ListOfValuesGroupList', 'ListOfValuesGroup', _parse_list_of_values_group
         )
         self.list_of_values = self._parse_item_list(
-            'ListOfValues', 'ListOfValue', _parse_list_of_value
+            'ListsOfValues', 'ListOfValue', _parse_list_of_value
+        )
+        self.user_types = self._parse_item_list(
+            'UserTypes', 'UserType', _parse_user_type
+        )
+        self.contexts = self._parse_item_list(
+            'ContextList', 'Context', _parse_context
         )
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
@@ -932,3 +940,164 @@ def _parse_delete_value(element: ET.Element) -> dict:
     
     return result
 
+
+def _parse_user_type(element: ET.Element) -> dict:
+    """Parse UserType element (object type definition).
+    
+    Attributes (15 total):
+    - ID (required): Object type identifier
+    - AllowOverlappingTerms, AllowQuarkTemplate, AllowInDesignTemplate (optional booleans)
+    - Revisability (optional enum)
+    - IsCategory (optional boolean, default False)
+    - DefaultProfileConfiguration, NamePattern, IDPattern (optional strings)
+    - ClassificationOwnsProductLinks (optional boolean)
+    - ManuallySorted (optional boolean, default False)
+    - ReferenceTargetLockPolicy (optional enum)
+    - Selected (optional boolean, default True)
+    - Referenced (optional boolean, default False)
+    - Changed (optional boolean, default False)
+    - Deleted (optional boolean, default False)
+    
+    Child Elements:
+    - Name (text, multiple) - UserType display name
+    - Icon (base64) - Custom icon
+    - VisibleTermFields (element) - Term configuration
+    - MetaData (element) - Metadata
+    - DimensionLink (multiple) - Associated dimensions
+    - UserTypeLink (multiple) - Parent object type links
+    - AttributeLink (multiple) - Valid attributes for this type
+    - Validation (element) - Validation rules
+    - MIMEType (multiple) - Supported MIME types
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "AllowOverlappingTerms", "AllowQuarkTemplate", 
+                   "AllowInDesignTemplate", "Revisability", "IsCategory",
+                   "DefaultProfileConfiguration", "ClassificationOwnsProductLinks",
+                   "NamePattern", "IDPattern", "ManuallySorted", 
+                   "ReferenceTargetLockPolicy", "Selected", "Referenced", 
+                   "Changed", "Deleted"),
+        specials={
+            "MetaData": _parse_metadata,
+            "Validation": lambda elem: elem.attrib.get("Base", "")
+        },
+        conversions={
+            "AllowOverlappingTerms": (_str_to_bool, False),
+            "AllowQuarkTemplate": (_str_to_bool, False),
+            "AllowInDesignTemplate": (_str_to_bool, False),
+            "IsCategory": (_str_to_bool, False),
+            "ClassificationOwnsProductLinks": (_str_to_bool, False),
+            "ManuallySorted": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse Name elements (text, multiple)
+    names = []
+    for child in element:
+        if child.tag.endswith("Name"):
+            if child.text:
+                names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse Icon (base64)
+    for child in element:
+        if child.tag.endswith("Icon"):
+            if child.text:
+                result["Icon"] = child.text
+            break
+    
+    # Parse VisibleTermFields
+    for child in element:
+        if child.tag.endswith("VisibleTermFields"):
+            result["VisibleTermFields"] = child.attrib.copy()
+            break
+    
+    # Parse DimensionLink (multiple)
+    dim_links = []
+    for child in element:
+        if child.tag.endswith("DimensionLink"):
+            dim_links.append(child.attrib.get("DimensionID", ""))
+    if dim_links:
+        result["DimensionLink"] = dim_links
+    
+    # Parse UserTypeLink (multiple) - parent type links
+    user_type_links = []
+    for child in element:
+        if child.tag.endswith("UserTypeLink"):
+            user_type_links.append(child.attrib.get("UserTypeID", ""))
+    if user_type_links:
+        result["UserTypeLink"] = user_type_links
+    
+    # Parse AttributeLink (multiple) - valid attributes for this type
+    attr_links = []
+    for child in element:
+        if child.tag.endswith("AttributeLink"):
+            attr_links.append(child.attrib.get("AttributeID", ""))
+    if attr_links:
+        result["AttributeLink"] = attr_links
+    
+    # Parse MIMEType (multiple)
+    mime_types = []
+    for child in element:
+        if child.tag.endswith("MIMEType"):
+            mime_type_dict = {"MIMEType": child.text or ""}
+            mime_type_dict.update(child.attrib.copy())
+            mime_types.append(mime_type_dict)
+    if mime_types:
+        result["MIMEType"] = mime_types
+    
+    return result
+
+
+def _parse_context(element: ET.Element) -> dict:
+    """Parse Context element (multi-language/multi-dimensional context).
+    
+    Attributes (5 total):
+    - ID (required): Context identifier (e.g., "en_US", "fr_FR")
+    - Priority (optional, default "0") - Cross-context priority
+    - Locale (optional string) - Locale code for language/region
+    - Selected (optional boolean, default True)
+    - Referenced (optional boolean, default False)
+    - Changed (optional boolean, default False)
+    - Deleted (optional boolean, default False)
+    
+    Child Elements:
+    - Name (text, multiple) - Context display name
+    - DimensionPointLink (multiple) - Associated dimension points
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "Priority", "Locale", "Selected", "Referenced", 
+                   "Changed", "Deleted"),
+        conversions={
+            "Priority": (lambda x: x, "0"),
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse Name elements (text, multiple)
+    names = []
+    for child in element:
+        if child.tag.endswith("Name"):
+            if child.text:
+                names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse DimensionPointLink (multiple)
+    dim_point_links = []
+    for child in element:
+        if child.tag.endswith("DimensionPointLink"):
+            dim_point_links.append(child.attrib.get("DimensionPointID", ""))
+    if dim_point_links:
+        result["DimensionPointLink"] = dim_point_links
+    
+    return result

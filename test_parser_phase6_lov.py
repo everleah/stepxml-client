@@ -12,15 +12,15 @@ def test_parse_single_list_of_value():
     """Test parsing a single list of value (LOV) with basic properties."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="StatusLOV">
                 <Name>Status Values</Name>
                 <Validation Base="Text"/>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -49,10 +49,10 @@ def test_parse_lov_with_simple_values():
     """Test parsing LOV with simple value items."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="ColorLOV" UseValueID="true">
                 <Name>Colors</Name>
                 <Validation Base="Text"/>
@@ -60,7 +60,7 @@ def test_parse_lov_with_simple_values():
                 <Value ID="GREEN">Green</Value>
                 <Value ID="BLUE">Blue</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -96,10 +96,10 @@ def test_parse_lov_with_dimension_link():
     """Test parsing LOV with dimension links."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="SizeLOV">
                 <Name>Sizes</Name>
                 <DimensionLink DimensionID="Length"/>
@@ -108,7 +108,7 @@ def test_parse_lov_with_dimension_link():
                 <Value ID="MEDIUM">M</Value>
                 <Value ID="LARGE">L</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -136,10 +136,10 @@ def test_parse_lov_with_value_groups():
     """Test parsing LOV with value groups (qualifier-specific values)."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="BrandLOV">
                 <Name>Brand Values</Name>
                 <ValueGroup ID="Group1">
@@ -150,7 +150,7 @@ def test_parse_lov_with_value_groups():
                     <Value ID="BRAND3">Brand Three</Value>
                 </ValueGroup>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -185,10 +185,10 @@ def test_parse_lov_with_metadata():
     """Test parsing LOV with metadata."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="PriorityLOV">
                 <Name>Priority Levels</Name>
                 <MetaData>
@@ -197,7 +197,7 @@ def test_parse_lov_with_metadata():
                 <Value ID="HIGH">High</Value>
                 <Value ID="NORMAL">Normal</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -223,17 +223,17 @@ def test_parse_lov_with_delete_values():
     """Test parsing LOV with delete value instructions."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="StatusLOV" UseValueID="true">
                 <Name>Status</Name>
                 <Value ID="ACTIVE">Active</Value>
                 <Value ID="INACTIVE">Inactive</Value>
                 <DeleteValue Force="false" GenerateEvents="true">DEPRECATED</DeleteValue>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -264,10 +264,10 @@ def test_parse_multiple_lovs():
     """Test parsing multiple LOVs in single document."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="StatusLOV">
                 <Name>Status</Name>
                 <Value>Active</Value>
@@ -283,7 +283,7 @@ def test_parse_multiple_lovs():
                 <Value>Small</Value>
                 <Value>Large</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -308,10 +308,10 @@ def test_parse_lov_with_parent_hierarchy():
     """Test parsing LOV with ParentID for hierarchy."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="VehicleTypeLOV">
                 <Name>Vehicle Types</Name>
                 <Value>Car</Value>
@@ -321,7 +321,7 @@ def test_parse_lov_with_parent_hierarchy():
                 <Value>Sedan</Value>
                 <Value>SUV</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -353,10 +353,10 @@ def test_parse_complex_lov_system():
     """Test complex LOV with all features combined."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="ProductCategoryLOV" UseValueID="true" AllowUserValueAddition="false" DefaultUnitID="DefaultUnit">
                 <Name>Product Categories</Name>
                 <Validation Base="Text"/>
@@ -373,7 +373,7 @@ def test_parse_complex_lov_system():
                 </ValueGroup>
                 <DeleteValue Force="true" GenerateEvents="false">OBSOLETE</DeleteValue>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
@@ -432,10 +432,10 @@ def test_parse_lov_with_attribute_group_links():
     """Test parsing LOV with multiple attribute group links."""
     xml_str = '''
     <STEP-ProductInformation>
-        <Attributes/>
-        <AttributeGroups/>
+        <AttributeList/>
+        <AttributeGroupList/>
         <ListOfValuesGroupList/>
-        <ListOfValues>
+        <ListsOfValues>
             <ListOfValue ID="CountryLOV">
                 <Name>Countries</Name>
                 <AttributeGroupLink AttributeGroupID="Shipping"/>
@@ -444,7 +444,7 @@ def test_parse_lov_with_attribute_group_links():
                 <Value>USA</Value>
                 <Value>Canada</Value>
             </ListOfValue>
-        </ListOfValues>
+        </ListsOfValues>
         <Products/>
         <Assets/>
         <DeleteAssets/>
