@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 5 Complete  
-**Coverage:** ~35% of STEP-XML schema
+**Current Version:** Phase 6 Complete  
+**Coverage:** ~40% of STEP-XML schema
 
 ---
 
@@ -55,6 +55,15 @@
   - Child elements: nested `ListOfValuesGroup` (hierarchical, multiple)
   - Child structures: `MetaData`, `AttributeGroupLink` (multiple)
   - Hierarchical enumeration group organization ✓
+
+- **ListOfValues** - Full support (Phase 6) ✅
+  - Attributes parsed: `ID`, `ParentID`, `AllowUserValueAddition`, `UseValueID`, `IDPattern`, `ReplaceListOfValuesValues`, `DefaultUnitID`
+  - Child text: `Name`
+  - Child elements: `Validation` (element), `DimensionLink` (multiple), `MetaData`, `AttributeGroupLink` (multiple)
+  - Child structures: `Value` (multiple, mixed content), `ValueGroup` (multiple), `DeleteValue` (multiple)
+  - Choice pattern handling (Value XOR ValueGroup) ✓
+  - Boolean attribute conversion with proper defaults ✓
+  - Individual enumeration value definitions ✓
 
 ### Deletion Operations
 - **DeleteAsset** - Fully supported
@@ -205,6 +214,33 @@
   - Hierarchical nesting: nested ListOfValuesGroup elements (unlimited depth)
   - Full support for enumeration group organization
 
+### List of Values System (Phase 6)
+- ✅ **ListOfValue** - Complete support
+  - Attributes parsed (7 total): `ID`, `ParentID`, `AllowUserValueAddition`, `UseValueID`, `IDPattern`, `ReplaceListOfValuesValues`, `DefaultUnitID`
+  - Boolean attributes with proper defaults (AllowUserValueAddition/UseValueID/ReplaceListOfValuesValues=False)
+  - Child elements: Name (text), Validation (base), DimensionLink (multiple), MetaData, AttributeGroupLink (multiple), Value (multiple), ValueGroup (multiple), DeleteValue (multiple)
+  - Choice pattern handling: Value elements XOR ValueGroup elements properly separated
+  - Support for all enumeration value containers and deletion operations ✓
+
+- ✅ **ListOfValueItem (Value within LOV)** - Complete support
+  - Attributes parsed (9 total): `ID`, `UnitID`, `UnitName`, `AttributeID`, `LOVQualifierID`, `QualifierID`, `Changed`, `Derived`, `DerivedContextID`, `InheritedFrom`, `Inherited`
+  - Boolean attributes with proper defaults (Changed/Derived=False, Inherited depends on context)
+  - Mixed content element: captures element text as "value" key
+  - Support for derived values with context tracking
+  - Proper inheritance flag handling ✓
+
+- ✅ **ValueGroup (Qualifier-Specific Value Container)** - Complete support
+  - Attributes parsed (4 total): `ID`, `Inherited`, `AttributeID`, `Changed`
+  - Boolean attributes with proper defaults (Inherited/Changed=False)
+  - Child elements: Value (multiple) - nested values within group
+  - Support for qualifier-specific value grouping ✓
+
+- ✅ **DeleteValue (Value Deletion Instruction)** - Complete support
+  - Attributes parsed (2 total): `Force`, `GenerateEvents`
+  - Boolean attributes with proper defaults (Force/GenerateEvents=False)
+  - Mixed content element: captures value ID to delete
+  - Support for forced deletion and event generation options ✓
+
 ## ⚠️ Partially Implemented
 
 ## ❌ Not Yet Implemented
@@ -233,18 +269,11 @@
   - Full enumeration group hierarchy with group linking
   - All 5 attributes, hierarchical nesting support
   - See "Fully Implemented" section above
-  - ❌ NOT PARSED
-  - Required for understanding attribute metadata
-  - Status: **High priority** - foundational
 
-- **AttributeGroups** - Attribute organization
-  - ❌ NOT PARSED
-  - Status: **High priority**
-
-- **ListOfValues (LOVs)** - Enumerated values
-  - ❌ NOT PARSED
-  - Needed for understanding attribute valid values
-  - Status: **High priority**
+- **ListOfValues** - ✅ COMPLETED (Phase 6)
+  - Full enumeration value definitions with choice pattern (Value/ValueGroup)
+  - All 7 LOV attributes, value item attributes, groups, deletion instructions
+  - See "Fully Implemented" section above
 
 ### Organizational Structure (Medium Priority)
 - **Qualifiers & Dimensions**
@@ -462,31 +491,56 @@ Parser.parse(root)
 
 **Schema Coverage:** ~20% (up from ~15%)
 
-### Phase 4 (Recommended Next - 1-2 weeks)
-**Add Entity Support:**
-- `_parse_entity()` function
-- Top-level Entity list parsing
-- Entity-to-entity relations
-- Entity relations to Products/Classifications/Assets
-- DeleteEntity support
+### Phase 4 (Completed ✅)
+✅ **Entity & Hierarchy Support:**
+- ✅ `_parse_entity()` function with full relation support
+- ✅ Top-level Entity list parsing in Parser.parse()
+- ✅ Nested entity hierarchy (unbounded depth)
+- ✅ Entity-to-entity, product, classification, asset, context, workspace cross-references
+- ✅ All 4 suppressed/delete variant types per relation
+- ✅ MetaData and KeyValue support in entities
+- ✅ 11 comprehensive integration tests, 100% pass rate
+
+**Schema Coverage:** ~30% (up from ~20%)
+
+### Phase 5 (Completed ✅)
+✅ **Attribute System Support:**
+- ✅ `_parse_attribute()` for attribute definitions (15 attributes)
+- ✅ `_parse_attribute_group()` for organizing attributes (9 attributes, hierarchical)
+- ✅ `_parse_list_of_values_group()` for LOV group organization (5 attributes, hierarchical)
+- ✅ Validation element (choice with ListOfValueLink) handling
+- ✅ All link types: DimensionLink, AttributeGroupLink, UserTypeLink, LinkType
+- ✅ Boolean attribute conversion with proper defaults
+- ✅ 11 comprehensive integration tests, 100% pass rate
+
+**Schema Coverage:** ~35% (up from ~30%)
+
+### Phase 6 (Completed ✅ - Just Now)
+✅ **List of Values System:**
+- ✅ `_parse_list_of_value()` for individual LOV definitions (7 attributes)
+- ✅ `_parse_list_of_value_item()` for enumeration values (9 attributes, mixed content)
+- ✅ `_parse_value_group()` for qualifier-specific value containers (4 attributes)
+- ✅ `_parse_delete_value()` for value deletion instructions (2 attributes)
+- ✅ Choice pattern handling: Value XOR ValueGroup properly separated
+- ✅ Support for DimensionLink, MetaData, AttributeGroupLink within LOVs
+- ✅ 10 comprehensive integration tests, 100% pass rate
+
+**Schema Coverage:** ~40% (up from ~35%)
+
+### Phase 7 (Recommended Next - 1-2 weeks)
+**Add Advanced System Support:**
+- `_parse_link_type()` for cross-reference type definitions
+- `_parse_user_type()` for object type definitions
+- `_parse_context()` for multi-language context definitions
+- `_parse_workspace()` for workspace definitions
+- DeleteLinkType, DeleteUserType, DeleteContext, DeleteWorkspace
 
 **Estimated effort:** 3-4 days
-**Estimated coverage:** ~25%
+**Estimated coverage:** ~45%
 
-### Phase 5 (Optional - Later)
-**Add Attribute System Support:**
-- `_parse_attribute()` for attribute definitions
-- `_parse_list_of_value()` for LOV definitions
-- Context/Dimension resolution
-- Type conversion for attribute values
-- Validation framework
-
-**Estimated effort:** 4-5 days
-
-### Phase 6 (Optional - Extended)
-**Add System Configuration Support:**
+### Phase 8 (Optional - Extended)
+**Add Organizational Structure:**
 - BusinessRules, EventQueues, Workflows
-- UserTypes, LinkTypes, Keys
 - Import/Export configurations
 - Integration endpoints
 
@@ -542,7 +596,20 @@ Parser.parse(root)
   - LOV group with attribute group links
   - Complex system with all three element types
 
-**Total Test Coverage:** 43 tests, 100% pass rate
+**Phase 6 Tests:**
+- ✅ `test_parser_phase6_lov.py` - 10 integration tests
+  - Single ListOfValue parsing
+  - LOV with simple value items
+  - LOV with dimension links
+  - LOV with value groups (qualifier-specific)
+  - LOV with metadata
+  - LOV with delete value instructions
+  - Multiple ListOfValues in single document
+  - LOV with parent hierarchy (ParentID)
+  - Complex LOV system with all features combined
+  - LOV with multiple attribute group links
+
+**Total Test Coverage:** 53 tests, 100% pass rate
 
 ### All Tests Passing ✅
 ```
@@ -551,7 +618,8 @@ Phase 2 Integration Tests: 6/6 ✓
 Phase 3 Classification Tests: 9/9 ✓
 Phase 4 Entity Tests: 11/11 ✓
 Phase 5 Attribute Tests: 11/11 ✓
-Total: 43/43 ✓
+Phase 6 ListOfValue Tests: 10/10 ✓
+Total: 53/53 ✓
 ```
 
 ### Running All Tests
@@ -562,9 +630,10 @@ python test_parser_phase2_integration.py
 python test_parser_phase3_classification.py
 python test_parser_phase4_entity.py
 python test_parser_phase5_attributes.py
+python test_parser_phase6_lov.py
 
 # Run all in sequence
-python test_parser_phase2.py && python test_parser_phase2_integration.py && python test_parser_phase3_classification.py && python test_parser_phase4_entity.py && python test_parser_phase5_attributes.py
+python test_parser_phase2.py && python test_parser_phase2_integration.py && python test_parser_phase3_classification.py && python test_parser_phase4_entity.py && python test_parser_phase5_attributes.py && python test_parser_phase6_lov.py
 ```
 
 ### Recommended Future Tests (Phase 6+)

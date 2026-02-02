@@ -20,6 +20,7 @@ class Parser:
         self.attributes: List[dict] = []
         self.attribute_groups: List[dict] = []
         self.list_of_values_groups: List[dict] = []
+        self.list_of_values: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
         return
@@ -52,6 +53,9 @@ class Parser:
         )
         self.list_of_values_groups = self._parse_item_list(
             'ListOfValuesGroupList', 'ListOfValuesGroup', _parse_list_of_values_group
+        )
+        self.list_of_values = self._parse_item_list(
+            'ListOfValues', 'ListOfValue', _parse_list_of_value
         )
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
@@ -748,3 +752,183 @@ def _parse_list_of_values_group(element: ET.Element) -> dict:
         result["ListOfValuesGroup"] = nested_groups
     
     return result
+
+
+def _parse_list_of_value(element: ET.Element) -> dict:
+    """Parse ListOfValue element with ID, ParentID, validation, and value items.
+    
+    Attributes:
+    - ID, ParentID
+    - AllowUserValueAddition (default: False), UseValueID (default: False)
+    - IDPattern, ReplaceListOfValuesValues (default: False), DefaultUnitID
+    
+    Children:
+    - Name (text, multiple), Validation
+    - DimensionLink (multiple), MetaData, AttributeGroupLink (multiple)
+    - Value (multiple), ValueGroup (multiple) - choice
+    - DeleteValue (multiple)
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "ParentID", "AllowUserValueAddition", "UseValueID",
+                   "IDPattern", "ReplaceListOfValuesValues", "DefaultUnitID"),
+        texts=("Name",),
+        conversions={
+            "AllowUserValueAddition": (_str_to_bool, False),
+            "UseValueID": (_str_to_bool, False),
+            "ReplaceListOfValuesValues": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse Validation element
+    validation_elem = None
+    for child in element:
+        if child.tag.endswith("Validation"):
+            result["Validation"] = child.attrib.get("Base", "")
+            validation_elem = child
+            break
+    
+    # Parse DimensionLink elements (multiple)
+    dim_links = []
+    for child in element:
+        if child.tag.endswith("DimensionLink"):
+            dim_links.append(child.attrib.get("DimensionID", ""))
+    if dim_links:
+        result["DimensionLink"] = dim_links
+    
+    # Parse MetaData
+    metadata_elem = None
+    for child in element:
+        if child.tag.endswith("MetaData"):
+            result["MetaData"] = _parse_metadata(child)
+            metadata_elem = child
+            break
+    
+    # Parse AttributeGroupLink elements (multiple)
+    attr_group_links = []
+    for child in element:
+        if child.tag.endswith("AttributeGroupLink"):
+            attr_group_links.append(child.attrib.get("AttributeGroupID", ""))
+    if attr_group_links:
+        result["AttributeGroupLink"] = attr_group_links
+    
+    # Parse Value and ValueGroup elements (choice - not from MetaData or other containers)
+    # We need to exclude Value elements that are direct children of containers like MetaData
+    values = []
+    value_groups = []
+    for child in element:
+        # Skip elements we've already processed above
+        if child.tag.endswith(("Validation", "DimensionLink", "MetaData", "AttributeGroupLink", 
+                               "Name", "DeleteValue")):
+            continue
+        
+        # Now parse Value and ValueGroup from direct children only
+        if child.tag.endswith("Value"):
+            values.append(_parse_list_of_value_item(child))
+        elif child.tag.endswith("ValueGroup"):
+            value_groups.append(_parse_value_group(child))
+    
+    if values:
+        result["Value"] = values
+    if value_groups:
+        result["ValueGroup"] = value_groups
+    
+    # Parse DeleteValue elements (multiple)
+    delete_values = []
+    for child in element:
+        if child.tag.endswith("DeleteValue"):
+            delete_values.append(_parse_delete_value(child))
+    if delete_values:
+        result["DeleteValue"] = delete_values
+    
+    return result
+
+
+def _parse_list_of_value_item(element: ET.Element) -> dict:
+    """Parse Value element within a LOV.
+    
+    Attributes:
+    - ID (value ID), UnitID, UnitName
+    - AttributeID, LOVQualifierID, QualifierID
+    - Changed (default: False), Derived (default: False)
+    - DerivedContextID, InheritedFrom, Inherited
+    
+    Text Content:
+    - The actual value (mixed content)
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "UnitID", "UnitName", "AttributeID", "LOVQualifierID",
+                   "QualifierID", "DerivedContextID", "InheritedFrom", "Inherited"),
+        conversions={
+            "Changed": (_str_to_bool, False),
+            "Derived": (_str_to_bool, False),
+        }
+    )
+    
+    # Capture text content (mixed type element)
+    if element.text and element.text.strip():
+        result["value"] = element.text.strip()
+    
+    return result
+
+
+def _parse_value_group(element: ET.Element) -> dict:
+    """Parse ValueGroup element (container for qualifier-specific values).
+    
+    Attributes:
+    - ID (group ID)
+    - Changed (default: False), Inherited, AttributeID
+    
+    Children:
+    - Value (multiple) - values within this group
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "Inherited", "AttributeID"),
+        conversions={
+            "Changed": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse Value elements (multiple within the group)
+    values = []
+    for child in element:
+        if child.tag.endswith("Value"):
+            values.append(_parse_list_of_value_item(child))
+    
+    if values:
+        result["Value"] = values
+    
+    return result
+
+
+def _parse_delete_value(element: ET.Element) -> dict:
+    """Parse DeleteValue element (deletion instruction for LOV value).
+    
+    Attributes:
+    - Force (default: False) - delete despite usage
+    - GenerateEvents (default: False) - generate events during deletion
+    
+    Text Content:
+    - The value ID to delete (mixed content)
+    """
+    result = _parse_element(
+        element,
+        attributes=(),
+        conversions={
+            "Force": (_str_to_bool, False),
+            "GenerateEvents": (_str_to_bool, False),
+        }
+    )
+    
+    # Parse boolean attributes manually since they're not in attributes tuple
+    result["Force"] = _str_to_bool(element.attrib.get("Force", "false"))
+    result["GenerateEvents"] = _str_to_bool(element.attrib.get("GenerateEvents", "false"))
+    
+    # Capture text content (value ID to delete)
+    if element.text and element.text.strip():
+        result["value"] = element.text.strip()
+    
+    return result
+
