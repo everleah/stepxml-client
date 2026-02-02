@@ -2,6 +2,12 @@ import xml.etree.ElementTree as ET
 from typing import Any, Callable, List, Optional
 from . import STEPXML_NS
 
+
+def _str_to_bool(value: str) -> bool:
+    """Convert XML boolean string ('true'/'false') to Python bool."""
+    return value.lower() == 'true'
+
+
 class Parser:
     
     def __init__(self):
@@ -106,16 +112,53 @@ def _parse_delete_asset(element):
     )
 
 def _parse_product(element):
-    return _parse_element(
+    """Parse Product element with support for multiple cross-references.
+    
+    Handles:
+    - Attributes: ID, ParentId, UserTypeID
+    - Child: Name (text)
+    - Child: Values (complex)
+    - Children: Multiple AssetCrossReference, ProductCrossReference, etc.
+    """
+    result = _parse_element(
         element,
         attributes = ("ID", "ParentId", "UserTypeID"),
         texts = ("Name",),
         specials = {
-            "Values" : _parse_values,
-            "AssetCrossReference": _parse_asset_reference,
-            "DeleteAssetCrossReference": _parse_asset_reference
-            }
+            "Values": _parse_values,
+        }
     )
+    
+    # Handle cross-references that can appear multiple times
+    cross_ref_types = {
+        "AssetCrossReference": _parse_asset_reference,
+        "DeleteAssetCrossReference": _parse_asset_reference,
+        "ProductCrossReference": _parse_product_cross_reference,
+        "DeleteProductCrossReference": _parse_product_cross_reference,
+        "ClassificationReference": _parse_classification_reference,
+        "DeleteClassificationReference": _parse_classification_reference,
+        "ClassificationCrossReference": _parse_classification_reference,
+        "DeleteClassificationCrossReference": _parse_classification_reference,
+        "EntityCrossReference": _parse_entity_cross_reference,
+        "DeleteEntityCrossReference": _parse_entity_cross_reference,
+    }
+    
+    # Process cross-references, aggregating multiples into lists
+    for child in element:
+        if child.tag in cross_ref_types:
+            parser_func = cross_ref_types[child.tag]
+            parsed = parser_func(child)
+            
+            if child.tag in result:
+                # Multiple elements of same type - convert to list
+                if not isinstance(result[child.tag], list):
+                    result[child.tag] = [result[child.tag]]
+                result[child.tag].append(parsed)
+            else:
+                # First element of this type
+                result[child.tag] = parsed
+    
+    return result
     
 def _parse_delete_product(element):
     return _parse_element(
@@ -145,13 +188,134 @@ def _parse_value(element):
         attributes = ("ID",))           
     
 def _parse_asset_reference(element):
-    return _parse_element(
+    """Parse AssetCrossReference or DeleteAssetCrossReference elements.
+    
+    Handles:
+    - Attributes: AssetID, Type, Changed, QualifierID
+    - Children: KeyValue (multiple), MetaData
+    """
+    result = _parse_element(
         element,
-        attributes=("AssetID", "Changed", "Type"),
-        conversions= {
-            "Changed" : (bool, False)
-        }
+        attributes=("AssetID", "Changed", "Type", "QualifierID"),
+        specials={"MetaData": _parse_metadata},
+        conversions={"Changed": (_str_to_bool, False)}
     )
+    
+    # Parse KeyValue elements (can be multiple)
+    key_values = []
+    for child in element:
+        if child.tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+
+def _parse_product_cross_reference(element):
+    """Parse ProductCrossReference or DeleteProductCrossReference elements.
+    
+    Handles:
+    - Attributes: ProductID, Type, Changed, QualifierID, MountLocation
+    - Children: KeyValue (multiple), MetaData
+    """
+    result = _parse_element(
+        element,
+        attributes=("ProductID", "Changed", "Type", "QualifierID", "MountLocation"),
+        specials={"MetaData": _parse_metadata},
+        conversions={"Changed": (_str_to_bool, False)}
+    )
+    
+    # Parse KeyValue elements (can be multiple)
+    key_values = []
+    for child in element:
+        if child.tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+
+def _parse_classification_reference(element):
+    """Parse ClassificationReference or DeleteClassificationReference elements.
+    
+    Handles:
+    - Attributes: ClassificationID, Type, Changed, QualifierID
+    - Children: KeyValue (multiple), MetaData
+    """
+    result = _parse_element(
+        element,
+        attributes=("ClassificationID", "Changed", "Type", "QualifierID"),
+        specials={"MetaData": _parse_metadata},
+        conversions={"Changed": (_str_to_bool, False)}
+    )
+    
+    # Parse KeyValue elements (can be multiple)
+    key_values = []
+    for child in element:
+        if child.tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+
+def _parse_entity_cross_reference(element):
+    """Parse EntityCrossReference or DeleteEntityCrossReference elements.
+    
+    Handles:
+    - Attributes: EntityID, Type, Changed, QualifierID
+    - Children: KeyValue (multiple), MetaData
+    """
+    result = _parse_element(
+        element,
+        attributes=("EntityID", "Changed", "Type", "QualifierID"),
+        specials={"MetaData": _parse_metadata},
+        conversions={"Changed": (_str_to_bool, False)}
+    )
+    
+    # Parse KeyValue elements (can be multiple)
+    key_values = []
+    for child in element:
+        if child.tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+
+def _parse_key_value(element):
+    """Parse KeyValue element used for alternate object identification.
+    
+    Returns dict with KeyID attribute and text value.
+    """
+    return {
+        "KeyID": element.get("KeyID"),
+        "value": element.text
+    }
+
+
+def _parse_metadata(element):
+    """Parse MetaData element with nested Value/MultiValue/ValueGroup.
+    
+    Returns dict with attribute IDs as keys and values.
+    """
+    metadata = {}
+    for child in element:
+        attribute_id = child.get('AttributeID')
+        if attribute_id is not None:
+            if child.tag == "Value":
+                metadata[attribute_id] = _parse_value(child)
+            elif child.tag == "MultiValue":
+                multi_value_list = []
+                for sub_child in child.findall('Value', STEPXML_NS):
+                    multi_value_list.append(_parse_value(sub_child))
+                if multi_value_list:
+                    metadata[attribute_id] = multi_value_list
+    return metadata if metadata else None
 
     
     
