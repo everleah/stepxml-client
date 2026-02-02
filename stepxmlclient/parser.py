@@ -15,6 +15,7 @@ class Parser:
         self._root: Optional[ET.Element] = None
         self.products: List[dict] = []
         self.assets: List[dict] = []
+        self.classifications: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
         return
@@ -33,6 +34,9 @@ class Parser:
             'Assets', 'Asset', _parse_asset)
         self.products = self._parse_item_list(
             'Products', 'Product', _parse_product)
+        self.classifications = self._parse_item_list(
+            'Classifications', 'Classification', _parse_classification
+        )
         self.delete_assets = self._parse_item_list(
             'DeleteAssets', 'DeleteAsset', _parse_delete_asset
         )
@@ -317,7 +321,93 @@ def _parse_metadata(element):
                     metadata[attribute_id] = multi_value_list
     return metadata if metadata else None
 
+
+def _parse_classification(element):
+    """Parse Classification element with support for nested classifications and cross-references.
     
+    Handles:
+    - Attributes: ID, ParentID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
+    - Children: KeyValue (multiple), ParentKeyValue (multiple)
+    - Children: Name (text), nested Classification (hierarchical)
+    - Cross-references: ProductReference, ProductCrossReference (suppressed/delete variants)
+    - Cross-references: ClassificationCrossReference (classification-to-classification)
+    - Cross-references: EntityCrossReference
+    - Cross-references: AssetCrossReference
+    - Other: MetaData, AttributeLink, DataContainerTypeLink
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "ParentID", "UserTypeID", "QualifierID", "Changed", "Republished", "Selected", "Referenced"),
+        texts=("Name",),
+        conversions={
+            "Changed": (_str_to_bool, False),
+            "Republished": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False)
+        }
+    )
     
+    # Parse KeyValue and ParentKeyValue elements (can be multiple)
+    key_values = []
+    parent_key_values = []
+    nested_classifications = []
     
+    # Define all cross-reference types supported by classifications
+    cross_ref_types = {
+        "ProductReference": _parse_product_cross_reference,
+        "DeleteProductReference": _parse_product_cross_reference,
+        "SuppressedProductReference": _parse_product_cross_reference,
+        "DeleteSuppressedProductReference": _parse_product_cross_reference,
+        "ProductCrossReference": _parse_product_cross_reference,
+        "DeleteProductCrossReference": _parse_product_cross_reference,
+        "SuppressedProductCrossReference": _parse_product_cross_reference,
+        "DeleteSuppressedProductCrossReference": _parse_product_cross_reference,
+        "ClassificationCrossReference": _parse_classification_reference,
+        "DeleteClassificationCrossReference": _parse_classification_reference,
+        "SuppressedClassificationCrossReference": _parse_classification_reference,
+        "DeleteSuppressedClassificationCrossReference": _parse_classification_reference,
+        "EntityCrossReference": _parse_entity_cross_reference,
+        "DeleteEntityCrossReference": _parse_entity_cross_reference,
+        "SuppressedEntityCrossReference": _parse_entity_cross_reference,
+        "DeleteSuppressedEntityCrossReference": _parse_entity_cross_reference,
+        "AssetCrossReference": _parse_asset_reference,
+        "DeleteAssetCrossReference": _parse_asset_reference,
+        "SuppressedAssetCrossReference": _parse_asset_reference,
+        "DeleteSuppressedAssetCrossReference": _parse_asset_reference,
+    }
+    
+    # Process child elements, handling special cases
+    for child in element:
+        if child.tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+        elif child.tag == "ParentKeyValue":
+            parent_key_values.append(_parse_key_value(child))
+        elif child.tag == "Classification":
+            # Nested classifications (hierarchical)
+            nested_classifications.append(_parse_classification(child))
+        elif child.tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+        elif child.tag in cross_ref_types:
+            # Cross-references - aggregate multiple into lists
+            parser_func = cross_ref_types[child.tag]
+            parsed = parser_func(child)
+            
+            if child.tag in result:
+                # Multiple elements of same type - convert to list
+                if not isinstance(result[child.tag], list):
+                    result[child.tag] = [result[child.tag]]
+                result[child.tag].append(parsed)
+            else:
+                # First element of this type
+                result[child.tag] = parsed
+    
+    # Add aggregated lists to result if present
+    if key_values:
+        result["KeyValue"] = key_values
+    if parent_key_values:
+        result["ParentKeyValue"] = parent_key_values
+    if nested_classifications:
+        result["Classification"] = nested_classifications
+    
+    return result
     
