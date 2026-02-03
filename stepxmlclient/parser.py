@@ -66,6 +66,11 @@ class Parser:
         self.replacement_rules: List[dict] = []
         self.collections: List[dict] = []
         self.collection_groups: List[dict] = []
+        self.bulk_update_configurations: List[dict] = []
+        self.derived_event_types: List[dict] = []
+        self.global_settings: dict = {}
+        self.import_configurations: List[dict] = []
+        self.portal_configurations: List[dict] = []
         return
 
     def parse_file(self, file_path: str):
@@ -155,6 +160,17 @@ class Parser:
         )
         self.replacement_rules = self._parse_replacement_rules()
         self.collections, self.collection_groups = self._parse_collections()
+        self.bulk_update_configurations = self._parse_item_list(
+            'BulkUpdateConfigurations', 'BulkUpdateConfiguration', _parse_bulk_update_configuration
+        )
+        self.derived_event_types = self._parse_derived_event_types()
+        self.global_settings = self._parse_global_settings()
+        self.import_configurations = self._parse_item_list(
+            'ImportConfigurations', 'ImportConfiguration', _parse_import_configuration
+        )
+        self.portal_configurations = self._parse_item_list(
+            'PortalConfigurations', 'PortalConfiguration', _parse_portal_configuration
+        )
         return
 
     def _parse_item_list(self, 
@@ -281,6 +297,41 @@ class Parser:
                     collection_groups.append(_parse_collection_item(child, is_group=True))
         
         return collections, collection_groups
+    
+    def _parse_derived_event_types(self) -> list:
+        """Parse derived event types (simple text elements)."""
+        result = []
+        
+        for child in self._root:
+            local_tag = _get_local_tag(child)
+            if local_tag == "DerivedEventTypes":
+                # DerivedEventTypes contains DerivedEventType text elements
+                for event_child in child:
+                    event_tag = _get_local_tag(event_child)
+                    if event_tag == "DerivedEventType":
+                        event_text = event_child.text
+                        if event_text:
+                            result.append({"value": event_text})
+                break
+        
+        return result
+    
+    def _parse_global_settings(self) -> dict:
+        """Parse global settings (system configuration)."""
+        for child in self._root:
+            local_tag = _get_local_tag(child)
+            if local_tag == "GlobalSettings":
+                result = {}
+                # Parse CalculatedAttributeSettings
+                for settings_child in child:
+                    settings_tag = _get_local_tag(settings_child)
+                    if settings_tag == "CalculatedAttributeSettings":
+                        result["CalculatedAttributeSettings"] = _parse_element(settings_child, attributes=[], texts=[])
+                    elif settings_tag == "AssetSettings":
+                        result["AssetSettings"] = _parse_element(settings_child, attributes=[], texts=[])
+                return result
+        
+        return {}
     
 def _parse_element(
         element, attributes = [], texts = [], 
@@ -2067,6 +2118,151 @@ def _parse_collection_item(element: ET.Element, is_group: bool = False) -> dict:
             result["CollectionGroup"] = collection_groups
         if collections:
             result["Collection"] = collections
+    
+    return result
+
+
+# Phase 13: Advanced Configuration Elements
+
+def _parse_bulk_update_configuration(element: ET.Element) -> dict:
+    """Parse bulk update configuration."""
+    result = _parse_element(element, attributes=["ID"], texts=[])
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse ClassificationReference elements (multiple)
+    class_refs = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "ClassificationReference":
+            class_refs.append(_parse_classification_reference(child))
+    
+    if class_refs:
+        result["ClassificationReference"] = class_refs
+    
+    # Parse Configuration element
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Configuration":
+            result["Configuration"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    return result
+
+
+def _parse_derived_event_type(element: ET.Element) -> dict:
+    """Parse derived event type (simple text)."""
+    event_text = element.text
+    if event_text:
+        return {"value": event_text}
+    return {}
+
+
+def _parse_import_configuration(element: ET.Element) -> dict:
+    """Parse import configuration."""
+    result = _parse_element(element, attributes=["ID"], texts=[])
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse ClassificationReference elements (multiple)
+    class_refs = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "ClassificationReference":
+            class_refs.append(_parse_classification_reference(child))
+    
+    if class_refs:
+        result["ClassificationReference"] = class_refs
+    
+    # Parse Configuration element
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Configuration":
+            result["Configuration"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    return result
+
+
+def _parse_portal_configuration(element: ET.Element) -> dict:
+    """Parse portal/web UI configuration."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "Selected", "Referenced", "Changed"],
+        texts=[],
+        conversions={
+            "Selected": (bool, True),
+            "Referenced": (bool, False),
+            "Changed": (bool, False)
+        }
+    )
+    
+    # Parse SetupGroupLink
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "SetupGroupLink":
+            result["SetupGroupLink"] = _parse_element(child, attributes=["ID"], texts=[])
+            break
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse Configuration element
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Configuration":
+            result["Configuration"] = _parse_element(child, attributes=[], texts=[])
+            break
     
     return result
 

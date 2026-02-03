@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 12 Complete  
-**Coverage:** ~70% of STEP-XML schema
+**Current Version:** Phase 13 Complete  
+**Coverage:** ~75% of STEP-XML schema
 
 ---
 
@@ -405,7 +405,36 @@
   - Child elements: Name (multiple, multi-language), MetaData
   - Status: Complete ✓
 
----
+- **BulkUpdateConfigurations** - ✅ COMPLETED (Phase 13)
+  - Bulk operation configuration for Products, Classifications, Entities, Assets
+  - Attributes: ID
+  - Child elements: Name (multiple, multi-language), MetaData, ClassificationReference (multiple), Configuration
+  - Status: Complete ✓
+
+- **DerivedEventTypes** - ✅ COMPLETED (Phase 13)
+  - Event system extensions/derivations (simple text elements)
+  - Structure: Text value wrapped as {"value": "<event_type>"}
+  - Storage: List of dictionaries with "value" key
+  - Status: Complete ✓
+
+- **GlobalSettings** - ✅ COMPLETED (Phase 13)
+  - System-wide configuration settings (singleton, not list)
+  - Child elements: CalculatedAttributeSettings, AssetSettings (both optional)
+  - Returns single dict (not list) with configuration elements
+  - Status: Complete ✓
+
+- **ImportConfigurations** - ✅ COMPLETED (Phase 13)
+  - Data import configuration definitions
+  - Attributes: ID
+  - Child elements: Name (multiple, multi-language), MetaData, ClassificationReference (multiple), Configuration
+  - Status: Complete ✓
+
+- **PortalConfigurations** - ✅ COMPLETED (Phase 13)
+  - Web UI/portal configuration
+  - Attributes: ID, Selected (default=True), Referenced (default=False), Changed (default=False)
+  - Child elements: SetupGroupLink, Name (multiple, multi-language), MetaData, Configuration
+  - Full boolean attribute conversion with proper defaults
+  - Status: Complete ✓
   - Status: **Lower priority** - advanced feature
 
 - **SuppressedAssetCrossReference**, **SuppressedClassificationCrossReference**, **SuppressedEntityCrossReference**
@@ -802,8 +831,9 @@ Phase 9 Advanced Features Tests: 12/12 ✓
 Phase 10 Organizational Structure Tests: 23/23 ✓
 Phase 11 Foundational Elements Tests: 25/25 ✓
 Phase 12 Replacement Rules & Collections Tests: 31/31 ✓
+Phase 13 Advanced Configuration Tests: 31/31 ✓
 Namespace Handling Tests: 3/3 ✓
-Total: 165/165 ✓
+Total: 187/187 ✓
 ```
 
 ### Running All Tests
@@ -915,24 +945,19 @@ Use this as the authoritative reference for what fields should be parsed.
 **Phase 9:** Advanced Features (12 tests, BusinessRules, EventQueues, Workflows, ExportConfigurations)  
 **Phase 10:** Organizational Structure (23 tests, DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers)  
 **Phase 11:** Foundational Elements (25 tests, Dimensions, DimensionPoints, Tags, TagGroups, Units)  
-**Phase 12:** Replacement Rules & Collections (31 tests, ReplacementRules bulk operations, Collections with hierarchies)
+**Phase 12:** Replacement Rules & Collections (31 tests, ReplacementRules bulk operations, Collections with hierarchies)  
+**Phase 13:** Advanced Configuration (31 tests, BulkUpdateConfigurations, DerivedEventTypes, GlobalSettings, ImportConfigurations, PortalConfigurations)
 
 ### 📋 Upcoming Phases
 
-**Phase 13:** Advanced Features - Suppressed Relations, PortalConfigurations, Other Configurations
-
----
-
+**Phase 14:** Advanced Features - Suppressed Relations & Remaining Configurations (~25% remaining coverage)
 ## Next Immediate Steps
 
-1. **Phase 13 Implementation** (Recommended - 2-3 weeks)
+1. **Phase 14 Implementation** (Recommended - 2-3 weeks)
    - Implement remaining configuration elements from STEP.xsd
    - Add Suppressed Relations catalog/parsing
-   - Implement PortalConfigurations and other UI settings
-   - Implement GlobalSettings, Keys, ImportConfigurations, BulkUpdateConfigurations
-   - Target: ~8-10 parsers, ~30 tests, ~80% schema coverage
-   
-2. **Extended Validation** - Verify against real STEP exports
+   - Implement remaining UI settings and advanced features
+   - Target: ~8-10 parsers, ~35 tests, ~80% schema coverage
    - Validate with actual Stibo STEP exports (if available)
    - Test all namespace scenarios with Phase 13 elements
    - Round-trip validation: creator → XML → parser → dict
