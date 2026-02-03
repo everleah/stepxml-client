@@ -35,6 +35,11 @@ class Creator:
         self.deletedproducts: List[BaseObject] = []
         self.deletedassets: List[BaseObject] = []
         self.product_replacement_rules: List[BaseObject] = []
+        self.replace_products: List[BaseObject] = []
+        self.replace_classifications: List[BaseObject] = []
+        self.replace_entities: List[BaseObject] = []
+        self.replace_assets: List[BaseObject] = []
+        self.replace_attributes: List[BaseObject] = []
         return
     
     def build(self) -> None:
@@ -46,11 +51,21 @@ class Creator:
             }
         )
         self.tree = ET.ElementTree(self.root)
-        # product replacement rules
-        if self.product_replacement_rules:
+        # replacement rules section (Phase 1 + Phase 7)
+        replacement_rules_collections = {
+            "Products": self.product_replacement_rules,
+            "Classifications": self.replace_classifications,
+            "Entities": self.replace_entities,
+            "Assets": self.replace_assets,
+            "Attributes": self.replace_attributes
+        }
+        # Check if any replacement rules exist
+        has_replacement_rules = any(replacement_rules_collections.values())
+        if has_replacement_rules:
             rules = ET.SubElement(self.root, 'ReplacementRules')
-            self._build_element_list(
-                rules, "Products", self.product_replacement_rules)
+            for xml_name, collection in replacement_rules_collections.items():
+                if collection:
+                    self._build_element_list(rules, xml_name, collection)
         # others - map XML element names to attribute names
         element_mapping = {
             "Assets": "assets",

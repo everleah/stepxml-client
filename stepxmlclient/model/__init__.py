@@ -127,6 +127,7 @@ from .organization import Context, Qualifier, Dimension, DimensionPoint
 from .metadata import UserType, LinkType, Tag, TagGroup, Unit
 from .business import BusinessRule, Workflow, Collection, CollectionGroup
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
+from .replacement import ReplaceValues, ReplaceCrossReferences, ReplaceAttributeLinks, ReplaceClassificationReferences, ReplaceProducts, ReplaceClassifications, ReplaceEntities, ReplaceAssets, ReplaceAttributes
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
 def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
@@ -179,6 +180,15 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'productcrossreference': ProductCrossReference,
         'classificationcrossreference': ClassificationCrossReference,
         'entitycrossreference': EntityCrossReference,
+        'replacevalues': ReplaceValues,
+        'replacecrossreferences': ReplaceCrossReferences,
+        'replaceattributelinks': ReplaceAttributeLinks,
+        'replaceclassificationreferences': ReplaceClassificationReferences,
+        'replaceproducts': ReplaceProducts,
+        'replaceclassifications': ReplaceClassifications,
+        'replaceentities': ReplaceEntities,
+        'replaceassets': ReplaceAssets,
+        'replaceattributes': ReplaceAttributes,
     }
     return model_classes.get(class_name.lower(), None)
 
@@ -218,4 +228,13 @@ __all__ = [
     'ProductCrossReference',
     'ClassificationCrossReference',
     'EntityCrossReference',
+    'ReplaceValues',
+    'ReplaceCrossReferences',
+    'ReplaceAttributeLinks',
+    'ReplaceClassificationReferences',
+    'ReplaceProducts',
+    'ReplaceClassifications',
+    'ReplaceEntities',
+    'ReplaceAssets',
+    'ReplaceAttributes',
 ]
