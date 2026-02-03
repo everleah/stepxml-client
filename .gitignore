@@ -203,3 +203,4 @@ logs/
 # Cache directories
 cache/
 .cache/
+sample_output.xml
