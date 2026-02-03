@@ -35,3 +35,21 @@ class DeleteProductCrossReference(BaseObject):
     _ATTRIBUTE_NAMES: List[str] = ["ProductID", "Type", "QualifierID", "MountLocation", "Changed"]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
+
+
+class DeleteClassificationCrossReference(BaseObject):
+    """Delete/sever classification link while keeping classification intact."""
+    _GROUP_NAME: Optional[str] = None  # Used as child element only
+    _TAG_NAME: str = 'DeleteClassificationCrossReference'
+    _ATTRIBUTE_NAMES: List[str] = ["ClassificationID", "Type", "QualifierID", "MountLocation", "Changed"]
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
+
+
+class DeleteEntityCrossReference(BaseObject):
+    """Delete/sever entity link while keeping entity intact."""
+    _GROUP_NAME: Optional[str] = None  # Used as child element only
+    _TAG_NAME: str = 'DeleteEntityCrossReference'
+    _ATTRIBUTE_NAMES: List[str] = ["EntityID", "Type", "QualifierID", "MountLocation", "Changed"]
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]

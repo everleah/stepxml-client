@@ -122,7 +122,7 @@ from .product import Product, ProductReplacementRule
 from .asset import Asset
 from .classification import Classification
 from .entity import Entity
-from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference
+from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
 def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
@@ -151,6 +151,8 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'deleteproduct': DeleteProduct,
         'deleteassetcrossreference': DeleteAssetCrossReference,
         'deleteproductcrossreference': DeleteProductCrossReference,
+        'deleteclassificationcrossreference': DeleteClassificationCrossReference,
+        'deleteentitycrossreference': DeleteEntityCrossReference,
         'assetcrossreference': AssetCrossReference,
         'productcrossreference': ProductCrossReference,
         'classificationcrossreference': ClassificationCrossReference,
@@ -170,6 +172,8 @@ __all__ = [
     'DeleteProduct',
     'DeleteAssetCrossReference',
     'DeleteProductCrossReference',
+    'DeleteClassificationCrossReference',
+    'DeleteEntityCrossReference',
     'AssetCrossReference',
     'ProductCrossReference',
     'ClassificationCrossReference',

@@ -99,6 +99,33 @@ class Classification(BaseObject):
             self._data["ProductCrossReference"] = []
         self._data["ProductCrossReference"].append(ref)
     
+    def delete_product_reference(self, product_id: Optional[str] = None,
+                               type_: Optional[str] = None,
+                               qualifier_id: Optional[str] = None,
+                               mount_location: Optional[str] = None,
+                               delete_ref_object: Optional['DeleteProductCrossReference'] = None) -> None:
+        """Delete/sever product reference from this classification.
+        
+        Can be called two ways:
+        1. With parameters: delete_product_reference(product_id="P001")
+        2. With object: delete_product_reference(delete_ref_object=delete_ref_obj)
+        """
+        from .deletion import DeleteProductCrossReference
+        
+        if delete_ref_object is not None:
+            delete_ref = delete_ref_object
+        else:
+            delete_ref = DeleteProductCrossReference({
+                "ProductID": product_id,
+                "Type": type_,
+                "QualifierID": qualifier_id,
+                "MountLocation": mount_location
+            })
+        
+        if not isinstance(self._data["DeleteProductCrossReference"], list):
+            self._data["DeleteProductCrossReference"] = []
+        self._data["DeleteProductCrossReference"].append(delete_ref)
+    
     # ===== Classification Reference Methods =====
     
     def add_classification_reference(self, classification_id: Optional[str] = None,
@@ -127,6 +154,33 @@ class Classification(BaseObject):
         if not isinstance(self._data["ClassificationCrossReference"], list):
             self._data["ClassificationCrossReference"] = []
         self._data["ClassificationCrossReference"].append(ref)
+    
+    def delete_classification_reference(self, classification_id: Optional[str] = None,
+                                      type_: Optional[str] = None,
+                                      qualifier_id: Optional[str] = None,
+                                      mount_location: Optional[str] = None,
+                                      delete_ref_object: Optional['DeleteClassificationCrossReference'] = None) -> None:
+        """Delete/sever classification reference from this classification.
+        
+        Can be called two ways:
+        1. With parameters: delete_classification_reference(classification_id="C001")
+        2. With object: delete_classification_reference(delete_ref_object=delete_ref_obj)
+        """
+        from .deletion import DeleteClassificationCrossReference
+        
+        if delete_ref_object is not None:
+            delete_ref = delete_ref_object
+        else:
+            delete_ref = DeleteClassificationCrossReference({
+                "ClassificationID": classification_id,
+                "Type": type_,
+                "QualifierID": qualifier_id,
+                "MountLocation": mount_location
+            })
+        
+        if not isinstance(self._data["DeleteClassificationCrossReference"], list):
+            self._data["DeleteClassificationCrossReference"] = []
+        self._data["DeleteClassificationCrossReference"].append(delete_ref)
     
     # ===== Entity Reference Methods =====
     
@@ -157,6 +211,33 @@ class Classification(BaseObject):
             self._data["EntityCrossReference"] = []
         self._data["EntityCrossReference"].append(ref)
     
+    def delete_entity_reference(self, entity_id: Optional[str] = None,
+                              type_: Optional[str] = None,
+                              qualifier_id: Optional[str] = None,
+                              mount_location: Optional[str] = None,
+                              delete_ref_object: Optional['DeleteEntityCrossReference'] = None) -> None:
+        """Delete/sever entity reference from this classification.
+        
+        Can be called two ways:
+        1. With parameters: delete_entity_reference(entity_id="E001")
+        2. With object: delete_entity_reference(delete_ref_object=delete_ref_obj)
+        """
+        from .deletion import DeleteEntityCrossReference
+        
+        if delete_ref_object is not None:
+            delete_ref = delete_ref_object
+        else:
+            delete_ref = DeleteEntityCrossReference({
+                "EntityID": entity_id,
+                "Type": type_,
+                "QualifierID": qualifier_id,
+                "MountLocation": mount_location
+            })
+        
+        if not isinstance(self._data["DeleteEntityCrossReference"], list):
+            self._data["DeleteEntityCrossReference"] = []
+        self._data["DeleteEntityCrossReference"].append(delete_ref)
+    
     # ===== Asset Reference Methods =====
     
     def add_asset_reference(self, asset_id: Optional[str] = None,
@@ -184,7 +265,30 @@ class Classification(BaseObject):
             self._data["AssetCrossReference"] = []
         self._data["AssetCrossReference"].append(ref)
     
-    # ===== Nested Classification Methods =====
+    def delete_asset_reference(self, asset_id: Optional[str] = None,
+                             type_: Optional[str] = None,
+                             qualifier_id: Optional[str] = None,
+                             delete_ref_object: Optional['DeleteAssetCrossReference'] = None) -> None:
+        """Delete/sever asset reference from this classification.
+        
+        Can be called two ways:
+        1. With parameters: delete_asset_reference(asset_id="A001")
+        2. With object: delete_asset_reference(delete_ref_object=delete_ref_obj)
+        """
+        from .deletion import DeleteAssetCrossReference
+        
+        if delete_ref_object is not None:
+            delete_ref = delete_ref_object
+        else:
+            delete_ref = DeleteAssetCrossReference({
+                "AssetID": asset_id,
+                "Type": type_,
+                "QualifierID": qualifier_id
+            })
+        
+        if not isinstance(self._data["DeleteAssetCrossReference"], list):
+            self._data["DeleteAssetCrossReference"] = []
+        self._data["DeleteAssetCrossReference"].append(delete_ref)
     
     def add_nested_classification(self, classification: Optional['Classification'] = None,
                                  **kwargs) -> None:
