@@ -32,10 +32,14 @@ class ReplaceValues(BaseObject):
     def __init__(self, attribute_id: Optional[str] = None,
                  attribute_group_id: Optional[str] = None,
                  context_id: Optional[str] = None):
-        super().__init__()
-        self.AttributeID = attribute_id
-        self.AttributeGroupID = attribute_group_id
-        self.ContextID = context_id
+        data = {}
+        if attribute_id is not None:
+            data["AttributeID"] = attribute_id
+        if attribute_group_id is not None:
+            data["AttributeGroupID"] = attribute_group_id
+        if context_id is not None:
+            data["ContextID"] = context_id
+        super().__init__(data)
 
 
 class ReplaceCrossReferences(BaseObject):
@@ -58,10 +62,14 @@ class ReplaceCrossReferences(BaseObject):
     def __init__(self, cross_reference_id: Optional[str] = None,
                  context_id: Optional[str] = None,
                  mount_location: Optional[str] = None):
-        super().__init__()
-        self.CrossReferenceID = cross_reference_id
-        self.ContextID = context_id
-        self.MountLocation = mount_location
+        data = {}
+        if cross_reference_id is not None:
+            data["CrossReferenceID"] = cross_reference_id
+        if context_id is not None:
+            data["ContextID"] = context_id
+        if mount_location is not None:
+            data["MountLocation"] = mount_location
+        super().__init__(data)
 
 
 class ReplaceAttributeLinks(BaseObject):
@@ -80,8 +88,10 @@ class ReplaceAttributeLinks(BaseObject):
     _CHILDREN_NAMES: List[str] = []
 
     def __init__(self, attribute_id: Optional[str] = None):
-        super().__init__()
-        self.AttributeID = attribute_id
+        data = {}
+        if attribute_id is not None:
+            data["AttributeID"] = attribute_id
+        super().__init__(data)
 
 
 class ReplaceClassificationReferences(BaseObject):
@@ -97,7 +107,7 @@ class ReplaceClassificationReferences(BaseObject):
     _CHILDREN_NAMES: List[str] = []
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
 
 
 class ReplaceProducts(BaseObject):
@@ -121,7 +131,7 @@ class ReplaceProducts(BaseObject):
                                    "ReplaceAttributeLinks", "ReplaceClassificationReferences"]
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
         self.ReplaceValues: List[BaseObject] = []
         self.ReplaceCrossReferences: List[BaseObject] = []
         self.ReplaceAttributeLinks: List[BaseObject] = []
@@ -252,7 +262,7 @@ class ReplaceClassifications(BaseObject):
                                    "ReplaceAttributeLinks"]
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
         self.ReplaceValues: List[BaseObject] = []
         self.ReplaceCrossReferences: List[BaseObject] = []
         self.ReplaceAttributeLinks: List[BaseObject] = []
@@ -312,7 +322,7 @@ class ReplaceEntities(BaseObject):
     _CHILDREN_NAMES: List[str] = ["ReplaceValues", "ReplaceCrossReferences"]
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
         self.ReplaceValues: List[BaseObject] = []
         self.ReplaceCrossReferences: List[BaseObject] = []
 
@@ -360,7 +370,7 @@ class ReplaceAssets(BaseObject):
     _CHILDREN_NAMES: List[str] = ["ReplaceValues", "ReplaceCrossReferences"]
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
         self.ReplaceValues: List[BaseObject] = []
         self.ReplaceCrossReferences: List[BaseObject] = []
 
@@ -404,4 +414,4 @@ class ReplaceAttributes(BaseObject):
     _CHILDREN_NAMES: List[str] = []
 
     def __init__(self):
-        super().__init__()
+        super().__init__({})
