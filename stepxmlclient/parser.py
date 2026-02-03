@@ -71,6 +71,14 @@ class Parser:
         self.global_settings: dict = {}
         self.import_configurations: List[dict] = []
         self.portal_configurations: List[dict] = []
+        # Phase 14 - Advanced Configuration & System Elements
+        self.keys: List[dict] = []
+        self.cross_contexts: List[dict] = []
+        self.business_libraries: List[dict] = []
+        self.setup_groups: List[dict] = []
+        self.action_sets: List[dict] = []
+        self.status_flags: List[dict] = []
+        self.integration_endpoints: List[dict] = []
         return
 
     def parse_file(self, file_path: str):
@@ -171,6 +179,26 @@ class Parser:
         self.portal_configurations = self._parse_item_list(
             'PortalConfigurations', 'PortalConfiguration', _parse_portal_configuration
         )
+        # Phase 14 - Advanced Configuration & System Elements
+        self.keys = self._parse_item_list(
+            'Keys', 'Key', _parse_key
+        )
+        self.cross_contexts = self._parse_item_list(
+            'CrossContexts', 'Context', _parse_cross_context
+        )
+        self.business_libraries = self._parse_item_list(
+            'BusinessLibraries', 'BusinessRule', _parse_business_library
+        )
+        self.setup_groups = self._parse_item_list(
+            'SetupGroups', 'SetupGroup', _parse_setup_group
+        )
+        self.action_sets = self._parse_item_list(
+            'ActionSetList', 'ActionSet', _parse_action_set
+        )
+        self.status_flags = self._parse_item_list(
+            'StatusFlags', 'StatusFlag', _parse_status_flag
+        )
+        self.integration_endpoints = self._parse_integration_endpoints()
         return
 
     def _parse_item_list(self, 
@@ -344,6 +372,41 @@ class Parser:
                 return result
         
         return {}
+    
+    def _parse_integration_endpoints(self) -> list:
+        """Parse integration endpoints (OutBound, InBound, Gateway variants)."""
+        results = []
+        if self._root is None:
+            return results
+
+        for child in self._root:
+            local_tag = _get_local_tag(child)
+            if local_tag == "IntegrationEndpoints":
+                for endpoint_child in child:
+                    endpoint_tag = _get_local_tag(endpoint_child)
+                    if endpoint_tag in ("OutBoundIntegrationEndpoint", "InBoundIntegrationEndpoint", "GatewayIntegrationEndpoint"):
+                        endpoint_data = _parse_element(
+                            endpoint_child,
+                            attributes=["ID"],
+                            texts=[]
+                        )
+                        endpoint_data["Type"] = endpoint_tag  # Add type to distinguish variants
+                        
+                        # Parse Name elements (multiple)
+                        names = []
+                        for ep_child in endpoint_child:
+                            ep_tag = _get_local_tag(ep_child)
+                            if ep_tag == "Name":
+                                name_text = ep_child.text
+                                if name_text:
+                                    names.append({"value": name_text})
+                        if names:
+                            endpoint_data["Name"] = names
+                        
+                        results.append(endpoint_data)
+        
+        return results
+
     
 def _parse_element(
         element, attributes = [], texts = [], 
@@ -2277,6 +2340,284 @@ def _parse_portal_configuration(element: ET.Element) -> dict:
         if local_tag == "Configuration":
             result["Configuration"] = _parse_element(child, attributes=[], texts=[])
             break
+    
+    return result
+
+
+# ===== PHASE 14: Advanced Configuration & System Elements =====
+
+def _parse_key(element: ET.Element) -> dict:
+    """Parse key definition (unique identifier configuration)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "State", "Selected", "Referenced", "Changed", "Deleted"],
+        texts=[],
+        conversions={
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
+    
+    # Parse KeyFormula
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "KeyFormula":
+            result["KeyFormula"] = child.text or ""
+            break
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    # Parse UserTypeLink (multiple)
+    user_type_links = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "UserTypeLink":
+            user_type_links.append(_parse_element(child, attributes=["ID"], texts=[]))
+    if user_type_links:
+        result["UserTypeLink"] = user_type_links
+    
+    # Parse AttributeLink (multiple)
+    attribute_links = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "AttributeLink":
+            attribute_links.append(_parse_element(child, attributes=["ID"], texts=[]))
+    if attribute_links:
+        result["AttributeLink"] = attribute_links
+    
+    return result
+
+
+def _parse_cross_context(element: ET.Element) -> dict:
+    """Parse cross-context definition (context wrapper for cross-context exports)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "Priority", "Locale", "Selected", "Referenced", "Changed", "Deleted"],
+        texts=[],
+        conversions={
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
+    
+    # Parse DimensionPointLink (multiple)
+    dimension_point_links = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "DimensionPointLink":
+            dimension_point_links.append(_parse_element(child, attributes=["ID"], texts=[]))
+    if dimension_point_links:
+        result["DimensionPointLink"] = dimension_point_links
+    
+    return result
+
+
+def _parse_business_library(element: ET.Element) -> dict:
+    """Parse business library (reusable business rule collection)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "Type", "RunPrivileged", "Scope", "Selected", "Referenced", "Changed", "Deleted"],
+        texts=[],
+        conversions={
+            "RunPrivileged": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False),
+            "Deleted": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse SetupGroupLink
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "SetupGroupLink":
+            result["SetupGroupLink"] = _parse_element(child, attributes=["ID"], texts=[])
+            break
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
+    
+    # Parse Description
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Description":
+            result["Description"] = child.text or ""
+            break
+    
+    # Parse Dependencies
+    dependencies = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Dependencies":
+            dependencies.append(_parse_element(child, attributes=["LibraryID", "LibraryAlias"], texts=[]))
+    if dependencies:
+        result["Dependencies"] = dependencies
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    return result
+
+
+def _parse_setup_group(element: ET.Element) -> dict:
+    """Parse setup group (hierarchical organization of setup components)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "UserTypeID", "ParentID", "Referenced", "Selected", "Changed"],
+        texts=[],
+        conversions={
+            "Referenced": (_str_to_bool, False),
+            "Selected": (_str_to_bool, True),
+            "Changed": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    # Parse nested SetupGroup (hierarchical)
+    nested_groups = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "SetupGroup":
+            nested_groups.append(_parse_setup_group(child))
+    if nested_groups:
+        result["SetupGroup"] = nested_groups
+    
+    return result
+
+
+def _parse_action_set(element: ET.Element) -> dict:
+    """Parse action set (collection of actions for privilege control)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "Type", "Selected", "Changed", "Referenced"],
+        texts=[],
+        conversions={
+            "Selected": (_str_to_bool, True),
+            "Changed": (_str_to_bool, False),
+            "Referenced": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_element(child, attributes=[], texts=[])
+            break
+    
+    # Parse ActionLink (multiple)
+    action_links = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "ActionLink":
+            action_links.append(_parse_element(child, attributes=["ID"], texts=[]))
+    if action_links:
+        result["ActionLink"] = action_links
+    
+    return result
+
+
+def _parse_status_flag(element: ET.Element) -> dict:
+    """Parse status flag (flag definition for status tracking)."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "Selected", "Referenced", "Changed"],
+        texts=[],
+        conversions={
+            "Selected": (_str_to_bool, True),
+            "Referenced": (_str_to_bool, False),
+            "Changed": (_str_to_bool, False)
+        }
+    )
+    
+    # Parse SetupGroupLink
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "SetupGroupLink":
+            result["SetupGroupLink"] = _parse_element(child, attributes=["ID"], texts=[])
+            break
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                names.append({"value": name_text})
+    if names:
+        result["Name"] = names
     
     return result
 

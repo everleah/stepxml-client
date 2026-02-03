@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 13 Complete  
-**Coverage:** ~75% of STEP-XML schema
+**Current Version:** Phase 14 Complete  
+**Coverage:** ~80% of STEP-XML schema
 
 ---
 
@@ -435,19 +435,56 @@
   - Child elements: SetupGroupLink, Name (multiple, multi-language), MetaData, Configuration
   - Full boolean attribute conversion with proper defaults
   - Status: Complete ✓
-  - Status: **Lower priority** - advanced feature
 
-- **SuppressedAssetCrossReference**, **SuppressedClassificationCrossReference**, **SuppressedEntityCrossReference**
-  - Status: **Lower priority** - context-specific suppression
+- **Keys** - ✅ COMPLETED (Phase 14)
+  - Unique identifier (key) definitions for objects
+  - Attributes: ID, State, Selected, Referenced, Changed, Deleted
+  - Child elements: Name (multiple), KeyFormula, MetaData, UserTypeLink (multiple), AttributeLink (multiple)
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
 
-- **ReplacementRules** - Bulk operation rules (exists in creator, not in parser)
-  - Status: **Lower priority** - operational feature
+- **CrossContexts** - ✅ COMPLETED (Phase 14)
+  - Cross-context definitions for multi-context exports (deprecated element)
+  - Attributes: ID, Priority, Locale, Selected, Referenced, Changed, Deleted
+  - Child elements: Name (multiple), DimensionPointLink (multiple)
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
 
-- **PortalConfigurations** - UI/Portal settings
-  - Status: **Lower priority** - configuration element
+- **BusinessLibraries** - ✅ COMPLETED (Phase 14)
+  - Reusable business rule collections (library definitions)
+  - Attributes: ID, Type, RunPrivileged, Scope, Selected, Referenced, Changed, Deleted
+  - Child elements: SetupGroupLink, Name (multiple), Description, Dependencies, MetaData
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
 
-- **Other top-level structures** - Miscellaneous configuration
-  - Status: **Lower priority** - advanced features
+- **SetupGroups** - ✅ COMPLETED (Phase 14)
+  - Hierarchical organization of setup components
+  - Attributes: ID, UserTypeID, ParentID, Referenced, Selected, Changed
+  - Child elements: Name (multiple), MetaData, SetupGroup (hierarchical nesting)
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
+
+- **ActionSets** - ✅ COMPLETED (Phase 14)
+  - Collections of actions for privilege control
+  - Attributes: ID, Type, Selected, Changed, Referenced
+  - Child elements: Name (multiple), MetaData, ActionLink (multiple)
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
+
+- **StatusFlags** - ✅ COMPLETED (Phase 14)
+  - Flag definitions for status tracking
+  - Attributes: ID, Selected, Referenced, Changed
+  - Child elements: SetupGroupLink, Name (multiple)
+  - Full boolean conversion with proper defaults
+  - Status: Complete ✓
+
+- **IntegrationEndpoints** - ✅ COMPLETED (Phase 14)
+  - Integration endpoint definitions (OutBound/InBound/Gateway variants)
+  - Attributes: ID
+  - Child elements: Name (multiple)
+  - Three variants: OutBoundIntegrationEndpoint, InBoundIntegrationEndpoint, GatewayIntegrationEndpoint
+  - Type field added to distinguish variants in parsed output
+  - Status: Complete ✓
 
 ---
 
@@ -815,7 +852,7 @@ Parser.parse(root)
   - Prefixed namespace (xmlns:step="http://...")
   - Unnamespaced XML (backward compatibility)
 
-**Total Test Coverage:** 86 tests, 100% pass rate
+**Total Test Coverage:** 223 tests, 100% pass rate
 
 ### All Tests Passing ✅
 ```
@@ -832,8 +869,9 @@ Phase 10 Organizational Structure Tests: 23/23 ✓
 Phase 11 Foundational Elements Tests: 25/25 ✓
 Phase 12 Replacement Rules & Collections Tests: 31/31 ✓
 Phase 13 Advanced Configuration Tests: 31/31 ✓
+Phase 14 Final Configuration & Setup Tests: 36/36 ✓
 Namespace Handling Tests: 3/3 ✓
-Total: 187/187 ✓
+Total: 223/223 ✓
 ```
 
 ### Running All Tests
@@ -851,11 +889,13 @@ python test_parser_phase9_advanced.py
 python test_parser_phase10_org_structure.py
 python test_parser_phase11_foundational.py
 python test_parser_phase12_replacement_collection.py
+python test_parser_phase13_advanced_config.py
+python test_parser_phase14_advanced_final.py
 python test_namespace_handling.py
 python test_creator_xml.py
 
 # Run all parser tests with proper encoding (Windows)
-$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_parser_phase11_foundational.py; python test_parser_phase12_replacement_collection.py; python test_namespace_handling.py
+$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_parser_phase11_foundational.py; python test_parser_phase12_replacement_collection.py; python test_parser_phase13_advanced_config.py; python test_parser_phase14_advanced_final.py; python test_namespace_handling.py
 ```
 
 ### Test Data Status
@@ -946,29 +986,34 @@ Use this as the authoritative reference for what fields should be parsed.
 **Phase 10:** Organizational Structure (23 tests, DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers)  
 **Phase 11:** Foundational Elements (25 tests, Dimensions, DimensionPoints, Tags, TagGroups, Units)  
 **Phase 12:** Replacement Rules & Collections (31 tests, ReplacementRules bulk operations, Collections with hierarchies)  
-**Phase 13:** Advanced Configuration (31 tests, BulkUpdateConfigurations, DerivedEventTypes, GlobalSettings, ImportConfigurations, PortalConfigurations)
+**Phase 13:** Advanced Configuration (31 tests, BulkUpdateConfigurations, DerivedEventTypes, GlobalSettings, ImportConfigurations, PortalConfigurations)  
+**Phase 14:** Final Configuration & Setup (36 tests, Keys, CrossContexts, BusinessLibraries, SetupGroups, ActionSets, StatusFlags, IntegrationEndpoints)
 
 ### 📋 Upcoming Phases
 
-**Phase 14:** Advanced Features - Suppressed Relations & Remaining Configurations (~25% remaining coverage)
+**Phase 15+:** Remaining Advanced Features (~20% remaining coverage)
+- Suppressed Relations & Context-Specific Suppression  
+- Additional Configurations & Edge Cases
+- Advanced Feature Parsing
 ## Next Immediate Steps
 
-1. **Phase 14 Implementation** (Recommended - 2-3 weeks)
-   - Implement remaining configuration elements from STEP.xsd
+1. **Phase 15 Implementation** (Optional - Remaining ~20% coverage)
+   - Implement remaining advanced features from STEP.xsd
    - Add Suppressed Relations catalog/parsing
-   - Implement remaining UI settings and advanced features
-   - Target: ~8-10 parsers, ~35 tests, ~80% schema coverage
+   - Implement context-specific suppression handling
+   - Target: ~5-8 additional parsers, ~30+ tests, ~95%+ schema coverage
    - Validate with actual Stibo STEP exports (if available)
-   - Test all namespace scenarios with Phase 13 elements
+   - Test all namespace scenarios with all parser elements
    - Round-trip validation: creator → XML → parser → dict
    
-3. **Parser → Model Integration** - Connect to model classes
+2. **Parser → Model Integration** - Connect to model classes
    - Create converters from parsed dicts to Product/Asset/Classification models
    - Enable seamless round-trip through parser and creator
    - Support both internal model format and external XML representation
    
-4. **Phase 14+ Planning** - Remaining advanced features (backlog)
-   - Suppressed relations (context-specific suppression)
-   - PortalConfigurations (UI/Portal settings)
-   - Other configurations
+3. **Production Readiness** (Optional)
+   - Performance optimization and caching
+   - Error handling and validation enhancements
+   - Documentation and usage examples
+   - Integration with upstream STEP REST API client
 
