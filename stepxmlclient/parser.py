@@ -63,6 +63,9 @@ class Parser:
         self.tags: List[dict] = []
         self.tag_groups: List[dict] = []
         self.units: List[dict] = []
+        self.replacement_rules: List[dict] = []
+        self.collections: List[dict] = []
+        self.collection_groups: List[dict] = []
         return
 
     def parse_file(self, file_path: str):
@@ -150,6 +153,8 @@ class Parser:
         self.units = self._parse_item_list(
             'UnitList', 'Unit', _parse_unit
         )
+        self.replacement_rules = self._parse_replacement_rules()
+        self.collections, self.collection_groups = self._parse_collections()
         return
 
     def _parse_item_list(self, 
@@ -194,6 +199,88 @@ class Parser:
         
         return results
     
+    def _parse_replacement_rules(self) -> dict:
+        """Parse replacement rules for products, classifications, entities, assets, attributes, etc."""
+        replacement_rules_elem = None
+        
+        for child in self._root:
+            local_tag = _get_local_tag(child)
+            if local_tag == "ReplacementRules":
+                replacement_rules_elem = child
+                break
+        
+        if replacement_rules_elem is None:
+            return {}
+        
+        result = {}
+        
+        for child in replacement_rules_elem:
+            local_tag = _get_local_tag(child)
+            
+            if local_tag == "Attributes":
+                if "Attributes" not in result:
+                    result["Attributes"] = []
+                result["Attributes"].append(_parse_replace_attributes(child))
+            
+            elif local_tag == "Products":
+                if "Products" not in result:
+                    result["Products"] = []
+                result["Products"].append(_parse_replace_products(child))
+            
+            elif local_tag == "Classifications":
+                if "Classifications" not in result:
+                    result["Classifications"] = []
+                result["Classifications"].append(_parse_replace_classifications(child))
+            
+            elif local_tag == "Entities":
+                if "Entities" not in result:
+                    result["Entities"] = []
+                result["Entities"].append(_parse_replace_entities(child))
+            
+            elif local_tag == "Assets":
+                if "Assets" not in result:
+                    result["Assets"] = []
+                result["Assets"].append(_parse_replace_assets(child))
+            
+            elif local_tag == "LinkTypes":
+                if "LinkTypes" not in result:
+                    result["LinkTypes"] = []
+                result["LinkTypes"].append(_parse_replace_link_types(child))
+            
+            elif local_tag == "UserTypes":
+                if "UserTypes" not in result:
+                    result["UserTypes"] = []
+                result["UserTypes"].append(_parse_replace_user_types(child))
+            
+            elif local_tag == "UserGroups":
+                if "UserGroups" not in result:
+                    result["UserGroups"] = []
+                result["UserGroups"].append(_parse_replace_user_groups(child))
+        
+        return result
+    
+    def _parse_collections(self) -> tuple:
+        """Parse collections and collection groups, returns (collections, collection_groups)."""
+        collection_list_elem = None
+        
+        for child in self._root:
+            local_tag = _get_local_tag(child)
+            if local_tag == "CollectionList":
+                collection_list_elem = child
+                break
+        
+        collections = []
+        collection_groups = []
+        
+        if collection_list_elem is not None:
+            for child in collection_list_elem:
+                local_tag = _get_local_tag(child)
+                if local_tag == "Collection":
+                    collections.append(_parse_collection_item(child, is_group=False))
+                elif local_tag == "CollectionGroup":
+                    collection_groups.append(_parse_collection_item(child, is_group=True))
+        
+        return collections, collection_groups
     
 def _parse_element(
         element, attributes = [], texts = [], 
@@ -1780,3 +1867,206 @@ def _parse_unit(element: ET.Element) -> dict:
             break
     
     return result
+
+
+# Phase 12: Replacement Rules and Collections
+
+
+
+def _parse_replace_attributes(element: ET.Element) -> dict:
+    """Parse replacement rules for attributes."""
+    return _parse_element(element, attributes=[], texts=[], specials={})
+
+
+def _parse_replace_products(element: ET.Element) -> dict:
+    """Parse replacement rules for products."""
+    result = {}
+    
+    for child in element:
+        local_tag = _get_local_tag(child)
+        
+        if local_tag == "ReplaceValues":
+            if "ReplaceValues" not in result:
+                result["ReplaceValues"] = []
+            result["ReplaceValues"].append(_parse_replace_values(child))
+        
+        elif local_tag == "ReplaceCrossReferences":
+            if "ReplaceCrossReferences" not in result:
+                result["ReplaceCrossReferences"] = []
+            result["ReplaceCrossReferences"].append(_parse_replace_cross_references(child))
+        
+        elif local_tag == "ReplaceAttributeLinks":
+            if "ReplaceAttributeLinks" not in result:
+                result["ReplaceAttributeLinks"] = []
+            result["ReplaceAttributeLinks"].append(_parse_replace_attribute_links(child))
+        
+        elif local_tag == "ReplaceClassificationReferences":
+            if "ReplaceClassificationReferences" not in result:
+                result["ReplaceClassificationReferences"] = []
+            result["ReplaceClassificationReferences"].append(_parse_replace_classification_references(child))
+    
+    return result
+
+
+def _parse_replace_classifications(element: ET.Element) -> dict:
+    """Parse replacement rules for classifications."""
+    result = {}
+    
+    for child in element:
+        local_tag = _get_local_tag(child)
+        
+        if local_tag == "ReplaceValues":
+            if "ReplaceValues" not in result:
+                result["ReplaceValues"] = []
+            result["ReplaceValues"].append(_parse_replace_values(child))
+        
+        elif local_tag == "ReplaceCrossReferences":
+            if "ReplaceCrossReferences" not in result:
+                result["ReplaceCrossReferences"] = []
+            result["ReplaceCrossReferences"].append(_parse_replace_cross_references(child))
+        
+        elif local_tag == "ReplaceAttributeLinks":
+            if "ReplaceAttributeLinks" not in result:
+                result["ReplaceAttributeLinks"] = []
+            result["ReplaceAttributeLinks"].append(_parse_replace_attribute_links(child))
+    
+    return result
+
+
+def _parse_replace_entities(element: ET.Element) -> dict:
+    """Parse replacement rules for entities."""
+    result = {}
+    
+    for child in element:
+        local_tag = _get_local_tag(child)
+        
+        if local_tag == "ReplaceValues":
+            if "ReplaceValues" not in result:
+                result["ReplaceValues"] = []
+            result["ReplaceValues"].append(_parse_replace_values(child))
+        
+        elif local_tag == "ReplaceCrossReferences":
+            if "ReplaceCrossReferences" not in result:
+                result["ReplaceCrossReferences"] = []
+            result["ReplaceCrossReferences"].append(_parse_replace_cross_references(child))
+    
+    return result
+
+
+def _parse_replace_assets(element: ET.Element) -> dict:
+    """Parse replacement rules for assets."""
+    result = {}
+    
+    for child in element:
+        local_tag = _get_local_tag(child)
+        
+        if local_tag == "ReplaceValues":
+            if "ReplaceValues" not in result:
+                result["ReplaceValues"] = []
+            result["ReplaceValues"].append(_parse_replace_values(child))
+        
+        elif local_tag == "ReplaceCrossReferences":
+            if "ReplaceCrossReferences" not in result:
+                result["ReplaceCrossReferences"] = []
+            result["ReplaceCrossReferences"].append(_parse_replace_cross_references(child))
+    
+    return result
+
+
+def _parse_replace_link_types(element: ET.Element) -> dict:
+    """Parse replacement rules for link types."""
+    return _parse_element(element, attributes=[], texts=[], specials={})
+
+
+def _parse_replace_user_types(element: ET.Element) -> dict:
+    """Parse replacement rules for user types."""
+    return _parse_element(element, attributes=[], texts=[], specials={})
+
+
+def _parse_replace_user_groups(element: ET.Element) -> dict:
+    """Parse replacement rules for user groups."""
+    return _parse_element(element, attributes=[], texts=[], specials={})
+
+
+def _parse_replace_values(element: ET.Element) -> dict:
+    """Parse replacement values instruction for attributes."""
+    return _parse_element(
+        element,
+        attributes=["AttributeID", "AttributeGroupID", "ContextID"],
+        texts=[]
+    )
+
+
+def _parse_replace_cross_references(element: ET.Element) -> dict:
+    """Parse replacement cross references instruction."""
+    return _parse_element(
+        element,
+        attributes=["CrossReferenceID", "ContextID", "MountLocation"],
+        texts=[]
+    )
+
+
+def _parse_replace_attribute_links(element: ET.Element) -> dict:
+    """Parse replacement attribute links instruction."""
+    return _parse_element(
+        element,
+        attributes=["AttributeID"],
+        texts=[]
+    )
+
+
+def _parse_replace_classification_references(element: ET.Element) -> dict:
+    """Parse replacement classification references instruction."""
+    return _parse_element(element, attributes=[], texts=[])
+
+
+def _parse_collection_item(element: ET.Element, is_group: bool = False) -> dict:
+    """Parse collection or collection group element."""
+    result = _parse_element(
+        element,
+        attributes=["ID", "ParentID"] + (["QueryURL"] if not is_group else []),
+        texts=[]
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name":
+            name_text = child.text
+            if name_text:
+                name_dict = {"value": name_text}
+                # Get attributes (Locale, etc.)
+                for attr_name, attr_value in child.attrib.items():
+                    local_attr = _get_local_tag(attr_name)
+                    name_dict[local_attr] = attr_value
+                names.append(name_dict)
+    
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # For collection groups, parse nested groups and collections
+    if is_group:
+        collection_groups = []
+        collections = []
+        for child in element:
+            local_tag = _get_local_tag(child)
+            if local_tag == "CollectionGroup":
+                collection_groups.append(_parse_collection_item(child, is_group=True))
+            elif local_tag == "Collection":
+                collections.append(_parse_collection_item(child, is_group=False))
+        
+        if collection_groups:
+            result["CollectionGroup"] = collection_groups
+        if collections:
+            result["Collection"] = collections
+    
+    return result
+

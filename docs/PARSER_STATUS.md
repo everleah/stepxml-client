@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 11 Complete  
-**Coverage:** ~65% of STEP-XML schema
+**Current Version:** Phase 12 Complete  
+**Coverage:** ~70% of STEP-XML schema
 
 ---
 
@@ -389,6 +389,20 @@
   - Measurement units for quantitative data (e.g., meters, kilograms)
   - Attributes: ID, Name, Symbol, Formula (4 total)
   - Child elements: MetaData (optional)
+  - Status: Complete ✓
+
+- **ReplacementRules** - ✅ COMPLETED (Phase 12)
+  - Bulk operation rules for Products, Classifications, Entities, Assets, Attributes, LinkTypes, UserTypes, UserGroups
+  - Support for ReplaceValues, ReplaceCrossReferences, ReplaceAttributeLinks, ReplaceClassificationReferences
+  - Attributes: AttributeID, AttributeGroupID, ContextID, CrossReferenceID, MountLocation
+  - Status: Complete ✓
+
+- **Collections** - ✅ COMPLETED (Phase 12)
+  - Data grouping elements with hierarchical support
+  - Collection attributes: ID, ParentID, QueryURL (for search-based collections)
+  - CollectionGroup attributes: ID, ParentID
+  - Support for nested CollectionGroups and Collections (unlimited depth)
+  - Child elements: Name (multiple, multi-language), MetaData
   - Status: Complete ✓
 
 ---
@@ -787,8 +801,9 @@ Phase 8 LinkType Tests: 8/8 ✓
 Phase 9 Advanced Features Tests: 12/12 ✓
 Phase 10 Organizational Structure Tests: 23/23 ✓
 Phase 11 Foundational Elements Tests: 25/25 ✓
+Phase 12 Replacement Rules & Collections Tests: 31/31 ✓
 Namespace Handling Tests: 3/3 ✓
-Total: 134/134 ✓
+Total: 165/165 ✓
 ```
 
 ### Running All Tests
@@ -805,11 +820,12 @@ python test_parser_phase8_links.py
 python test_parser_phase9_advanced.py
 python test_parser_phase10_org_structure.py
 python test_parser_phase11_foundational.py
+python test_parser_phase12_replacement_collection.py
 python test_namespace_handling.py
 python test_creator_xml.py
 
 # Run all parser tests with proper encoding (Windows)
-$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_parser_phase11_foundational.py; python test_namespace_handling.py
+$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_parser_phase11_foundational.py; python test_parser_phase12_replacement_collection.py; python test_namespace_handling.py
 ```
 
 ### Test Data Status
@@ -823,6 +839,7 @@ $env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_
 - ✅ Phase 9: BusinessRules, EventQueues, Workflows, ExportConfigurations
 - ✅ Phase 10: DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers
 - ✅ Phase 11: Dimensions, DimensionPoints, Tags, TagGroups, Units
+- ✅ Phase 12: ReplacementRules, Collections, CollectionGroups
 
 ---
 
@@ -897,27 +914,27 @@ Use this as the authoritative reference for what fields should be parsed.
 **Phase 8:** Link Types (8 tests, edge type definitions, namespace support, 100% backward compatible)  
 **Phase 9:** Advanced Features (12 tests, BusinessRules, EventQueues, Workflows, ExportConfigurations)  
 **Phase 10:** Organizational Structure (23 tests, DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers)  
-**Phase 11:** Foundational Elements (25 tests, Dimensions, DimensionPoints, Tags, TagGroups, Units)
+**Phase 11:** Foundational Elements (25 tests, Dimensions, DimensionPoints, Tags, TagGroups, Units)  
+**Phase 12:** Replacement Rules & Collections (31 tests, ReplacementRules bulk operations, Collections with hierarchies)
 
 ### 📋 Upcoming Phases
 
-**Phase 10:** Organizational Structure - Qualifiers, Dimensions, CrossReferenceTypes, Workspaces  
-**Phase 11+:** Advanced Features - Suppressed Relations, PortalConfigurations, Other Configurations
+**Phase 13:** Advanced Features - Suppressed Relations, PortalConfigurations, Other Configurations
 
 ---
 
 ## Next Immediate Steps
 
-1. **Phase 10 Implementation** (Recommended - 2-3 weeks)
-   - Implement CrossReferenceTypes parser (~2-3 days, ~5 tests)
-   - Implement Qualifiers & Dimensions support (~3-4 days, ~5-10 tests)
-   - Implement Workspaces parser (~2-3 days, ~5 tests)
-   - Implement DeleteClassifications/DeleteEntities (~1-2 days, ~5 tests)
-   - Target: ~20 tests, ~60% schema coverage
+1. **Phase 13 Implementation** (Recommended - 2-3 weeks)
+   - Implement remaining configuration elements from STEP.xsd
+   - Add Suppressed Relations catalog/parsing
+   - Implement PortalConfigurations and other UI settings
+   - Implement GlobalSettings, Keys, ImportConfigurations, BulkUpdateConfigurations
+   - Target: ~8-10 parsers, ~30 tests, ~80% schema coverage
    
 2. **Extended Validation** - Verify against real STEP exports
    - Validate with actual Stibo STEP exports (if available)
-   - Test all namespace scenarios with Phase 10 elements
+   - Test all namespace scenarios with Phase 13 elements
    - Round-trip validation: creator → XML → parser → dict
    
 3. **Parser → Model Integration** - Connect to model classes
@@ -925,7 +942,7 @@ Use this as the authoritative reference for what fields should be parsed.
    - Enable seamless round-trip through parser and creator
    - Support both internal model format and external XML representation
    
-4. **Phase 11 Planning** - Advanced features (backlog)
+4. **Phase 14+ Planning** - Remaining advanced features (backlog)
    - Suppressed relations (context-specific suppression)
    - PortalConfigurations (UI/Portal settings)
    - Other configurations
