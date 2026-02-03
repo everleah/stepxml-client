@@ -122,6 +122,7 @@ from .product import Product, ProductReplacementRule
 from .asset import Asset
 from .classification import Classification
 from .entity import Entity
+from .attribute import Attribute, AttributeGroup, ListOfValues, ValueGroup, ListOfValuesGroup
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
@@ -129,7 +130,7 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
     
     Args:
-        class_name: The name of the model class (e.g., 'Product', 'Asset', 'Classification', 'Entity')
+        class_name: The name of the model class (e.g., 'Product', 'Asset', 'Attribute', 'ListOfValues')
         
     Returns:
         The model class type, or None if not found. All returned types are 
@@ -138,8 +139,8 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     Example:
         >>> ProductClass = get_model_class('Product')
         >>> product = ProductClass({"ID": "P001", "Name": "Test"})
-        >>> ClassClass = get_model_class('Classification')
-        >>> classification = ClassClass({"ID": "C001", "Name": "Test Classification"})
+        >>> AttributeClass = get_model_class('Attribute')
+        >>> attribute = AttributeClass({"ID": "A001", "Name": "Size"})
     """
     model_classes = {
         'product': Product,
@@ -147,6 +148,11 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'asset': Asset,
         'classification': Classification,
         'entity': Entity,
+        'attribute': Attribute,
+        'attributegroup': AttributeGroup,
+        'listofvalues': ListOfValues,
+        'valuegroup': ValueGroup,
+        'listofvaluesgroup': ListOfValuesGroup,
         'deleteasset': DeleteAsset,
         'deleteproduct': DeleteProduct,
         'deleteassetcrossreference': DeleteAssetCrossReference,
@@ -168,6 +174,11 @@ __all__ = [
     'Asset',
     'Classification',
     'Entity',
+    'Attribute',
+    'AttributeGroup',
+    'ListOfValues',
+    'ValueGroup',
+    'ListOfValuesGroup',
     'DeleteAsset',
     'DeleteProduct',
     'DeleteAssetCrossReference',
