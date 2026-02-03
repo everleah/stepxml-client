@@ -28,6 +28,10 @@ class Creator:
         self.tags: List[BaseObject] = []
         self.taggroups: List[BaseObject] = []
         self.units: List[BaseObject] = []
+        self.businessrules: List[BaseObject] = []
+        self.workflows: List[BaseObject] = []
+        self.collections: List[BaseObject] = []
+        self.collectiongroups: List[BaseObject] = []
         self.deletedproducts: List[BaseObject] = []
         self.deletedassets: List[BaseObject] = []
         self.product_replacement_rules: List[BaseObject] = []
@@ -64,6 +68,10 @@ class Creator:
             "Tags": "tags",
             "TagGroups": "taggroups",
             "Units": "units",
+            "BusinessRules": "businessrules",
+            "Workflows": "workflows",
+            "Collections": "collections",
+            "CollectionGroups": "collectiongroups",
             "DeletedAssets": "deletedassets",
             "DeletedProducts": "deletedproducts"
         }

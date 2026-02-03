@@ -125,6 +125,7 @@ from .entity import Entity
 from .attribute import Attribute, AttributeGroup, ListOfValues, ValueGroup, ListOfValuesGroup
 from .organization import Context, Qualifier, Dimension, DimensionPoint
 from .metadata import UserType, LinkType, Tag, TagGroup, Unit
+from .business import BusinessRule, Workflow, Collection, CollectionGroup
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
@@ -132,7 +133,7 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
     
     Args:
-        class_name: The name of the model class (e.g., 'Product', 'UserType', 'Unit')
+        class_name: The name of the model class (e.g., 'Product', 'Workflow', 'Collection')
         
     Returns:
         The model class type, or None if not found. All returned types are 
@@ -141,8 +142,8 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     Example:
         >>> ProductClass = get_model_class('Product')
         >>> product = ProductClass({"ID": "P001", "Name": "Test"})
-        >>> UserTypeClass = get_model_class('UserType')
-        >>> user_type = UserTypeClass({"ID": "UT001", "Name": "Standard"})
+        >>> WorkflowClass = get_model_class('Workflow')
+        >>> workflow = WorkflowClass({"ID": "WF001", "Name": "Approval"})
     """
     model_classes = {
         'product': Product,
@@ -164,6 +165,10 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'tag': Tag,
         'taggroup': TagGroup,
         'unit': Unit,
+        'businessrule': BusinessRule,
+        'workflow': Workflow,
+        'collection': Collection,
+        'collectiongroup': CollectionGroup,
         'deleteasset': DeleteAsset,
         'deleteproduct': DeleteProduct,
         'deleteassetcrossreference': DeleteAssetCrossReference,
@@ -199,6 +204,10 @@ __all__ = [
     'Tag',
     'TagGroup',
     'Unit',
+    'BusinessRule',
+    'Workflow',
+    'Collection',
+    'CollectionGroup',
     'DeleteAsset',
     'DeleteProduct',
     'DeleteAssetCrossReference',
