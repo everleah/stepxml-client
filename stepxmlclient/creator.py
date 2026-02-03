@@ -20,6 +20,9 @@ class Creator:
         self.attributes: List[BaseObject] = []
         self.attributegroups: List[BaseObject] = []
         self.listofvalues: List[BaseObject] = []
+        self.contexts: List[BaseObject] = []
+        self.qualifiers: List[BaseObject] = []
+        self.dimensions: List[BaseObject] = []
         self.deletedproducts: List[BaseObject] = []
         self.deletedassets: List[BaseObject] = []
         self.product_replacement_rules: List[BaseObject] = []
@@ -48,6 +51,9 @@ class Creator:
             "Attributes": "attributes",
             "AttributeGroups": "attributegroups",
             "ListOfValues": "listofvalues",
+            "Contexts": "contexts",
+            "Qualifiers": "qualifiers",
+            "Dimensions": "dimensions",
             "DeletedAssets": "deletedassets",
             "DeletedProducts": "deletedproducts"
         }

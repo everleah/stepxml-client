@@ -123,6 +123,7 @@ from .asset import Asset
 from .classification import Classification
 from .entity import Entity
 from .attribute import Attribute, AttributeGroup, ListOfValues, ValueGroup, ListOfValuesGroup
+from .organization import Context, Qualifier, Dimension, DimensionPoint
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
@@ -130,7 +131,7 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
     
     Args:
-        class_name: The name of the model class (e.g., 'Product', 'Asset', 'Attribute', 'ListOfValues')
+        class_name: The name of the model class (e.g., 'Product', 'Attribute', 'Dimension')
         
     Returns:
         The model class type, or None if not found. All returned types are 
@@ -139,8 +140,8 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     Example:
         >>> ProductClass = get_model_class('Product')
         >>> product = ProductClass({"ID": "P001", "Name": "Test"})
-        >>> AttributeClass = get_model_class('Attribute')
-        >>> attribute = AttributeClass({"ID": "A001", "Name": "Size"})
+        >>> DimensionClass = get_model_class('Dimension')
+        >>> dimension = DimensionClass({"ID": "D001", "Name": "Color"})
     """
     model_classes = {
         'product': Product,
@@ -153,6 +154,10 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'listofvalues': ListOfValues,
         'valuegroup': ValueGroup,
         'listofvaluesgroup': ListOfValuesGroup,
+        'context': Context,
+        'qualifier': Qualifier,
+        'dimension': Dimension,
+        'dimensionpoint': DimensionPoint,
         'deleteasset': DeleteAsset,
         'deleteproduct': DeleteProduct,
         'deleteassetcrossreference': DeleteAssetCrossReference,
@@ -179,6 +184,10 @@ __all__ = [
     'ListOfValues',
     'ValueGroup',
     'ListOfValuesGroup',
+    'Context',
+    'Qualifier',
+    'Dimension',
+    'DimensionPoint',
     'DeleteAsset',
     'DeleteProduct',
     'DeleteAssetCrossReference',
