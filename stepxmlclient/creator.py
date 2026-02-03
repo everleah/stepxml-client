@@ -23,6 +23,11 @@ class Creator:
         self.contexts: List[BaseObject] = []
         self.qualifiers: List[BaseObject] = []
         self.dimensions: List[BaseObject] = []
+        self.usertypes: List[BaseObject] = []
+        self.linktypes: List[BaseObject] = []
+        self.tags: List[BaseObject] = []
+        self.taggroups: List[BaseObject] = []
+        self.units: List[BaseObject] = []
         self.deletedproducts: List[BaseObject] = []
         self.deletedassets: List[BaseObject] = []
         self.product_replacement_rules: List[BaseObject] = []
@@ -54,6 +59,11 @@ class Creator:
             "Contexts": "contexts",
             "Qualifiers": "qualifiers",
             "Dimensions": "dimensions",
+            "UserTypes": "usertypes",
+            "LinkTypes": "linktypes",
+            "Tags": "tags",
+            "TagGroups": "taggroups",
+            "Units": "units",
             "DeletedAssets": "deletedassets",
             "DeletedProducts": "deletedproducts"
         }
