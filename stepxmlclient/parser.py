@@ -51,10 +51,14 @@ class Parser:
         self.link_types: List[dict] = []
         self.delete_products: List[dict] = []
         self.delete_assets: List[dict] = []
+        self.delete_classifications: List[dict] = []
+        self.delete_entities: List[dict] = []
         self.business_rules: List[dict] = []
         self.event_queues: List[dict] = []
         self.workflows: List[dict] = []
         self.export_configurations: List[dict] = []
+        self.cross_reference_types: List[dict] = []
+        self.qualifiers: List[dict] = []
         return
 
     def parse_file(self, file_path: str):
@@ -106,6 +110,12 @@ class Parser:
         self.delete_products = self._parse_item_list(
             'DeleteProducts', 'DeleteProduct', _parse_delete_product
         )
+        self.delete_classifications = self._parse_item_list(
+            'DeleteClassifications', 'DeleteClassification', _parse_delete_classification
+        )
+        self.delete_entities = self._parse_item_list(
+            'DeleteEntities', 'DeleteEntity', _parse_delete_entity
+        )
         self.business_rules = self._parse_item_list(
             'BusinessRules', 'BusinessRule', _parse_business_rule
         )
@@ -117,6 +127,12 @@ class Parser:
         )
         self.export_configurations = self._parse_item_list(
             'ExportConfigurations', 'ExportConfiguration', _parse_export_configuration
+        )
+        self.cross_reference_types = self._parse_item_list(
+            'CrossReferenceTypes', 'CrossReferenceType', _parse_cross_reference_type
+        )
+        self.qualifiers = self._parse_item_list(
+            'Qualifiers', 'Qualifier', _parse_qualifier
         )
         return
 
@@ -1401,5 +1417,147 @@ def _parse_export_configuration(element: ET.Element) -> dict:
             class_refs.append(child.attrib.get("ClassificationID", ""))
     if class_refs:
         result["ClassificationReference"] = class_refs
+    
+    return result
+
+def _parse_delete_classification(element: ET.Element) -> dict:
+    """Parse DeleteClassification element (Phase 10: Organizational Structure).
+    
+    Specifies deletion of a classification and optionally its values/subtypes.
+    Attributes include the classification identifier and its type.
+    
+    Attributes (2 total):
+    - ID (required): Classification identifier to delete
+    - Type (required): Type of deletion ('All', 'SubTypes', or 'Values')
+    
+    Child elements:
+    - KeyValue (multiple): Specific values/keys to delete
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "Type")
+    )
+    
+    # Parse KeyValue elements (multiple)
+    key_values = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+def _parse_delete_entity(element: ET.Element) -> dict:
+    """Parse DeleteEntity element (Phase 10: Organizational Structure).
+    
+    Specifies deletion of an entity and optionally its records/relationships.
+    Attributes include the entity identifier.
+    
+    Attributes (1 total):
+    - ID (required): Entity identifier to delete
+    
+    Child elements:
+    - KeyValue (multiple): Entity records/keys to delete
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse KeyValue elements (multiple)
+    key_values = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "KeyValue":
+            key_values.append(_parse_key_value(child))
+    if key_values:
+        result["KeyValue"] = key_values
+    
+    return result
+
+def _parse_cross_reference_type(element: ET.Element) -> dict:
+    """Parse CrossReferenceType element (Phase 10: Organizational Structure).
+    
+    Defines a type of cross-reference relationship between objects.
+    Cross-reference types specify how different entities relate to each other.
+    
+    Attributes (1 total):
+    - ID (required): Unique identifier for the cross-reference type
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    return result
+
+def _parse_qualifier(element: ET.Element) -> dict:
+    """Parse Qualifier element (Phase 10: Organizational Structure).
+    
+    Represents a dimension qualifier or multi-dimensional data point.
+    Qualifiers enable multi-dimensional attribute management in STEP.
+    
+    Attributes (1 total):
+    - ID (required): Unique identifier for the qualifier
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    - DimensionPointLink (multiple): Dimension point references
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse DimensionPointLink elements (multiple)
+    dim_links = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "DimensionPointLink":
+            dim_links.append({
+                "DimensionID": child.attrib.get("DimensionID", ""),
+                "DimensionPointID": child.attrib.get("DimensionPointID", "")
+            })
+    if dim_links:
+        result["DimensionPointLink"] = dim_links
     
     return result
