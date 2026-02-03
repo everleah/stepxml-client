@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
 **Last Updated:** February 3, 2026  
-**Current Version:** Phase 10 Complete  
-**Coverage:** ~60% of STEP-XML schema
+**Current Version:** Phase 11 Complete  
+**Coverage:** ~65% of STEP-XML schema
 
 ---
 
@@ -361,11 +361,37 @@
   - Child elements: Name (text, multiple), MetaData (optional), DimensionPointLink (multiple)
   - Status: Complete ✓
 
+- **Dimensions** - ✅ COMPLETED (Phase 11)
+  - Multi-dimensional data organization axes (e.g., Market, Color)
+  - Attributes: ID, AllowDuplicates (2 total)
+  - Child elements: Name (text, multiple), MetaData (optional), DimensionPoint (multiple)
+  - Status: Complete ✓
+
+- **DimensionPoints** - ✅ COMPLETED (Phase 11)
+  - Individual dimension values/points
+  - Attributes: ID (1 total)
+  - Child elements: Name (text, multiple), MetaData (optional)
+  - Status: Complete ✓
+
+- **Tags** - ✅ COMPLETED (Phase 11)
+  - Flexible object categorization independent of hierarchy
+  - Attributes: ID (1 total)
+  - Child elements: Name (text, multiple), MetaData (optional)
+  - Status: Complete ✓
+
+- **TagGroups** - ✅ COMPLETED (Phase 11)
+  - Hierarchical organization of tags
+  - Attributes: ID (1 total)
+  - Child elements: Name (text, multiple), MetaData (optional), TagGroup (multiple, hierarchical), Tag (multiple)
+  - Status: Complete ✓
+
+- **Units** - ✅ COMPLETED (Phase 11)
+  - Measurement units for quantitative data (e.g., meters, kilograms)
+  - Attributes: ID, Name, Symbol, Formula (4 total)
+  - Child elements: MetaData (optional)
+  - Status: Complete ✓
+
 ---
-
-## ❌ Not Yet Implemented
-
-### Lower Priority (Phase 11+) - Advanced/Configuration
   - Status: **Lower priority** - advanced feature
 
 - **SuppressedAssetCrossReference**, **SuppressedClassificationCrossReference**, **SuppressedEntityCrossReference**
@@ -760,8 +786,9 @@ Phase 7 System Configuration Tests: 10/10 ✓
 Phase 8 LinkType Tests: 8/8 ✓
 Phase 9 Advanced Features Tests: 12/12 ✓
 Phase 10 Organizational Structure Tests: 23/23 ✓
+Phase 11 Foundational Elements Tests: 25/25 ✓
 Namespace Handling Tests: 3/3 ✓
-Total: 109/109 ✓
+Total: 134/134 ✓
 ```
 
 ### Running All Tests
@@ -777,11 +804,12 @@ python test_parser_phase7_system.py
 python test_parser_phase8_links.py
 python test_parser_phase9_advanced.py
 python test_parser_phase10_org_structure.py
+python test_parser_phase11_foundational.py
 python test_namespace_handling.py
 python test_creator_xml.py
 
 # Run all parser tests with proper encoding (Windows)
-$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_namespace_handling.py
+$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_parser_phase10_org_structure.py; python test_parser_phase11_foundational.py; python test_namespace_handling.py
 ```
 
 ### Test Data Status
@@ -794,6 +822,7 @@ $env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_
 - ✅ Phase 8: LinkTypes
 - ✅ Phase 9: BusinessRules, EventQueues, Workflows, ExportConfigurations
 - ✅ Phase 10: DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers
+- ✅ Phase 11: Dimensions, DimensionPoints, Tags, TagGroups, Units
 
 ---
 
@@ -867,7 +896,8 @@ Use this as the authoritative reference for what fields should be parsed.
 **Phase 7:** System Configuration (10 tests, UserTypes and Contexts, multi-language/dimensional support)  
 **Phase 8:** Link Types (8 tests, edge type definitions, namespace support, 100% backward compatible)  
 **Phase 9:** Advanced Features (12 tests, BusinessRules, EventQueues, Workflows, ExportConfigurations)  
-**Phase 10:** Organizational Structure (23 tests, DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers)
+**Phase 10:** Organizational Structure (23 tests, DeleteClassifications, DeleteEntities, CrossReferenceTypes, Qualifiers)  
+**Phase 11:** Foundational Elements (25 tests, Dimensions, DimensionPoints, Tags, TagGroups, Units)
 
 ### 📋 Upcoming Phases
 

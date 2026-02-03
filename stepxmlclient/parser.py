@@ -59,6 +59,10 @@ class Parser:
         self.export_configurations: List[dict] = []
         self.cross_reference_types: List[dict] = []
         self.qualifiers: List[dict] = []
+        self.dimensions: List[dict] = []
+        self.tags: List[dict] = []
+        self.tag_groups: List[dict] = []
+        self.units: List[dict] = []
         return
 
     def parse_file(self, file_path: str):
@@ -133,6 +137,18 @@ class Parser:
         )
         self.qualifiers = self._parse_item_list(
             'Qualifiers', 'Qualifier', _parse_qualifier
+        )
+        self.dimensions = self._parse_item_list(
+            'DimensionList', 'Dimension', _parse_dimension
+        )
+        self.tags = self._parse_item_list(
+            'TagList', 'Tag', _parse_tag
+        )
+        self.tag_groups = self._parse_item_list(
+            'TagGroupList', 'TagGroup', _parse_tag_group
+        )
+        self.units = self._parse_item_list(
+            'UnitList', 'Unit', _parse_unit
         )
         return
 
@@ -1559,5 +1575,208 @@ def _parse_qualifier(element: ET.Element) -> dict:
             })
     if dim_links:
         result["DimensionPointLink"] = dim_links
+    
+    return result
+
+def _parse_dimension(element: ET.Element) -> dict:
+    """Parse Dimension element (Phase 11: Foundational Elements).
+    
+    Represents a dimension for multi-dimensional data organization.
+    Dimensions define axes along which data can be organized (e.g., Market, Color).
+    
+    Attributes (2 total):
+    - ID (required): Unique identifier for the dimension
+    - AllowDuplicates (optional): Whether duplicate dimension points are allowed
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    - DimensionPoint (multiple): Points/values for this dimension
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "AllowDuplicates")
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse DimensionPoint elements (multiple)
+    dim_points = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "DimensionPoint":
+            dim_points.append(_parse_dimension_point(child))
+    if dim_points:
+        result["DimensionPoint"] = dim_points
+    
+    return result
+
+def _parse_dimension_point(element: ET.Element) -> dict:
+    """Parse DimensionPoint element (Phase 11: Foundational Elements).
+    
+    Represents a point/value within a dimension.
+    
+    Attributes (1 total):
+    - ID (required): Unique identifier for this dimension point
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    return result
+
+def _parse_tag(element: ET.Element) -> dict:
+    """Parse Tag element (Phase 11: Foundational Elements).
+    
+    Represents a flexible tag for object categorization.
+    Tags enable custom classification independent of the fixed hierarchy.
+    
+    Attributes (1 total):
+    - ID (required): Unique identifier for the tag
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    return result
+
+def _parse_tag_group(element: ET.Element) -> dict:
+    """Parse TagGroup element (Phase 11: Foundational Elements).
+    
+    Represents a hierarchical grouping of tags.
+    Tag groups organize tags into logical collections.
+    
+    Attributes (1 total):
+    - ID (required): Unique identifier for the tag group
+    
+    Child elements:
+    - Name (multiple): Display name in different languages
+    - MetaData (optional): Metadata attributes and values
+    - TagGroup (multiple): Nested tag groups (hierarchical)
+    - Tag (multiple): Tags in this group
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID",)
+    )
+    
+    # Parse Name elements (multiple)
+    names = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Name" and child.text:
+            names.append(child.text)
+    if names:
+        result["Name"] = names
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
+    
+    # Parse nested TagGroup elements (multiple)
+    tag_groups = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "TagGroup":
+            tag_groups.append(_parse_tag_group(child))
+    if tag_groups:
+        result["TagGroup"] = tag_groups
+    
+    # Parse Tag elements (multiple)
+    tags = []
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "Tag":
+            tags.append(_parse_tag(child))
+    if tags:
+        result["Tag"] = tags
+    
+    return result
+
+def _parse_unit(element: ET.Element) -> dict:
+    """Parse Unit element (Phase 11: Foundational Elements).
+    
+    Represents a measurement unit (e.g., meters, kilograms, liters).
+    Units are used for quantitative attribute values.
+    
+    Attributes (4 total):
+    - ID (required): Unique identifier for the unit
+    - Name (optional): Display name of the unit
+    - Symbol (optional): Unit symbol (e.g., 'm', 'kg', 'l')
+    - Formula (optional): Conversion formula to base unit
+    
+    Child elements:
+    - MetaData (optional): Metadata attributes and values
+    """
+    result = _parse_element(
+        element,
+        attributes=("ID", "Name", "Symbol", "Formula")
+    )
+    
+    # Parse MetaData
+    for child in element:
+        local_tag = _get_local_tag(child)
+        if local_tag == "MetaData":
+            result["MetaData"] = _parse_metadata(child)
+            break
     
     return result
