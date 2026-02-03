@@ -120,6 +120,8 @@ class BaseObject:
 # Export model classes
 from .product import Product, ProductReplacementRule
 from .asset import Asset
+from .classification import Classification
+from .entity import Entity
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
 
@@ -127,7 +129,7 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
     
     Args:
-        class_name: The name of the model class (e.g., 'Product', 'Asset')
+        class_name: The name of the model class (e.g., 'Product', 'Asset', 'Classification', 'Entity')
         
     Returns:
         The model class type, or None if not found. All returned types are 
@@ -136,11 +138,15 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     Example:
         >>> ProductClass = get_model_class('Product')
         >>> product = ProductClass({"ID": "P001", "Name": "Test"})
+        >>> ClassClass = get_model_class('Classification')
+        >>> classification = ClassClass({"ID": "C001", "Name": "Test Classification"})
     """
     model_classes = {
         'product': Product,
         'productreplacementrule': ProductReplacementRule,
         'asset': Asset,
+        'classification': Classification,
+        'entity': Entity,
         'deleteasset': DeleteAsset,
         'deleteproduct': DeleteProduct,
         'deleteassetcrossreference': DeleteAssetCrossReference,
@@ -158,6 +164,8 @@ __all__ = [
     'Product',
     'ProductReplacementRule',
     'Asset',
+    'Classification',
+    'Entity',
     'DeleteAsset',
     'DeleteProduct',
     'DeleteAssetCrossReference',

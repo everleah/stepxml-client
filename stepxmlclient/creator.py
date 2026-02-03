@@ -15,6 +15,8 @@ class Creator:
         self.tree: Optional[ET.ElementTree] = None
         self.products: List[BaseObject] = []
         self.assets: List[BaseObject] = []
+        self.classifications: List[BaseObject] = []
+        self.entities: List[BaseObject] = []
         self.deletedproducts: List[BaseObject] = []
         self.deletedassets: List[BaseObject] = []
         self.product_replacement_rules: List[BaseObject] = []
@@ -37,7 +39,9 @@ class Creator:
         # others - map XML element names to attribute names
         element_mapping = {
             "Assets": "assets",
-            "Products": "products", 
+            "Products": "products",
+            "Classifications": "classifications",
+            "Entities": "entities",
             "DeletedAssets": "deletedassets",
             "DeletedProducts": "deletedproducts"
         }
