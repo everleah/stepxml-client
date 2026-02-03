@@ -1,8 +1,8 @@
 # STEP XML Parser - Feature Status & Roadmap
 
-**Last Updated:** February 4, 2026  
-**Current Version:** Phase 8 Complete  
-**Coverage:** ~47% of STEP-XML schema
+**Last Updated:** February 3, 2026  
+**Current Version:** Phase 9 Complete  
+**Coverage:** ~55% of STEP-XML schema
 
 ---
 
@@ -313,22 +313,33 @@
   - LinkTypeID attribute enumeration parsing
   - See "Fully Implemented" section above
 
+- **BusinessRules** - ✅ COMPLETED (Phase 9)
+  - Business rule definitions (Actions, Conditions, Functions, Libraries)
+  - Attributes: ID, Type, Scope, RunPrivileged (4 total)
+  - Child elements: Name, Description, Dependencies
+  - Status: Complete ✓
+
+- **EventQueues** - ✅ COMPLETED (Phase 9)
+  - Event queue configurations for event processing
+  - Attributes: ID, QueueStatus, DaysRetained, Selected, Referenced, Changed, Deleted (7 total)
+  - Child elements: Name, MetaData, Configuration
+  - Status: Complete ✓
+
+- **STEPWorkflows** - ✅ COMPLETED (Phase 9)
+  - Workflow definitions for business process orchestration
+  - Attributes: ID, Selected, Referenced, Changed (4 total)
+  - Child elements: Name, MetaData, ValidUserTypeLink
+  - Status: Complete ✓
+
+- **ExportConfigurations** - ✅ COMPLETED (Phase 9)
+  - Export/integration configurations for data exchange
+  - Attributes: ID (1 total)
+  - Child elements: Name, MetaData, ClassificationReference
+  - Status: Complete ✓
+
 ---
 
 ## ❌ Not Yet Implemented
-
-### High Priority (Phase 9) - Advanced Features
-- **BusinessRules** - Business rule definitions and constraints
-  - Status: **Recommended for Phase 9** (~2-3 days, ~5-10 tests)
-
-- **EventQueues** - Event queue configurations and orchestration
-  - Status: **Recommended for Phase 9** (~2-3 days, ~5-10 tests)
-
-- **Workflows** - Workflow definitions and process automation
-  - Status: **Recommended for Phase 9** (~2-3 days, ~5-10 tests)
-
-- **Import/Export Configurations** - Data exchange and ETL settings
-  - Status: **Recommended for Phase 9** (~1-2 days, ~5 tests)
 
 ### Medium Priority (Phase 10) - Organizational Structure
 - **CrossReferenceTypes** - Relation type definitions and validation
@@ -709,13 +720,28 @@ Parser.parse(root)
   - LinkTypes alongside other system elements (UserTypes, Contexts)
   - All LinkType combinations (duplicates allowed)
 
+**Phase 9 Tests:**
+- ✅ `test_parser_phase9_advanced.py` - 12 integration tests
+  - Single and multiple BusinessRule parsing
+  - BusinessRule type variants (Action, Condition, Library, Function)
+  - Single and multiple EventQueue parsing
+  - EventQueue status variants (Read, Discard)
+  - Single and multiple STEPWorkflow parsing
+  - Workflow ValidUserTypeLink parsing
+  - Single and multiple ExportConfiguration parsing
+  - ClassificationReference parsing in ExportConfigurations
+  - All Phase 9 elements parsed together
+  - Namespace handling for all Phase 9 elements
+  - Empty containers handling
+  - Missing elements handling
+
 **Namespace Handling Tests:**
 - ✅ `test_namespace_handling.py` - 3 integration tests
   - Default namespace (xmlns="http://...")
   - Prefixed namespace (xmlns:step="http://...")
   - Unnamespaced XML (backward compatibility)
 
-**Total Test Coverage:** 68 tests, 100% pass rate
+**Total Test Coverage:** 86 tests, 100% pass rate
 
 ### All Tests Passing ✅
 ```
@@ -727,8 +753,9 @@ Phase 5 Attribute Tests: 11/11 ✓
 Phase 6 ListOfValue Tests: 10/10 ✓
 Phase 7 System Configuration Tests: 10/10 ✓
 Phase 8 LinkType Tests: 8/8 ✓
+Phase 9 Advanced Features Tests: 12/12 ✓
 Namespace Handling Tests: 3/3 ✓
-Total: 74/74 ✓
+Total: 86/86 ✓
 ```
 
 ### Running All Tests
@@ -742,11 +769,12 @@ python test_parser_phase5_attributes.py
 python test_parser_phase6_lov.py
 python test_parser_phase7_system.py
 python test_parser_phase8_links.py
+python test_parser_phase9_advanced.py
 python test_namespace_handling.py
 python test_creator_xml.py
 
 # Run all parser tests with proper encoding (Windows)
-$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_namespace_handling.py
+$env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_phase2_integration.py; python test_parser_phase3_classification.py; python test_parser_phase4_entity.py; python test_parser_phase5_attributes.py; python test_parser_phase6_lov.py; python test_parser_phase7_system.py; python test_parser_phase8_links.py; python test_parser_phase9_advanced.py; python test_namespace_handling.py
 ```
 
 ### Test Data Status
@@ -757,7 +785,7 @@ $env:PYTHONIOENCODING="utf-8"; python test_parser_phase2.py; python test_parser_
 - ✅ Phase 6: List of Values with value items
 - ✅ Phase 7: UserTypes and Contexts
 - ✅ Phase 8: LinkTypes
-- ⏳ Phase 9: BusinessRules, EventQueues, Workflows, Import/Export configs (TBD)
+- ✅ Phase 9: BusinessRules, EventQueues, Workflows, ExportConfigurations
 
 ---
 
@@ -829,27 +857,28 @@ Use this as the authoritative reference for what fields should be parsed.
 **Phase 5:** Attribute System (11 tests, 3 element types, full validation/LOV support)  
 **Phase 6:** List of Values (10 tests, value hierarchies, qualifier-specific groups)  
 **Phase 7:** System Configuration (10 tests, UserTypes and Contexts, multi-language/dimensional support)  
-**Phase 8:** Link Types (8 tests, edge type definitions, namespace support, 100% backward compatible)
+**Phase 8:** Link Types (8 tests, edge type definitions, namespace support, 100% backward compatible)  
+**Phase 9:** Advanced Features (12 tests, BusinessRules, EventQueues, Workflows, ExportConfigurations)
 
 ### 📋 Upcoming Phases
 
-**Phase 9:** Advanced Features - Business Rules, Workflows, Event Queues, Imports/Exports  
-**Phase 10+:** Extended Configuration - Workspaces, Qualifiers, Dimensions
+**Phase 10:** Organizational Structure - Qualifiers, Dimensions, CrossReferenceTypes, Workspaces  
+**Phase 11+:** Advanced Features - Suppressed Relations, PortalConfigurations, Other Configurations
 
 ---
 
 ## Next Immediate Steps
 
-1. **Phase 9 Implementation** (Recommended - 1-2 weeks)
-   - Implement BusinessRules parser (~2-3 days, ~5-10 tests)
-   - Implement EventQueues parser (~2-3 days, ~5-10 tests)
-   - Implement Workflows parser (~2-3 days, ~5-10 tests)
-   - Implement Import/Export configurations (~1-2 days, ~5 tests)
-   - Target: ~20 tests, ~55% schema coverage
+1. **Phase 10 Implementation** (Recommended - 2-3 weeks)
+   - Implement CrossReferenceTypes parser (~2-3 days, ~5 tests)
+   - Implement Qualifiers & Dimensions support (~3-4 days, ~5-10 tests)
+   - Implement Workspaces parser (~2-3 days, ~5 tests)
+   - Implement DeleteClassifications/DeleteEntities (~1-2 days, ~5 tests)
+   - Target: ~20 tests, ~60% schema coverage
    
 2. **Extended Validation** - Verify against real STEP exports
    - Validate with actual Stibo STEP exports (if available)
-   - Test all namespace scenarios with Phase 9 elements
+   - Test all namespace scenarios with Phase 10 elements
    - Round-trip validation: creator → XML → parser → dict
    
 3. **Parser → Model Integration** - Connect to model classes
@@ -857,8 +886,8 @@ Use this as the authoritative reference for what fields should be parsed.
    - Enable seamless round-trip through parser and creator
    - Support both internal model format and external XML representation
    
-4. **Phase 10 Planning** - Organizational structure (backlog)
-   - Qualifiers & Dimensions (medium priority)
-   - CrossReferenceTypes (medium priority)
-   - Workspaces (medium priority)
+4. **Phase 11 Planning** - Advanced features (backlog)
+   - Suppressed relations (context-specific suppression)
+   - PortalConfigurations (UI/Portal settings)
+   - Other configurations
 
