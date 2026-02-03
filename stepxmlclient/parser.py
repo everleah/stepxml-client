@@ -63,7 +63,7 @@ class Parser:
         self.tags: List[dict] = []
         self.tag_groups: List[dict] = []
         self.units: List[dict] = []
-        self.replacement_rules: List[dict] = []
+        self.replacement_rules: dict = {}
         self.collections: List[dict] = []
         self.collection_groups: List[dict] = []
         self.bulk_update_configurations: List[dict] = []
@@ -219,6 +219,9 @@ class Parser:
         """Parse replacement rules for products, classifications, entities, assets, attributes, etc."""
         replacement_rules_elem = None
         
+        if self._root is None:
+            return {}
+
         for child in self._root:
             local_tag = _get_local_tag(child)
             if local_tag == "ReplacementRules":
@@ -279,6 +282,9 @@ class Parser:
         """Parse collections and collection groups, returns (collections, collection_groups)."""
         collection_list_elem = None
         
+        if self._root is None:
+            return [], []
+
         for child in self._root:
             local_tag = _get_local_tag(child)
             if local_tag == "CollectionList":
@@ -302,6 +308,9 @@ class Parser:
         """Parse derived event types (simple text elements)."""
         result = []
         
+        if self._root is None:
+            return result
+
         for child in self._root:
             local_tag = _get_local_tag(child)
             if local_tag == "DerivedEventTypes":
@@ -318,6 +327,9 @@ class Parser:
     
     def _parse_global_settings(self) -> dict:
         """Parse global settings (system configuration)."""
+        if self._root is None:
+            return {}
+
         for child in self._root:
             local_tag = _get_local_tag(child)
             if local_tag == "GlobalSettings":
@@ -2089,7 +2101,9 @@ def _parse_collection_item(element: ET.Element, is_group: bool = False) -> dict:
                 name_dict = {"value": name_text}
                 # Get attributes (Locale, etc.)
                 for attr_name, attr_value in child.attrib.items():
-                    local_attr = _get_local_tag(attr_name)
+                    local_attr = attr_name
+                    if '}' in local_attr:
+                        local_attr = local_attr.split('}', 1)[1]
                     name_dict[local_attr] = attr_value
                 names.append(name_dict)
     
