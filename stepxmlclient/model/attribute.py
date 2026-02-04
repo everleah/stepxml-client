@@ -1,3 +1,9 @@
+"""Attribute model for STEP XML Client.
+
+Defines the Attribute entity class for representing attribute definitions in STEP MDM.
+Attributes define the properties that can be assigned to products, assets, and entities.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -6,16 +12,39 @@ if TYPE_CHECKING:
 
 
 class Attribute(BaseObject):
-    """Attribute - defines a property that can be assigned to products, assets, and entities.
+    """Attribute definition in STEP MDM.
     
-    Supports:
-    - Multiple data types via Validation or ListOfValueLink
-    - Unit definitions (DefaultUnitID)
-    - Dimensional analysis (DimensionLink)
-    - Product mode (Normal/Property)
-    - Filtering configurations (hierarchical, classification hierarchical)
-    - Security (CryptographicKeyID)
-    - Boolean state tracking (Selected, Referenced, Changed, Deleted, MultiValued, Mandatory, etc.)
+    Defines a property/characteristic that can be assigned to products, assets, and entities.
+    Supports multiple data types, validation rules, units, and dimensional analysis.
+    
+    Attributes:
+        ID: Unique attribute identifier
+        DefaultUnitID: Default unit for numeric values
+        ProductMode: 'Normal' or 'Property' (property attributes have limited usage)
+        CryptographicKeyID: Optional encryption key for sensitive data
+        HierarchicalFiltering: Whether to use hierarchical filtering
+        ClassificationHierarchicalFiltering: Whether to use classification hierarchy filtering
+        ExternallyMaintained: Whether values are maintained externally
+        FullTextIndexed: Whether to index for full-text search
+        MultiValued: Whether attribute can have multiple values
+        Mandatory: Whether attribute is required
+        Derived: Whether value is computed/derived
+        Selected: Whether attribute is selected in UI
+        Referenced: Whether attribute is referenced elsewhere
+        Changed: Whether attribute was modified
+        Deleted: Whether attribute is marked for deletion
+        Name: Attribute name (localized)
+        Validation: Data type validation configuration
+        ListOfValueLink: Link to List-of-Values for choice attributes
+        ValueTemplate: Template for attribute values
+        UnitTemplate: Template for units
+        DimensionLink: Links to dimensional definitions
+        MetaData: Metadata associated with attribute
+        AttributeGroupLink: Links to attribute groups
+        UserTypeLink: Links to user types
+        LinkType: Link type associations
+        ValueFilter: Filters for attribute values
+        CurrentTasks: Current task information
     """
     _GROUP_NAME: str = 'attributes'
     _TAG_NAME: str = 'Attribute'

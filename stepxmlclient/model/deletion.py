@@ -1,8 +1,21 @@
+"""Deletion models for STEP XML Client.
+
+Defines entity and cross-reference deletion classes for removing items from STEP MDM.
+Supports both full entity deletion and link severance operations.
+"""
+
 from typing import List, Optional
 from . import BaseObject
 
 class DeleteAsset(BaseObject):
-    """Move asset to recycle bin. Top-level deletion structure."""
+    """Top-level deletion specification for assets.
+    
+    Moves an asset to the recycle bin. The asset and all its associated data is marked for deletion.
+    
+    Attributes:
+        ID: Asset ID to delete
+        KeyValue: Optional key value reference
+    """
     _GROUP_NAME: str = 'deletedassets'
     _TAG_NAME: str = 'DeleteAsset'
     _ATTRIBUTE_NAMES: List[str] = ["ID"]
@@ -11,7 +24,14 @@ class DeleteAsset(BaseObject):
 
 
 class DeleteProduct(BaseObject):
-    """Move product to recycle bin. Top-level deletion structure."""
+    """Top-level deletion specification for products.
+    
+    Moves a product to the recycle bin. The product and all its associated data is marked for deletion.
+    
+    Attributes:
+        ID: Product ID to delete
+        KeyValue: Optional key value reference
+    """
     _GROUP_NAME: str = 'deletedproducts'
     _TAG_NAME: str = 'DeleteProduct'
     _ATTRIBUTE_NAMES: List[str] = ["ID"]
@@ -20,7 +40,19 @@ class DeleteProduct(BaseObject):
 
 
 class DeleteAssetCrossReference(BaseObject):
-    """Delete/sever asset link from a product while keeping product intact."""
+    """Deletion specification for asset cross-references.
+    
+    Severs the link between an asset and a product while keeping both items intact.
+    The product remains but the asset reference is removed.
+    
+    Attributes:
+        AssetID: Asset ID of the link to sever
+        Type: Link type
+        QualifierID: Optional qualifier
+        Changed: Whether changed
+        KeyValue: Optional key value reference
+        MetaData: Optional metadata
+    """
     _GROUP_NAME: Optional[str] = None  # Used as child element only
     _TAG_NAME: str = 'DeleteAssetCrossReference'
     _ATTRIBUTE_NAMES: List[str] = ["AssetID", "Type", "QualifierID", "Changed"]

@@ -1,3 +1,9 @@
+"""Metadata and configuration models for STEP XML Client.
+
+Defines metadata and configuration classes for STEP MDM systems including user types,
+contexts, qualifiers, dimensions, tags, units, and other configuration elements.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -6,10 +12,11 @@ if TYPE_CHECKING:
 
 
 class UserType(BaseObject):
-    """UserType - defines an object type in STEP with its properties and behaviors.
+    """User type - object type definition in STEP MDM.
     
-    User types define customizable object classifications with attributes,
-    validation, icons, and category information.
+    User types define customizable object classifications with attributes, validation rules,
+    icons, and category information. User types control the structure and behavior of
+    products, assets, classifications, and entities.
     
     Supports:
     - Multiple names (multi-language)
@@ -19,6 +26,29 @@ class UserType(BaseObject):
     - Category classification
     - Revisability and link policies
     - Boolean state tracking (Selected, Referenced, Changed, Deleted)
+    
+    Attributes:
+        ID: Unique user type identifier
+        AllowOverlappingTerms: Whether overlapping terms are allowed
+        AllowQuarkTemplate: Support for Quark templates
+        AllowInDesignTemplate: Support for InDesign templates
+        Revisability: Revision tracking policy
+        IsCategory: Whether this type represents a category
+        DefaultProfileConfiguration: Default profile configuration
+        ClassificationOwnsProductLinks: Classification ownership semantics
+        NamePattern: Pattern for naming instances
+        IDPattern: Pattern for ID generation
+        ManuallySorted: Whether instances are manually sorted
+        ReferenceTargetLockPolicy: Link policy
+        Name: User type name (localized)
+        Icon: Icon representation
+        VisibleTermFields: Visible fields for search
+        MetaData: Metadata
+        DimensionLink: Dimension associations
+        UserTypeLink: Links to other user types
+        AttributeLink: Attribute associations
+        Validation: Validation rules
+        MIMEType: Associated MIME types
     """
     _GROUP_NAME: str = 'usertypes'
     _TAG_NAME: str = 'UserType'

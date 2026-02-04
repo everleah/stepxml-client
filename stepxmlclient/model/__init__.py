@@ -1,20 +1,106 @@
 
+"""
+Base object model module for STEP XML Client.
+
+This module provides the BaseObject class, which is the foundation for all STEP entity models
+(Product, Asset, Attribute, Classification, etc.). BaseObject uses a declarative configuration
+approach to define XML serialization behavior.
+
+All STEP entity classes inherit from BaseObject and use class-level configuration attributes
+to define how instances are serialized to XML elements. This approach enables automatic
+serialization without requiring custom to_element() implementations in subclasses.
+
+Configuration Attributes (set in subclasses):
+    _GROUP_NAME: The collection name in Creator (e.g., 'products', 'assets')
+    _TAG_NAME: The XML element tag name (e.g., 'Product', 'Asset')
+    _ATTRIBUTE_NAMES: Tuple of attribute names to serialize as XML attributes
+    _TEXT_NAMES: Tuple of simple text element names
+    _VALUE_NAME: Name of the single text value for this element
+    _CHILDREN_NAMES: Tuple of child element names to process recursively
+
+Example:
+    Defining a custom STEP entity model::
+    
+        from stepxmlclient.model import BaseObject
+        
+        class MyEntity(BaseObject):
+            _GROUP_NAME = 'my_entities'
+            _TAG_NAME = 'MyEntity'
+            _ATTRIBUTE_NAMES = ('ID', 'Type')
+            _TEXT_NAMES = ('Name', 'Description')
+            _CHILDREN_NAMES = ('Values', 'Relations')
+"""
+
 import xml.etree.ElementTree as ET
 from typing import Any, Dict, List, Optional, Union, Type
 
 class BaseObject:
+    """Base class for all STEP entity models.
+    
+    Provides declarative XML serialization for STEP entities. Subclasses define their
+    structure through class-level configuration attributes that control how instances
+    are converted to XML elements.
+    
+    The to_element() method handles the actual serialization by inspecting these
+    configuration attributes and building the appropriate XML structure.
+    
+    Attributes:
+        _GROUP_NAME: Collection name for this entity type in Creator
+        _TAG_NAME: XML element tag name for this entity
+        _ATTRIBUTE_NAMES: Tuple of attribute names to serialize as XML attributes
+        _TEXT_NAMES: Tuple of child element names to render as text elements
+        _VALUE_NAME: Name of the element value (for elements with single text content)
+        _CHILDREN_NAMES: Tuple of child element names to process recursively
+    """
+    
+    #: Collection name for grouping in Creator (override in subclasses)
     _GROUP_NAME: Optional[str] = None
+    
+    #: XML element tag name (override in subclasses)
     _TAG_NAME: Optional[str] = None
+    
+    #: Attribute names to serialize as XML attributes (override in subclasses)
     _ATTRIBUTE_NAMES: Optional[List[str]] = None
+    
+    #: Child element names to render as simple text elements (override in subclasses)
     _TEXT_NAMES: Optional[List[str]] = None
+    
+    #: Name of element value for single-value elements (override in subclasses)
     _VALUE_NAME: Optional[str] = None
+    
+    #: Child element names to process and add recursively (override in subclasses)
     _CHILDREN_NAMES: Optional[List[str]] = None
 
     def __init__(self, data: Dict[str, Any]) -> None:
+        """Initialize a BaseObject with data dictionary.
+        
+        Args:
+            data: Dictionary containing the entity data.
+                  Keys should match configuration attribute names defined in subclasses.
+        """
         self._data: Dict[str, Any] = data
         return
     
     def to_element(self, parent: Optional[ET.Element] = None) -> ET.Element:
+        """Serialize this object to an XML element.
+        
+        Converts the entity to an ElementTree element using the class-level configuration
+        attributes. If parent is provided, adds this element as a child; otherwise creates
+        a standalone element.
+        
+        The serialization process:
+        1. Creates the element with _TAG_NAME and serializes _ATTRIBUTE_NAMES as attributes
+        2. Sets element text if _VALUE_NAME is defined
+        3. Adds simple text child elements from _TEXT_NAMES
+        4. Recursively processes children from _CHILDREN_NAMES
+        
+        Args:
+            parent: Optional parent ElementTree element. If provided, adds this element as a child.
+                   If None, creates and returns a standalone element.
+                   
+        Returns:
+            The created ElementTree element
+        """
         if parent is None:
             element = ET.Element(
                 tag=self._TAG_NAME if self._TAG_NAME else "",
@@ -34,6 +120,14 @@ class BaseObject:
         return element
     
     def _get_value(self) -> Optional[str]:
+        """Get the element's text value if configured.
+        
+        Returns the string value from the data dictionary using the _VALUE_NAME key.
+        Used for elements that contain simple text content rather than child elements.
+        
+        Returns:
+            String representation of the value, or None if not configured or not present
+        """
         if self._VALUE_NAME:
             val = self._data.get(self._VALUE_NAME)
             if val is not None:
@@ -41,16 +135,32 @@ class BaseObject:
         return None
     
     def _get_attributes(self) -> Dict[str, str]:
+        """Collect XML attributes from configured attribute names.
+        
+        Extracts values from the data dictionary for all names specified in
+        _ATTRIBUTE_NAMES and builds an attributes dictionary suitable for ElementTree.
+        
+        Returns:
+            Dictionary mapping attribute names to string values
+        """
         attributes: Dict[str, str] = {}
         if self._ATTRIBUTE_NAMES:
-            for name in self._ATTRIBUTE_NAMES:
+            for name in self._ATTRIBUTE_NAMES:                
                 value = self._data.get(name)
                 if value is not None:
                     attributes[name] = str(value)
         return attributes
     
     def _add_texts(self, element: ET.Element) -> None:
-        if self._TEXT_NAMES:
+        """Add simple text child elements.
+        
+        Creates child elements for each name in _TEXT_NAMES and populates them with
+        corresponding values from the data dictionary.
+        
+        Args:
+            element: Parent ElementTree element to add text children to
+        """
+        if self._TEXT_NAMES:    
             for name in self._TEXT_NAMES:
                 value = self._data.get(name)
                 if value is not None:
@@ -59,7 +169,17 @@ class BaseObject:
         return
     
     def _add_children(self, element: ET.Element) -> None:
-        if self._CHILDREN_NAMES:
+        """Add child elements recursively.
+        
+        Processes items from _CHILDREN_NAMES and handles different data types:
+        - BaseObject instances: calls to_element() recursively
+        - Dictionaries: passes to _add_dict_child() for special handling
+        - Lists: processes each item in the list
+        
+        Args:
+            element: Parent ElementTree element to add children to
+        """
+        if self._CHILDREN_NAMES:    
             for name in self._CHILDREN_NAMES:
                 child = self._data.get(name)
                 if child is not None:
@@ -80,10 +200,20 @@ class BaseObject:
         return
     
     def _add_dict_child(self, parent: ET.Element, tag_name: str, data: Dict[str, Any]) -> ET.Element:
-        """Add a child element from dictionary data"""
-        child_element = ET.SubElement(parent, tag_name)
-
-        # Handle special case for Values (nested structure)
+        """Add a child element from dictionary data.
+        
+        Processes dictionary data and creates appropriate XML elements. Handles special cases
+        like the Values element with MultiValue/Value nesting structure commonly used in STEP.
+        
+        Args:
+            parent: Parent ElementTree element
+            tag_name: XML tag name for the child element
+            data: Dictionary data to serialize
+            
+        Returns:
+            The created child element
+        """
+        child_element = ET.SubElement(parent, tag_name)        # Handle special case for Values (nested structure)
         if tag_name == "Values" and isinstance(data, dict):
             for attribute_id, value_data in data.items():
                 if isinstance(value_data, list):

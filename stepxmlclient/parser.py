@@ -1,10 +1,44 @@
+"""
+STEP-XML Parser module.
+
+This module provides the Parser class for deserializing STEP-XML documents into Python dictionaries.
+It handles both namespaced and unnamespaced XML elements and supports parsing all STEP entity types
+including Products, Assets, Classifications, Attributes, Business Rules, and advanced configuration elements.
+
+The parser uses a declarative approach with separate lists for each entity type, following the
+STEP-XML schema structure. It handles namespace-aware parsing automatically, supporting both
+prefixed namespaces (e.g., step:Product) and default namespaces.
+
+Example:
+    Basic parsing workflow::
+    
+        from stepxmlclient.parser import Parser
+        
+        parser = Parser()
+        parser.parse_file('step_data.xml')
+        
+        # Access parsed entities
+        for product in parser.products:
+            print(product['ID'])
+        
+        for asset in parser.assets:
+            print(asset['ID'])
+"""
+
 import xml.etree.ElementTree as ET
 from typing import Any, Callable, List, Optional
 from . import STEPXML_NS
 
 
 def _str_to_bool(value: str) -> bool:
-    """Convert XML boolean string ('true'/'false') to Python bool."""
+    """Convert XML boolean string ('true'/'false') to Python bool.
+    
+    Args:
+        value: String value from XML ('true' or 'false', case-insensitive)
+        
+    Returns:
+        Boolean representation of the string value
+    """
     return value.lower() == 'true'
 
 
@@ -12,7 +46,18 @@ def _get_local_tag(element: ET.Element) -> str:
     """Extract local tag name from potentially namespaced tag.
     
     Handles both namespaced tags (e.g., '{http://...}Value') and 
-    unnamespaced tags (e.g., 'Value').
+    unnamespaced tags (e.g., 'Value'). This is essential for robust XML parsing
+    since different XML sources may or may not include namespace prefixes.
+    
+    Args:
+        element: XML Element to extract tag name from
+        
+    Returns:
+        Local tag name without namespace prefix
+        
+    Example:
+        For an element with tag '{http://www.stibosystems.com/step}Product',
+        returns 'Product'
     """
     tag = element.tag
     if '}' in tag:
@@ -24,8 +69,17 @@ def _get_namespace_from_tag(tag: str) -> Optional[str]:
     """Extract namespace URL from a namespaced tag.
     
     Handles both namespaced tags (e.g., '{http://...}Value') and 
-    unnamespaced tags (e.g., 'Value').
-    Returns None if tag is unnamespaced.
+    unnamespaced tags (e.g., 'Value'). Returns None if tag is unnamespaced.
+    
+    Args:
+        tag: Tag string from XML Element
+        
+    Returns:
+        Namespace URL if tag is namespaced, None otherwise
+        
+    Example:
+        For tag '{http://www.stibosystems.com/step}Product',
+        returns 'http://www.stibosystems.com/step'
     """
     if not tag or '}' not in tag:
         return None
@@ -34,8 +88,61 @@ def _get_namespace_from_tag(tag: str) -> Optional[str]:
 
 
 class Parser:
+    """Parser for STEP-XML documents.
+    
+    Deserializes STEP-XML documents into Python dictionaries organized by entity type.
+    The parser maintains separate lists for each STEP entity type (products, assets, 
+    classifications, etc.) and handles namespace-aware XML parsing automatically.
+    
+    Attributes:
+        products: List of parsed Product entities
+        assets: List of parsed Asset entities
+        classifications: List of parsed Classification entities
+        entities: List of parsed Entity (business entity) objects
+        attributes: List of parsed Attribute definitions
+        attribute_groups: List of parsed Attribute groups
+        list_of_values_groups: List of parsed List-of-Values group definitions
+        list_of_values: List of parsed List-of-Values items
+        user_types: List of parsed User Type definitions
+        contexts: List of parsed STEP Contexts
+        link_types: List of parsed Link Type definitions
+        delete_products: List of Product deletion specifications
+        delete_assets: List of Asset deletion specifications
+        delete_classifications: List of Classification deletion specifications
+        delete_entities: List of Entity deletion specifications
+        business_rules: List of parsed Business Rule definitions
+        event_queues: List of parsed Event Queue configurations
+        workflows: List of parsed Workflow definitions
+        export_configurations: List of parsed Export Configuration definitions
+        cross_reference_types: List of parsed Cross Reference Type definitions
+        qualifiers: List of parsed Qualifier definitions
+        dimensions: List of parsed Dimension definitions
+        tags: List of parsed Tag definitions
+        tag_groups: List of parsed Tag Group definitions
+        units: List of parsed Unit definitions
+        replacement_rules: Dictionary of replacement rules for various entity types
+        collections: List of parsed Collection entities
+        collection_groups: List of parsed Collection Group entities
+        bulk_update_configurations: List of parsed Bulk Update Configuration definitions
+        derived_event_types: List of parsed Derived Event Type definitions
+        global_settings: Dictionary of global system settings
+        import_configurations: List of parsed Import Configuration definitions
+        portal_configurations: List of parsed Portal Configuration definitions
+        keys: List of parsed Key definitions (Phase 14)
+        cross_contexts: List of parsed Cross-Context definitions (Phase 14)
+        business_libraries: List of parsed Business Library definitions (Phase 14)
+        setup_groups: List of parsed Setup Group definitions (Phase 14)
+        action_sets: List of parsed Action Set definitions (Phase 14)
+        status_flags: List of parsed Status Flag definitions (Phase 14)
+        integration_endpoints: List of parsed Integration Endpoint definitions (Phase 14)
+    """
     
     def __init__(self):
+        """Initialize a new Parser instance with empty entity lists.
+        
+        Creates a fresh parser with all entity collection lists initialized as empty.
+        Call parse_file(), parse_str(), or parse() to populate these lists with parsed data.
+        """
         self._tree = None
         self._root: Optional[ET.Element] = None
         self.products: List[dict] = []
@@ -82,13 +189,70 @@ class Parser:
         return
 
     def parse_file(self, file_path: str):
+        """Parse a STEP-XML file from disk.
+        
+        Reads and parses an XML file, populating all entity lists from the file contents.
+        
+        Args:
+            file_path: Path to the STEP-XML file to parse
+            
+        Returns:
+            None (populates instance attributes with parsed data)
+            
+        Raises:
+            FileNotFoundError: If the file does not exist
+            ParseError: If the XML is malformed
+            AssertionError: If the root element is not STEP-ProductInformation
+            
+        Example:
+            parser = Parser()
+            parser.parse_file('/path/to/step_data.xml')
+            print(f"Parsed {len(parser.products)} products")
+        """
         self._tree = ET.parse(file_path)
         return self.parse(self._tree.getroot())
 
     def parse_str(self, xml_str: str):
+        """Parse a STEP-XML document from a string.
+        
+        Parses XML content provided as a string, populating all entity lists.
+        
+        Args:
+            xml_str: XML content as a string
+            
+        Returns:
+            None (populates instance attributes with parsed data)
+            
+        Raises:
+            ParseError: If the XML is malformed
+            AssertionError: If the root element is not STEP-ProductInformation
+            
+        Example:
+            parser = Parser()
+            parser.parse_str(xml_content)
+            assets = parser.assets
+        """
         return self.parse(ET.fromstring(xml_str))
-
+    
     def parse(self, root: ET.Element):
+        """Parse a STEP-XML ElementTree root element.
+        
+        Deserializes a STEP-XML document from an ElementTree root element, parsing all
+        entity types and organizing them into their respective lists.
+        
+        This is the core parsing method called by parse_file() and parse_str().
+        It orchestrates parsing of all STEP entity types in the correct order.
+        
+        Args:
+            root: The root ElementTree Element of a STEP-XML document
+            
+        Raises:
+            AssertionError: If the root element is not STEP-ProductInformation
+            
+        Note:
+            The root element must be 'STEP-ProductInformation'. Namespace handling is
+            automatic - the parser works with both namespaced and unnamespaced XML.
+        """
         # Handle both namespaced and unnamespaced root elements
         local_tag = _get_local_tag(root)
         assert local_tag == 'STEP-ProductInformation', f"Expected STEP-ProductInformation, got {local_tag}"
@@ -206,6 +370,24 @@ class Parser:
                          item_name: str, 
                          parse_fct: Callable[[Any], Any]
                          ) -> List[Any]:
+        """Parse a list of items from the XML document.
+        
+        Generic method for parsing repeating elements in the STEP-XML document.
+        Handles namespace-aware lookup and applies a custom parser function to each item.
+        
+        Args:
+            list_name: XML element name containing the items (e.g., 'Products')
+            item_name: XML element name for individual items (e.g., 'Product')
+            parse_fct: Callable that parses a single item element and returns a dictionary
+            
+        Returns:
+            List of parsed item dictionaries, empty list if the container element not found
+            
+        Note:
+            This method automatically handles both namespaced and unnamespaced XML by:
+            1. First attempting namespace-aware lookup using STEPXML_NS
+            2. Falling back to local tag name matching for default namespaces
+        """
         results: List[Any] = []
         if self._root is None:
             return results

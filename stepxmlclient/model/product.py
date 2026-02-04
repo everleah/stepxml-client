@@ -6,6 +6,24 @@ if TYPE_CHECKING:
     from .deletion import DeleteAssetCrossReference, DeleteProductCrossReference
 
 class Product(BaseObject):
+    """Product entity in STEP MDM.
+    
+    Represents a product with attributes, relationships to other products/assets/entities,
+    and hierarchical parent/child relationships.
+    
+    Attributes:
+        ID: Unique product identifier
+        ParentId: Optional parent product ID for hierarchical relationships
+        UserTypeID: Optional user type that defines extended properties
+        Name: Product name (localized dictionary)
+        Values: Dictionary of attribute ID to attribute values
+        AssetCrossReference: List of linked assets
+        ProductCrossReference: List of linked products
+        ClassificationCrossReference: List of classifications
+        EntityCrossReference: List of linked business entities
+        DeleteAssetCrossReference: Assets to unlink
+        DeleteProductCrossReference: Products to unlink
+    """
     _GROUP_NAME: str = 'products'
     _TAG_NAME: str = 'Product'
     _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentId", "UserTypeID"]

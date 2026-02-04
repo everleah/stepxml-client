@@ -1,3 +1,9 @@
+"""Classification model for STEP XML Client.
+
+Defines the Classification entity class for representing hierarchical product categorization
+in STEP MDM. Classifications organize products into taxonomies and support cross-references.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -9,12 +15,27 @@ if TYPE_CHECKING:
 class Classification(BaseObject):
     """Classification entity - hierarchical product categorization.
     
+    Represents a classification node in a product hierarchy used to organize and categorize
+    products. Classifications can be nested and can reference products, other classifications,
+    entities, and assets.
+    
     Supports:
     - Nested classifications (parent/child hierarchy)
     - Multiple cross-references (Product, Classification, Entity, Asset)
     - Deletion operations (full deletion and link severance)
     - Multi-language via QualifierID
     - Boolean state tracking (Changed, Republished, Selected, Referenced)
+    
+    Attributes:
+        ID: Unique classification identifier
+        ParentID: Optional parent classification ID for hierarchy
+        UserTypeID: Optional user type for extended properties
+        QualifierID: Optional qualifier for multi-language/context support
+        Name: Classification name (localized)
+        Values: Dictionary of attribute ID to attribute values
+        ProductReference: Referenced products
+        ProductCrossReference: Cross-referenced products
+        Classification: Nested child classifications
     """
     _GROUP_NAME: str = 'classifications'
     _TAG_NAME: str = 'Classification'

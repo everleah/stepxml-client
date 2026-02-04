@@ -1,3 +1,9 @@
+"""Business rules and workflow models for STEP XML Client.
+
+Defines business logic execution entities including Business Rules and Workflows
+that control behavior and processes within STEP MDM systems.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -6,10 +12,10 @@ if TYPE_CHECKING:
 
 
 class BusinessRule(BaseObject):
-    """BusinessRule - defines executable business logic in STEP.
+    """Business logic executable in STEP MDM.
     
-    Business rules can be Actions, Conditions, Functions, or Libraries.
-    They contain business logic that executes within the STEP system.
+    Defines executable business logic including actions, conditions, functions, and libraries.
+    Business rules contain logic that executes within the STEP system to automate processes.
     
     Supports:
     - Multiple rule types (Action, Condition, Function, Library)
@@ -18,6 +24,20 @@ class BusinessRule(BaseObject):
     - Dependencies on other rules
     - Multi-language names and descriptions
     - Setup group configuration
+    
+    Attributes:
+        ID: Unique business rule identifier
+        Type: Rule type (Action, Condition, Function, Library, etc.)
+        Scope: Scope of execution (Local or Global)
+        RunPrivileged: Whether to run with elevated privileges
+        Name: Rule name (localized)
+        Description: Rule description (localized)
+        Dependency: List of dependent rules
+        FunctionDependency: List of function dependencies
+        OnApprove: On-approval behavior configuration
+        Configuration: Rule-specific configuration
+        ValidObjectTypes: Object types this rule applies to
+        SetupGroupLink: Link to setup groups
     """
     _GROUP_NAME: str = 'businessrules'
     _TAG_NAME: str = 'BusinessRule'
@@ -43,8 +63,9 @@ class BusinessRule(BaseObject):
 class Workflow(BaseObject):
     """Workflow - orchestrates business processes in STEP.
     
-    Workflows define states, transitions, and validations that
-    control how objects move through business processes.
+    Workflows define states, transitions, and validations that control how objects
+    move through business processes. Workflows enforce rules about what operations
+    are allowed in each state and what data must be valid before transitions.
     
     Supports:
     - Object type constraints (ValidUserTypeLink)
@@ -54,6 +75,18 @@ class Workflow(BaseObject):
     - Setup group configuration
     - Multi-language names
     - Boolean state tracking (Selected, Referenced, Changed)
+    
+    Attributes:
+        ID: Unique workflow identifier
+        Name: Workflow name (localized)
+        Description: Workflow description
+        ValidUserTypeLink: Links to object types this workflow applies to
+        ValidBusinessRuleLink: Links to relevant business rules
+        StartCondition: Condition for workflow start
+        STEPAction: Workflow actions
+        STEPState: Workflow states
+        STEPEdge: State transitions
+        SetupGroupLink: Setup group associations
     """
     _GROUP_NAME: str = 'workflows'
     _TAG_NAME: str = 'Workflow'

@@ -1,3 +1,10 @@
+"""Asset model for STEP XML Client.
+
+Defines the Asset entity class for representing binary asset files in STEP MDM.
+Assets represent digital files (images, documents, videos, etc.) that can be associated
+with products and other entities.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -6,6 +13,20 @@ if TYPE_CHECKING:
     from .deletion import DeleteProductCrossReference
 
 class Asset(BaseObject):
+    """Asset entity in STEP MDM.
+    
+    Represents a binary asset (file) with metadata and relationships.
+    
+    Attributes:
+        ID: Unique asset identifier
+        Name: Asset name or description
+        KeyValue: Optional key value for asset lookup
+        Values: Dictionary of attribute ID to attribute values
+        ProductCrossReference: List of linked products
+        ClassificationCrossReference: List of classifications
+        EntityCrossReference: List of linked business entities
+        DeleteProductCrossReference: Products to unlink
+    """
     _GROUP_NAME: str = 'assets'
     _TAG_NAME: str = 'Asset'
     _ATTRIBUTE_NAMES: List[str] = ["ID"]

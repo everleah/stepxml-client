@@ -1,3 +1,10 @@
+"""Entity model for STEP XML Client.
+
+Defines the Entity class for representing generic MDM objects in STEP.
+Entities provide a flexible structure for modeling various types of business objects beyond
+products, classifications, and assets.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -9,6 +16,9 @@ if TYPE_CHECKING:
 class Entity(BaseObject):
     """Entity - generic MDM object with flexible structure.
     
+    Represents a generic Master Data entity with flexible structure. Entities can model
+    various business object types and support hierarchical organization and cross-references.
+    
     Supports:
     - Nested entities (parent/child hierarchy)
     - Multiple cross-references (Product, Classification, Entity, Asset, Context, Workspace)
@@ -17,6 +27,19 @@ class Entity(BaseObject):
     - Boolean state tracking (Changed, Republished, Selected, Referenced)
     - Values (attribute data)
     - DataContainers
+    
+    Attributes:
+        ID: Unique entity identifier
+        ParentID: Optional parent entity ID for hierarchy
+        UserTypeID: Optional user type for extended properties
+        QualifierID: Optional qualifier for multi-language/context support
+        Name: Entity name (localized)
+        Values: Dictionary of attribute ID to attribute values
+        Entity: Nested child entities
+        ProductCrossReference: Cross-referenced products
+        ClassificationCrossReference: Cross-referenced classifications
+        EntityCrossReference: Cross-referenced entities
+        AssetCrossReference: Cross-referenced assets
     """
     _GROUP_NAME: str = 'entities'
     _TAG_NAME: str = 'Entity'

@@ -42,6 +42,19 @@ class StiboStepRestClient:
         return
 
     def __create_client(self, location_base, openapi_file, cache_openapi):
+        """Create and initialize the OpenAPI client.
+        
+        Internal method that loads the OpenAPI specification and creates the
+        requests-openapi client instance.
+        
+        Args:
+            location_base: Base URL of the STEP API server
+            openapi_file: Path to OpenAPI specification file (if available)
+            cache_openapi: Whether to cache the OpenAPI spec if fetched
+            
+        Raises:
+            FileNotFoundError: If specified openapi_file doesn't exist and caching is False
+        """
         if cache_openapi:
             if openapi_file is None:
                 openapi_file = self._OPENAPI_CACHE_FILE
@@ -64,23 +77,62 @@ class StiboStepRestClient:
         return
 
 class __Authorisation:
+    """Abstract base class for authentication handlers.
+    
+    Provides the interface that all authentication implementations must follow.
+    Subclasses should override adapt_client() and do_authorisation() as needed.
+    """
 
+    #: Authentication type identifier (override in subclasses)
     TYPE = None
 
     def adapt_client(self, client):
+        """Adapt the client with authentication-specific configuration.
+        
+        Called to modify the client's request session or configuration
+        before making authenticated requests.
+        
+        Args:
+            client: The requests_openapi.Client instance to configure
+        """
         return
 
     def do_authorisation(self, client):
+        """Perform any post-initialization authorization setup.
+        
+        Called after client creation and adaptation to perform additional
+        authorization steps if needed (e.g., token refresh, permission checks).
+        
+        Args:
+            client: The requests_openapi.Client instance
+        """
         return
 
     def get_type(self):
+        """Get the authentication type identifier.
+        
+        Returns:
+            String identifying the authentication type (e.g., 'BASIC')
+        """
         return self.TYPE
 
 class BasicAuthorisation(__Authorisation):
+    """HTTP Basic Authentication handler.
+    
+    Implements Basic Authentication (username/password) for STEP REST API requests.
+    Credentials are sent in the Authorization header with each request.
+    """
 
+    #: Authentication type identifier
     TYPE = "BASIC"
 
     def __init__(self, user, pwd):
+        """Initialize BasicAuthorisation with credentials.
+        
+        Args:
+            user: Username for Basic Auth
+            pwd: Password for Basic Auth
+        """
         self.user = user
         self.pwd = pwd
         return

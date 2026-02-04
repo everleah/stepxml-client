@@ -1,43 +1,48 @@
-import os
-from typing import Optional, Dict, Any, BinaryIO, Union
-from pathlib import Path
-
 """
 Asset binary upload module for STEP XML Client.
 
-This module provides functionality to upload binary files (images, documents, etc.)
+This module provides the AssetUploader class for uploading binary files (images, documents, etc.)
 to STEP MDM system as asset binaries using the REST API v2.
 
----
-USAGE EXAMPLE: How to upload an asset binary
+Features:
+- Support for file paths and URLs as input
+- Automatic MIME type detection
+- Support for multi-workspace environments
+- Stream-based upload for memory efficiency
+- Binary content download capability
 
-from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
-from stepxmlclient.upload import AssetUploader
-
-# 1. Create and configure the STEP REST client
-client = StiboStepRestClient(
-    'https://your-step-server/restapiv2',
-    BasicAuthorisation('username', 'password'),
-    nocert=True  # For development only
-)
-
-# 2. Create the uploader
-uploader = AssetUploader(client)
-
-# 3. Upload a file to an asset
-result = uploader.upload_file(
-    file_path='path/to/image.jpg',
-    asset_id='A123',
-    filename=None,         # Optional: use original filename
-    mime_type=None,        # Optional: auto-detect
-    context_id='Context1', # Optional: STEP context
-    workspace_id=None      # Optional: workspace
-)
-
-print(result)
----
+Usage Example:
+    Upload an asset binary to STEP::
+    
+        from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+        from stepxmlclient.upload import AssetUploader
+        
+        # 1. Create and configure the STEP REST client
+        client = StiboStepRestClient(
+            'https://your-step-server/restapiv2',
+            BasicAuthorisation('username', 'password'),
+            nocert=True  # For development only
+        )
+        
+        # 2. Create the uploader
+        uploader = AssetUploader(client)
+        
+        # 3. Upload a file to an asset
+        result = uploader.upload_file(
+            file_path='path/to/image.jpg',
+            asset_id='A123',
+            filename=None,         # Optional: use original filename
+            mime_type=None,        # Optional: auto-detect
+            context_id='Context1', # Optional: STEP context
+            workspace_id=None      # Optional: workspace
+        )
+        
+        print(result)
 """
 
+import os
+from typing import Optional, Dict, Any, BinaryIO, Union
+from pathlib import Path
 
 
 class AssetUploader:
@@ -47,7 +52,7 @@ class AssetUploader:
     Uses the STEP REST API v2 to upload files that will be associated
     with Asset objects in the MDM system.
     """
-    
+        
     def __init__(self, client):
         """
         Initialize the asset uploader.

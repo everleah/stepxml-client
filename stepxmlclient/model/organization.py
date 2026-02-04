@@ -1,3 +1,9 @@
+"""Organization and dimensional models for STEP XML Client.
+
+Defines organizational and dimensional configuration classes including Contexts,
+Qualifiers, Dimensions, Tags, and Units used to organize and structure STEP MDM data.
+"""
+
 from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
@@ -6,9 +12,10 @@ if TYPE_CHECKING:
 
 
 class Context(BaseObject):
-    """Context - defines multi-language/multi-dimensional context for data.
+    """Context - multi-language/multi-dimensional context for data.
     
-    Contexts enable language and regional variants of data.
+    Defines a context in which data can exist with language and dimensional variations.
+    Contexts enable organizing data by language, region, or dimensional axes.
     
     Supports:
     - Multiple languages via Name elements
@@ -16,6 +23,18 @@ class Context(BaseObject):
     - Locale specification (language/region codes)
     - Priority management for cross-context resolution
     - Boolean state tracking (Selected, Referenced, Changed, Deleted)
+    
+    Attributes:
+        ID: Unique context identifier
+        Priority: Priority for context resolution
+        Locale: Language/locale code (e.g., 'en_US')
+        Name: Context name (localized)
+        DimensionPointLink: Links to dimension points
+        MetaData: Associated metadata
+        Selected: Whether context is selected
+        Referenced: Whether context is referenced
+        Changed: Whether context was changed
+        Deleted: Whether context is marked for deletion
     """
     _GROUP_NAME: str = 'contexts'
     _TAG_NAME: str = 'Context'
