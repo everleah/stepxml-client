@@ -14,6 +14,7 @@ A practical guide to using the `stepxml-client` Creator for building STEP-XML do
 6. [Deletion Operations](#deletion-operations)
 7. [Advanced Examples](#advanced-examples)
 8. [Exporting XML](#exporting-xml)
+9. [Sending to STEP API](#sending-to-step-api)
 
 ---
 
@@ -773,6 +774,84 @@ xml_string = creator.to_string()
 dom = minidom.parseString(xml_string)
 pretty_xml = dom.toprettyxml(indent="  ")
 print(pretty_xml)
+```
+
+---
+
+## Sending to STEP API
+
+The library includes a REST client wrapper that can be used to send your generated XML directly to a STEP Inbound Integration Endpoint.
+
+### Prerequisites
+
+You need a configured **Inbound Integration Endpoint** in your STEP system (under System Setup).
+
+### Basic Implementation
+
+```python
+from stepxmlclient.creator import Creator
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+
+# 1. Generate your XML
+creator = Creator(context_id="Context1", workspace_id="Main")
+# ... add assets and products ...
+creator.build()
+xml_bytes = creator.to_bytes()
+
+# 2. Setup Authentication
+auth = BasicAuthorisation(user="username", pwd="password")
+client = StiboStepRestClient(
+    location_base="https://your-step-system.com/rest/v2",
+    authorisation=auth
+)
+
+# 3. Send to Inbound Endpoint
+# Note: Use postInboundIntegrationEndpointUploadAndInvoke to upload AND trigger processing
+try:
+    response = client.client.postInboundIntegrationEndpointUploadAndInvoke(
+        id="my_inbound_endpoint_id",  # ID from STEP System Setup
+        context="Context1",           # Required
+        workspace="Main",             # Optional
+        fileName="import_data.xml",   # Optional filename
+        body=xml_bytes                # The XML data
+    )
+
+    if response.status_code == 200:
+        print("Successfully sent to STEP")
+    else:
+        print(f"Error {response.status_code}: {response.text}")
+
+except Exception as e:
+    print(f"Connection error: {e}")
+```
+
+### Complete Example Function
+
+```python
+def send_xml_to_step(creator: Creator, endpoint_id: str, config: dict):
+    """
+    Send creator content to STEP.
+    config should contain: host, user, password
+    """
+    # ensure XML is built
+    if not creator.root:
+        creator.build()
+        
+    xml_bytes = creator.to_bytes()
+    
+    auth = BasicAuthorisation(user=config['user'], pwd=config['password'])
+    client = StiboStepRestClient(
+        location_base=config['host'],
+        authorisation=auth
+    )
+    
+    return client.client.postInboundIntegrationEndpointUploadAndInvoke(
+        id=endpoint_id,
+        context=creator.context_id,
+        workspace=creator.workspace_id,
+        fileName="data.xml",
+        body=xml_bytes                # The XML data
+    )
 ```
 
 ---
