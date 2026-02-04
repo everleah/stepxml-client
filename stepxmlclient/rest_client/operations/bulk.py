@@ -263,7 +263,7 @@ class WorkflowOperations(BaseOperation):
             return [WorkflowDefinition(**wf) for wf in response["workflows"]]
         elif isinstance(response, list):
             return [WorkflowDefinition(**wf) if isinstance(wf, dict) else wf for wf in response]
-        return response
+        return []
     
     @handle_rest_errors
     def get_workflow_definition(self, workflow_id: str) -> WorkflowDefinition:
