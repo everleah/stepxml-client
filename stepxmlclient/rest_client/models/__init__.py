@@ -47,6 +47,19 @@ from .classification import (
     ClassificationMetadata,
     ClassificationHierarchyNode,
 )
+from .entity import (
+    EntityResponse,
+    EntityListResponse,
+    EntitySearchRequest,
+    EntityCreateRequest,
+    EntityUpdateRequest,
+    EntityRelationship,
+    EntityRelationshipResponse,
+    EntityBulkRequest,
+    EntityBulkResponse,
+    EntityAttribute,
+    EntityMetadata,
+)
 
 __all__ = [
     'PageInfo',
@@ -85,4 +98,15 @@ __all__ = [
     'ClassificationValue',
     'ClassificationMetadata',
     'ClassificationHierarchyNode',
+    'EntityResponse',
+    'EntityListResponse',
+    'EntitySearchRequest',
+    'EntityCreateRequest',
+    'EntityUpdateRequest',
+    'EntityRelationship',
+    'EntityRelationshipResponse',
+    'EntityBulkRequest',
+    'EntityBulkResponse',
+    'EntityAttribute',
+    'EntityMetadata',
 ]

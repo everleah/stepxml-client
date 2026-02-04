@@ -12,6 +12,7 @@ from .base import BaseOperation
 from .operations.products import ProductOperations
 from .operations.assets import AssetOperations
 from .operations.classifications import ClassificationOperations
+from .operations.entities import EntityOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -69,9 +70,7 @@ class StepRestClient(StiboStepRestClient):
         self.products = ProductOperations(self.client, logger=op_logger)
         self.assets = AssetOperations(self.client, logger=op_logger)
         self.classifications = ClassificationOperations(self.client, logger=op_logger)
-        
-        # These are placeholders for future phases
-        self.entities = None    # EntityOperations(self.client, logger=op_logger)
+        self.entities = EntityOperations(self.client, logger=op_logger)
         self.attributes = None  # AttributeOperations(self.client, logger=op_logger)
         self.metadata = None    # MetadataOperations(self.client, logger=op_logger)
         self.imports = None     # ImportOperations(self.client, logger=op_logger)
