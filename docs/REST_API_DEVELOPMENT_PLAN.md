@@ -57,11 +57,11 @@ stepxmlclient/
 **Objective**: Set up core infrastructure and patterns
 
 #### 0.1 - Core Pydantic Models
-- [ ] Create `rest_client/models/common.py` with:
+- [x] Create `rest_client/models/common.py` with:
   - `PagedResponse[T]` - Generic paginated result wrapper
   - `ErrorResponse` - Standard error model
   - `ApiResponse[T]` - Generic API response envelope
-- [ ] Add validation utilities and helpers
+- [x] Add validation utilities and helpers
 
 **Files to Create**:
 - `stepxmlclient/rest_client/__init__.py`
@@ -73,12 +73,12 @@ stepxmlclient/
 - `test_rest_client_phase0_foundation.py`
 
 #### 0.2 - Base Operation Class
-- [ ] Create `rest_client/base.py` with `BaseOperation` class
+- [x] Create `rest_client/base.py` with `BaseOperation` class
   - Common patterns for all operations
   - Error handling wrapper
   - Pagination helpers
   - Logging integration
-- [ ] Client wrapper `rest_client/client.py`
+- [x] Client wrapper `rest_client/client.py`
   - Extend `StiboStepRestClient`
   - Initialize operation instances
   - Expose operation groups
@@ -92,7 +92,7 @@ stepxmlclient/
 **Objective**: Full CRUD and search for Products
 
 #### 1.1 - Product Models
-- [ ] `rest_client/models/product.py`:
+- [x] `rest_client/models/product.py`:
   - `ProductResponse` - Single product data
   - `ProductListResponse` - List with pagination
   - `ProductSearchRequest` - Search query model
@@ -100,7 +100,7 @@ stepxmlclient/
   - `ProductUpdateRequest` - Update payload
 
 #### 1.2 - Product Operations
-- [ ] `rest_client/operations/products.py`:
+- [x] `rest_client/operations/products.py`:
   - `get_product(product_id)` - Retrieve single
   - `search_products(query, filters, limit, offset)` - Search/list
   - `create_product(product_data)` - Create
@@ -122,7 +122,7 @@ stepxmlclient/
 **Objective**: Asset CRUD, search, and binary operations
 
 #### 2.1 - Asset Models
-- [ ] `rest_client/models/asset.py`:
+- [x] `rest_client/models/asset.py`:
   - `AssetResponse` - Asset metadata
   - `AssetListResponse` - List results
   - `AssetSearchRequest` - Search criteria
@@ -130,7 +130,7 @@ stepxmlclient/
   - `AssetDownloadResponse` - Download info
 
 #### 2.2 - Asset Operations
-- [ ] `rest_client/operations/assets.py`:
+- [x] `rest_client/operations/assets.py`:
   - `get_asset(asset_id)` - Retrieve
   - `search_assets(query, filters, limit, offset)` - Search
   - `create_asset(asset_data)` - Create
@@ -152,14 +152,14 @@ stepxmlclient/
 **Objective**: Classification hierarchy and CRUD
 
 #### 3.1 - Classification Models
-- [ ] `rest_client/models/classification.py`:
+- [x] `rest_client/models/classification.py`:
   - `ClassificationResponse` - Single classification
   - `ClassificationListResponse` - List
   - `ClassificationHierarchyResponse` - Hierarchical structure
   - `ClassificationCreateRequest` - Create payload
 
 #### 3.2 - Classification Operations
-- [ ] `rest_client/operations/classifications.py`:
+- [x] `rest_client/operations/classifications.py`:
   - `get_classification(classification_id)` - Retrieve
   - `list_classifications(filters, limit, offset)` - List
   - `get_classification_hierarchy(root_id)` - Hierarchical view
@@ -177,14 +177,14 @@ stepxmlclient/
 **Objective**: Entity CRUD and management
 
 #### 4.1 - Entity Models
-- [ ] `rest_client/models/entity.py`:
+- [x] `rest_client/models/entity.py`:
   - `EntityResponse` - Entity data
   - `EntityListResponse` - List
   - `EntityCreateRequest` - Create payload
   - `EntityUpdateRequest` - Update payload
 
 #### 4.2 - Entity Operations
-- [ ] `rest_client/operations/entities.py`:
+- [x] `rest_client/operations/entities.py`:
   - `get_entity(entity_id)` - Retrieve
   - `list_entities(filters, limit, offset)` - List
   - `create_entity(data)` - Create
@@ -201,23 +201,23 @@ stepxmlclient/
 **Objective**: Attributes, LOVs, contexts, and system metadata
 
 #### 5.1 - Models
-- [ ] `rest_client/models/attribute.py`:
+- [x] `rest_client/models/attribute.py`:
   - `AttributeResponse`, `AttributeListResponse`
   - `ListOfValueResponse` - LOV definitions
   - `ContextResponse` - Context definitions
   
-- [ ] `rest_client/models/metadata.py`:
+- [x] `rest_client/models/metadata.py`:
   - `SystemMetadataResponse` - Version, capabilities
   - `QualifierResponse` - Qualifier definitions
   - `DimensionResponse` - Dimension definitions
 
 #### 5.2 - Operations
-- [ ] `rest_client/operations/attributes.py`:
+- [x] `rest_client/operations/attributes.py`:
   - `get_attribute(attr_id)` - Retrieve
   - `list_attributes(filters)` - List
   - `get_lov_items(lov_id)` - LOV items
   
-- [ ] `rest_client/operations/metadata.py`:
+- [x] `rest_client/operations/metadata.py`:
   - `get_system_info()` - Version, capabilities
   - `list_contexts()` - Available contexts
   - `list_qualifiers()` - Available qualifiers
@@ -232,7 +232,7 @@ stepxmlclient/
 **Objective**: Bulk import/export and data exchange
 
 #### 6.1 - Models
-- [ ] `rest_client/models/import_export.py`:
+- [x] `rest_client/models/import_export.py`:
   - `ImportJobResponse` - Import job status
   - `ImportJobCreateRequest` - Create import job
   - `ExportJobResponse` - Export job status
@@ -240,14 +240,14 @@ stepxmlclient/
   - `JobProgressResponse` - Job progress tracking
 
 #### 6.2 - Operations
-- [ ] `rest_client/operations/imports.py`:
+- [x] `rest_client/operations/imports.py`:
   - `create_import_job(source_data, config)` - Start import
   - `get_import_job(job_id)` - Check status
   - `list_import_jobs(filters)` - List jobs
   - `cancel_import_job(job_id)` - Cancel
   - `get_import_job_errors(job_id)` - Error details
 
-- [ ] `rest_client/operations/exports.py`:
+- [x] `rest_client/operations/exports.py`:
   - `create_export_job(config)` - Start export
   - `get_export_job(job_id)` - Check status
   - `list_export_jobs(filters)` - List jobs
@@ -262,22 +262,44 @@ stepxmlclient/
 
 ---
 
-### Phase 7: Advanced Features (Priority: LOW)
-**Objective**: Relationship management, bulk operations, workflows
+### Phase 7: Relations Operations (Priority: HIGH)
+**Objective**: Relationship management, cross-references, and links
 
-#### 7.1 - Advanced Models & Operations
-- [ ] `rest_client/operations/relations.py`:
-  - Cross-reference operations
-  - Link management
-  
-- [ ] `rest_client/operations/bulk.py`:
-  - Batch operations
-  - Bulk updates
-  
-- [ ] Advanced search helpers and utilities
+#### 7.1 - Models
+- [x] `rest_client/models/relations.py`:
+  - `RelationshipTypeResponse` - Relationship type definitions
+  - `RelationshipResponse` - Single relationship
+  - `RelationshipListResponse` - Paginated relationships
+  - `RelationshipCreateRequest` - Create relationship
+  - `RelationshipUpdateRequest` - Update relationship
+  - `CrossReferenceResponse` - Entity cross-references
+  - `CrossReferenceListResponse` - Paginated cross-references
+  - `CrossReferenceCreateRequest` - Create cross-reference
+  - `LinkResponse` - Product/Asset links
+  - `LinkListResponse` - Paginated links
+  - `LinkCreateRequest` - Create link
+  - `RelationshipGraphResponse` - Graph representation
+
+#### 7.2 - Operations
+- [x] `rest_client/operations/relations.py`:
+  - `get_relationship(relationship_id)` - Get relationship
+  - `list_relationships(filters)` - List relationships
+  - `create_relationship(data)` - Create relationship
+  - `update_relationship(relationship_id, data)` - Update relationship
+  - `delete_relationship(relationship_id)` - Delete relationship
+  - `get_relationship_types()` - Get available types
+  - `get_relationship_graph(entity_id, depth)` - Traverse graph
+  - `get_cross_reference(cross_reference_id)` - Get cross-reference
+  - `list_cross_references(filters)` - List cross-references
+  - `create_cross_reference(data)` - Create cross-reference
+  - `delete_cross_reference(cross_reference_id)` - Delete cross-reference
+  - `get_link(link_id)` - Get link
+  - `list_links(filters)` - List links
+  - `create_link(data)` - Create link
+  - `delete_link(link_id)` - Delete link
 
 **Tests**:
-- `test_rest_client_phase7_advanced.py`
+- `test_rest_client_phase7_relations.py` (39 tests)
 
 ---
 
@@ -358,12 +380,14 @@ openapi-python-client>=0.15  # Code generation (Phase 8+)
 - ✅ Phase 2 complete: Asset operations (DONE - 40 tests)
 - ✅ Phase 3 complete: Classification operations (DONE - 33 tests)
 - ✅ Phase 4 complete: Entity operations (DONE - 37 tests)
+- ✅ Phase 5 complete: Attribute & metadata operations (DONE - 33 tests)
+- ✅ Phase 6 complete: Import/Export operations (DONE - 29 tests)
+- ✅ Phase 7 complete: Relations operations (DONE - 39 tests)
 - ✅ Auth shared and working across modules (DONE)
 - ✅ Type hints on all public APIs (DONE)
-- ✅ Comprehensive test coverage (183/183 tests passing, 100%)
+- ✅ Comprehensive test coverage (284/284 tests passing, 100%)
 - ✅ Error handling with proper exception hierarchy (DONE)
-- ⏳ Documentation and integration examples (IN PROGRESS)
-- ⏳ Phase 5+ operations (NEXT)
+- ⏳ Phase 8 operations (NEXT - Advanced features)
 
 ---
 
@@ -376,38 +400,84 @@ openapi-python-client>=0.15  # Code generation (Phase 8+)
 | 2     | HIGH     | 2-3 days         | ✅ Complete (40 tests) |
 | 3     | MEDIUM   | 2-3 days         | ✅ Complete (33 tests) |
 | 4     | MEDIUM   | 2-3 days         | ✅ Complete (37 tests) |
-| 5     | MEDIUM   | 2-3 days         | 📋 Next (Attributes & Metadata) |
-| 6     | MEDIUM   | 3-4 days         | Planned (Import/Export) |
-| 7     | LOW      | 4-5 days         | Planned (Advanced) |
+| 5     | MEDIUM   | 2-3 days         | ✅ Complete (33 tests) |
+| 6     | MEDIUM   | 3-4 days         | ✅ Complete (29 tests) |
+| 7     | HIGH     | 3-4 days         | ✅ Complete (39 tests) |
+| 8     | LOW      | 4-5 days         | 📋 Next (Bulk Operations, Workflows) |
 
 ---
 
-## Next Steps
+## Completion Status
 
-### Completed ✅
-1. ✅ **Phase 0 Complete**: Foundation infrastructure solid with 37 tests
-2. ✅ **Phase 1 Complete**: Products CRUD + search with 36 tests
-3. ✅ **Phase 2 Complete**: Assets CRUD + binary operations with 40 tests
-4. ✅ **Phase 3 Complete**: Classifications CRUD + hierarchy with 33 tests
-5. ✅ **Phase 4 Complete**: Entities CRUD + relationships + bulk ops with 37 tests
-6. ✅ **Error Handling**: Proper exception hierarchy and decorator patterns established
-7. ✅ **Total Test Coverage**: 183/183 tests passing (100% - all 5 phases)
+### ✅ Completed Phases (284 Tests - 100% Pass Rate)
 
-### Recommended Next: Phase 5 (Attributes & Metadata)
+1. ✅ **Phase 0**: Foundation infrastructure (37 tests)
+   - BaseOperation, exception hierarchy, pagination helpers
+   - Common models: PagedResponse, ErrorResponse, ApiResponse, SearchFilter
 
-Attributes and Metadata are the next logical steps because:
-1. **System foundation** - Understand available attributes and system capabilities
-2. **Enables advanced entity operations** - Metadata needed for entity creation/updates
-3. **Builds on proven patterns** - Same architecture as Products/Assets/Classifications
-4. **Moderate complexity** - Metadata operations are simpler, good stepping stone
-5. **Prerequisite for Phase 6** - Import/Export operations need metadata context
+2. ✅ **Phase 1**: Product Operations (36 tests)
+   - CRUD operations, search, filtering, attributes, values
+   - Cross-references and product attributes
 
-**Phase 5 Scope**:
-- Attribute models (Response, List, LOV items)
-- Metadata models (System info, Contexts, Qualifiers, Dimensions)
-- AttributeOperations: get_attribute, list_attributes, get_lov_items
-- MetadataOperations: get_system_info, list_contexts, list_qualifiers, list_dimensions
-- ~35-40 tests expected
-- ~2-3 days estimated effort
+3. ✅ **Phase 2**: Asset Operations (40 tests)
+   - CRUD operations, binary upload/download
+   - Asset metadata, search with filters, content retrieval
 
-**Ready to start Phase 5?** Just say the word!
+4. ✅ **Phase 3**: Classification Operations (33 tests)
+   - CRUD operations, hierarchy traversal
+   - Classification values and metadata
+
+5. ✅ **Phase 4**: Entity Operations (37 tests)
+   - CRUD operations, relationships with pagination
+   - Bulk create/update, advanced search, entity attributes
+
+6. ✅ **Phase 5**: Attribute & Metadata Operations (33 tests)
+   - Attribute models and operations (get, search, list, create, update, delete)
+   - Metadata models (System, Contexts, Qualifiers, Dimensions, UserTypes, Workspaces)
+   - LOV (List of Values) retrieval and management
+
+7. ✅ **Phase 6**: Import/Export Operations (29 tests)
+   - Import job management (create, status tracking, error handling, cancellation)
+   - Export job management (create, status tracking, data download)
+   - Job progress tracking and error details
+   - Convenience methods for filtering by status and entity type
+
+8. ✅ **Phase 7**: Relations Operations (39 tests)
+   - Relationship operations (get, list, create, update, delete)
+   - Relationship type discovery and graph traversal
+   - Cross-reference management (create, list, delete)
+   - Link management (create, list, delete)
+   - Graph operations for entity relationship analysis
+
+### 🎯 Test Coverage Summary
+
+```
+Phase 0 (Foundation):           37/37 ✅
+Phase 1 (Products):            36/36 ✅
+Phase 2 (Assets):              40/40 ✅
+Phase 3 (Classifications):     33/33 ✅
+Phase 4 (Entities):            37/37 ✅
+Phase 5 (Attributes/Metadata): 33/33 ✅
+Phase 6 (Import/Export):       29/29 ✅
+Phase 7 (Relations):           39/39 ✅
+────────────────────────────────────────
+TOTAL:                        284/284 ✅ (100%)
+```
+
+### 📋 Next Steps: Phase 8 (Advanced Features)
+
+Phase 8 will cover remaining advanced capabilities:
+1. **Bulk operations** - Batch create, update, delete operations
+2. **Workflow management** - Workflow triggers and execution
+3. **Advanced search** - Complex queries, aggregations
+4. **Caching & performance** - Optional response caching layer
+5. **Streaming** - Large result set handling
+
+**Phase 8 Estimated Scope**:
+- Bulk operations (15-20 tests)
+- Workflow operations (10-15 tests)
+- Advanced search (10-15 tests)
+- ~40-50 total tests
+- ~4-5 days estimated effort
+
+**Milestone Achievement**: Phases 0-7 complete with 284/284 tests (100% pass rate)!

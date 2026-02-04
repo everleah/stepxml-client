@@ -95,6 +95,20 @@ from .import_export import (
     JobErrorResponse,
     JobErrorListResponse,
 )
+from .relations import (
+    RelationshipTypeResponse,
+    RelationshipResponse,
+    RelationshipListResponse,
+    RelationshipCreateRequest,
+    RelationshipUpdateRequest,
+    CrossReferenceResponse,
+    CrossReferenceListResponse,
+    CrossReferenceCreateRequest,
+    LinkResponse,
+    LinkListResponse,
+    LinkCreateRequest,
+    RelationshipGraphResponse,
+)
 
 __all__ = [
     'PageInfo',
@@ -173,4 +187,16 @@ __all__ = [
     'JobProgressResponse',
     'JobErrorResponse',
     'JobErrorListResponse',
+    'RelationshipTypeResponse',
+    'RelationshipResponse',
+    'RelationshipListResponse',
+    'RelationshipCreateRequest',
+    'RelationshipUpdateRequest',
+    'CrossReferenceResponse',
+    'CrossReferenceListResponse',
+    'CrossReferenceCreateRequest',
+    'LinkResponse',
+    'LinkListResponse',
+    'LinkCreateRequest',
+    'RelationshipGraphResponse',
 ]

@@ -11,6 +11,7 @@ from .attributes import AttributeOperations
 from .metadata import MetadataOperations
 from .imports import ImportOperations
 from .exports import ExportOperations
+from .relations import RelationOperations
 
 __all__ = [
     'ProductOperations',
@@ -21,4 +22,5 @@ __all__ = [
     'MetadataOperations',
     'ImportOperations',
     'ExportOperations',
+    'RelationOperations',
 ]
