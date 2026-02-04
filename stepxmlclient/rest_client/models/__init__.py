@@ -35,6 +35,18 @@ from .asset import (
     AssetKeyValue,
     AssetMetadata,
 )
+from .classification import (
+    ClassificationResponse,
+    ClassificationListResponse,
+    ClassificationHierarchyResponse,
+    ClassificationSearchRequest,
+    ClassificationCreateRequest,
+    ClassificationUpdateRequest,
+    ClassificationValueResponse,
+    ClassificationValue,
+    ClassificationMetadata,
+    ClassificationHierarchyNode,
+)
 
 __all__ = [
     'PageInfo',
@@ -63,4 +75,14 @@ __all__ = [
     'AssetDownloadResponse',
     'AssetKeyValue',
     'AssetMetadata',
+    'ClassificationResponse',
+    'ClassificationListResponse',
+    'ClassificationHierarchyResponse',
+    'ClassificationSearchRequest',
+    'ClassificationCreateRequest',
+    'ClassificationUpdateRequest',
+    'ClassificationValueResponse',
+    'ClassificationValue',
+    'ClassificationMetadata',
+    'ClassificationHierarchyNode',
 ]

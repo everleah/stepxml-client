@@ -384,6 +384,8 @@ class TestAssetOperations(unittest.TestCase):
         mock_response.filename = "image.jpg"
         mock_response.size = 102400
         mock_response.mime_type = "image/jpeg"
+        mock_response.content_url = None
+        mock_response.expires_at = None
         self.mock_client.downloadAssetContent.return_value = mock_response
         
         result = self.operations.download_asset_content("ASSET123")
@@ -400,6 +402,8 @@ class TestAssetOperations(unittest.TestCase):
         mock_response.size = 102400
         mock_response.mime_type = "image/jpeg"
         mock_response.content = b"binary content"
+        mock_response.content_url = None
+        mock_response.expires_at = None
         
         self.mock_client.downloadAssetContent.return_value = mock_response
         
