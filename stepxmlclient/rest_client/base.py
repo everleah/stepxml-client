@@ -21,6 +21,7 @@ def handle_rest_errors(func: Callable) -> Callable:
     """Decorator to handle common REST API errors.
     
     Converts HTTP errors to appropriate exception types.
+    Allows FileNotFoundError and other file system exceptions to pass through.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -55,6 +56,9 @@ def handle_rest_errors(func: Callable) -> Callable:
                     raise exc.RestApiError(status, error_msg, error_code=error_code)
             else:
                 raise exc.RestClientError(f"Request failed: {str(e)}")
+        except (FileNotFoundError, OSError, IOError) as e:
+            # Let file system errors pass through unchanged
+            raise
         except Exception as e:
             if isinstance(e, exc.RestClientError):
                 raise

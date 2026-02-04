@@ -10,6 +10,7 @@ from typing import Optional
 from ..client import StiboStepRestClient
 from .base import BaseOperation
 from .operations.products import ProductOperations
+from .operations.assets import AssetOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -20,7 +21,7 @@ class StepRestClient(StiboStepRestClient):
     
     Attributes:
         products: ProductOperations instance
-        assets: AssetOperations instance (planned)
+        assets: AssetOperations instance
         classifications: ClassificationOperations instance (planned)
         entities: EntityOperations instance (planned)
         attributes: AttributeOperations instance (planned)
@@ -65,9 +66,9 @@ class StepRestClient(StiboStepRestClient):
         
         # Initialize operation groups
         self.products = ProductOperations(self.client, logger=op_logger)
+        self.assets = AssetOperations(self.client, logger=op_logger)
         
         # These are placeholders for future phases
-        self.assets = None      # AssetOperations(self.client, logger=op_logger)
         self.classifications = None  # ClassificationOperations(self.client, logger=op_logger)
         self.entities = None    # EntityOperations(self.client, logger=op_logger)
         self.attributes = None  # AttributeOperations(self.client, logger=op_logger)

@@ -24,6 +24,17 @@ from .product import (
     ProductValue,
     CrossReference,
 )
+from .asset import (
+    AssetResponse,
+    AssetListResponse,
+    AssetSearchRequest,
+    AssetCreateRequest,
+    AssetUpdateRequest,
+    AssetUploadRequest,
+    AssetDownloadResponse,
+    AssetKeyValue,
+    AssetMetadata,
+)
 
 __all__ = [
     'PageInfo',
@@ -43,4 +54,13 @@ __all__ = [
     'ProductAttribute',
     'ProductValue',
     'CrossReference',
+    'AssetResponse',
+    'AssetListResponse',
+    'AssetSearchRequest',
+    'AssetCreateRequest',
+    'AssetUpdateRequest',
+    'AssetUploadRequest',
+    'AssetDownloadResponse',
+    'AssetKeyValue',
+    'AssetMetadata',
 ]
