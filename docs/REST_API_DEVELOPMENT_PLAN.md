@@ -356,12 +356,14 @@ openapi-python-client>=0.15  # Code generation (Phase 8+)
 - ✅ Phase 0 complete: Solid infrastructure (DONE - 37 tests)
 - ✅ Phase 1 complete: Product operations (DONE - 36 tests)
 - ✅ Phase 2 complete: Asset operations (DONE - 40 tests)
+- ✅ Phase 3 complete: Classification operations (DONE - 33 tests)
+- ✅ Phase 4 complete: Entity operations (DONE - 37 tests)
 - ✅ Auth shared and working across modules (DONE)
 - ✅ Type hints on all public APIs (DONE)
-- ✅ Comprehensive test coverage (113/113 tests passing)
+- ✅ Comprehensive test coverage (183/183 tests passing, 100%)
 - ✅ Error handling with proper exception hierarchy (DONE)
 - ⏳ Documentation and integration examples (IN PROGRESS)
-- ⏳ Phase 3+ operations (NEXT)
+- ⏳ Phase 5+ operations (NEXT)
 
 ---
 
@@ -372,11 +374,11 @@ openapi-python-client>=0.15  # Code generation (Phase 8+)
 | 0     | CRITICAL | 2-3 days         | ✅ Complete (37 tests) |
 | 1     | HIGH     | 3-4 days         | ✅ Complete (36 tests) |
 | 2     | HIGH     | 2-3 days         | ✅ Complete (40 tests) |
-| 3     | MEDIUM   | 2-3 days         | 📋 Next (Recommended) |
-| 4     | MEDIUM   | 2-3 days         | Planned |
-| 5     | MEDIUM   | 2-3 days         | Planned |
-| 6     | MEDIUM   | 3-4 days         | Planned |
-| 7     | LOW      | 4-5 days         | Planned |
+| 3     | MEDIUM   | 2-3 days         | ✅ Complete (33 tests) |
+| 4     | MEDIUM   | 2-3 days         | ✅ Complete (37 tests) |
+| 5     | MEDIUM   | 2-3 days         | 📋 Next (Attributes & Metadata) |
+| 6     | MEDIUM   | 3-4 days         | Planned (Import/Export) |
+| 7     | LOW      | 4-5 days         | Planned (Advanced) |
 
 ---
 
@@ -386,23 +388,26 @@ openapi-python-client>=0.15  # Code generation (Phase 8+)
 1. ✅ **Phase 0 Complete**: Foundation infrastructure solid with 37 tests
 2. ✅ **Phase 1 Complete**: Products CRUD + search with 36 tests
 3. ✅ **Phase 2 Complete**: Assets CRUD + binary operations with 40 tests
-4. ✅ **Error Handling**: Proper exception hierarchy and decorator patterns established
-5. ✅ **Total Test Coverage**: 113/113 tests passing (100%)
+4. ✅ **Phase 3 Complete**: Classifications CRUD + hierarchy with 33 tests
+5. ✅ **Phase 4 Complete**: Entities CRUD + relationships + bulk ops with 37 tests
+6. ✅ **Error Handling**: Proper exception hierarchy and decorator patterns established
+7. ✅ **Total Test Coverage**: 183/183 tests passing (100% - all 5 phases)
 
-### Recommended Next: Phase 3 (Classifications)
+### Recommended Next: Phase 5 (Attributes & Metadata)
 
-Classifications are the next logical step because:
-1. **High business value** - Core STEP domain model
-2. **Builds on proven patterns** - Same architecture as Products/Assets
-3. **Enables advanced filtering** - Classifications are used by Products
-4. **Moderate complexity** - Includes hierarchy traversal (good foundation for Phase 4+)
+Attributes and Metadata are the next logical steps because:
+1. **System foundation** - Understand available attributes and system capabilities
+2. **Enables advanced entity operations** - Metadata needed for entity creation/updates
+3. **Builds on proven patterns** - Same architecture as Products/Assets/Classifications
+4. **Moderate complexity** - Metadata operations are simpler, good stepping stone
+5. **Prerequisite for Phase 6** - Import/Export operations need metadata context
 
-**Phase 3 Scope**:
-- Classification models (Response, List, Create, Update, Hierarchy)
-- Full CRUD operations  
-- Hierarchical traversal (parent/child relationships)
-- Classification values/items access
+**Phase 5 Scope**:
+- Attribute models (Response, List, LOV items)
+- Metadata models (System info, Contexts, Qualifiers, Dimensions)
+- AttributeOperations: get_attribute, list_attributes, get_lov_items
+- MetadataOperations: get_system_info, list_contexts, list_qualifiers, list_dimensions
 - ~35-40 tests expected
 - ~2-3 days estimated effort
 
-**Ready to start Phase 3?** Just say the word!
+**Ready to start Phase 5?** Just say the word!
