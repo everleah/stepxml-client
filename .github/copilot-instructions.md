@@ -1,105 +1,69 @@
 # STEP XML Client - AI Coding Agent Instructions
 
 ## Project Overview
-This is a reusable Python client module for integrating with Stibo Systems STEP MDM (Master Data Management) using standard STEP-XML protocol. The module provides a ready-to-use client for other software projects to communicate with STEP systems via standard Outbound Integration Endpoint (OIEP) and Inbound Integration Endpoint (IIEP).
+This is a reusable Python client library for integrating with Stibo Systems STEP MDM (Master Data Management). It supports standard STEP-XML protocol (OIEP/IIEP) and STEP REST API v2.
 
 ## Architecture
-The module provides focused STEP-XML processing for core MDM entities in early development:
-- **`stepxmlclient/client.py`**: REST API client wrapper using `requests-openapi` - handles configuration only
-- **`stepxmlclient/parser.py`**: STEP-XML parser for Products, Assets, and their relationships
-- **`stepxmlclient/creator.py`**: STEP-XML document generator for Products, Assets, and Product Replacement Rules
-- **`stepxmlclient/model/`**: Core model classes - `Asset`, `Product`, `ProductReplacementRule`
-- **`STEP.xsd`**: Official STEP-XML schema (8500+ lines) - the authoritative reference for validation
+The module is structured into distinct functional areas:
+- **`stepxmlclient/parser.py`**: Robust XML parser that deserializes STEP-XML into Python dictionaries. Aggregate specifically typed lists (`self.products`, `self.assets`, `self.attributes`, etc.). Supports a wide range of STEP entities (Products, Assets, Classifications, Attributes, Business Rules, etc.).
+- **`stepxmlclient/creator.py`**: XML generator for creating STEP-XML documents from Python objects.
+- **`stepxmlclient/model/`**: Object models inheriting from `BaseObject`. These classes define the structure of STEP entities for generation/manipulation (`Product`, `Asset`, `Attribute`, `Classification`, etc.).
+- **`stepxmlclient/client.py`**: REST API configuration wrapper around `requests-openapi`.
+- **`stepxmlclient/upload.py`**: Specialized client for binary asset uploads (images, documents).
+- **`STEP.xsd`**: Authoritative XML schema used for validation.
 
 ## Critical Patterns & Conventions
 
-### Namespace Handling
-All XML operations use the `STEPXML_NS` namespace dictionary defined in `__init__.py`:
+### 1. Namespace Handling
+STEP-XML uses standard namespaces. Always use `STEPXML_NS` from `__init__.py`:
 ```python
 STEPXML_NS = {
     'step': 'http://www.stibosystems.com/step',
     'outputtemplate': 'http://www.stibosystems.com/step/outputtemplate'
 }
 ```
-Always pass this to `find()` and `findall()` calls on XML elements.
+In the parser, use `_get_local_tag(element)` to handle tags effectively, as they may or may not have namespace prefixes depending on the source.
 
-### Object Model Pattern
-All model classes inherit from `BaseObject` with class-level configuration:
+### 2. Object Model & `BaseObject`
+All model classes must inherit from `BaseObject` and use declarative configuration:
 ```python
-class Product(BaseObject):
-    _GROUP_NAME = 'products'  # Collection name in Creator
-    _TAG_NAME = 'Product'     # XML element name
-    _ATTRIBUTE_NAMES = ("ID", "ParentId", "UserTypeID")  # XML attributes
-    _TEXT_NAMES = ("Name",)   # Child text elements
-    _CHILDREN_NAMES = ("Values", "AssetCrossReference", "DeleteAssetCrossReference")
+class MyEntity(BaseObject):
+    _GROUP_NAME = 'my_entities' # For creator collection
+    _TAG_NAME = 'MyEntity'      # XML Element Tag
+    _ATTRIBUTE_NAMES = ("ID", "UserTypeID")
+    _TEXT_NAMES = ("Name",)
+    _CHILDREN_NAMES = ("Values",) # Ordered list of child elements
 ```
-Note: `AssetCrossReference` and `DeleteAssetCrossReference` handle the critical product-to-asset relationships.
+- **Serialization**: `to_element()` uses these configs to auto-generate XML.
+- **Children**: Use `_add_children()` which handles `BaseObject` instances, dicts, and lists automatically.
 
-### Parser Function Naming
-Parser functions follow strict naming: `_parse_<element_name>()` for element-specific parsers, using lowercase with underscores.
+### 3. Parser Architecture
+The `Parser` class maintains separate lists for each entity type (`self.products`, `self.assets`, `self.attributes`, etc.).
+- **Parsing Logic**: Use `_parse_item_list(xml_tag, item_tag, parser_func)` to populate these lists.
+- **Parser Functions**: Strictly named `_parse_<element_name>(element) -> dict`.
+- **Boolean Handling**: Use `_str_to_bool()` for XML "true"/"false" strings.
+- **Context**: The parser is stateful regarding the document it just parsed.
 
-## Critical Patterns & Fix Guidelines
+### 4. REST API Integration
+- Wraps `requests-openapi` via `StiboStepRestClient`.
+- **No Method Wrappers**: The client exposes the underlying `client` object (`client.client.operation_id(...)`).
+- **Uploads**: Use `StepAssetUploader` in `upload.py` for pushing binary content.
 
-### XML Element Creation Pattern
-When adding XML elements, always specify the tag name: `ET.SubElement(parent, tag_name)` 
+## Workflows & Testing
 
-### Attribute Conversion Pattern
-The parser supports conversions for both attributes and child elements. Use `conversions` parameter to transform data types during parsing.
+### Building
+- **Build**: `build_wheel.bat` (Windows) or `python setup.py bdist_wheel`.
+- **Install**: `pip install dist/stepxmlclient-x.x-py3-none-any.whl`.
 
-### Child Data Handling Pattern
-`BaseObject._add_children()` handles multiple data types:
-- Objects with `to_element()` method (other BaseObject instances)
-- Dictionaries (converted to XML elements with attributes)
-- Lists (processes each item individually)
+### Testing Strategy
+The project follows a phased testing approach using `unittest`.
+- **Main Runner**: `test.py` (runs core integration tests).
+- **Phase Tests**: `test_parser_phaseX_....py` target specific functionalities (e.g., `test_parser_phase5_attributes.py`).
+- **Validation**: `validate_xml_xsd.py` checks generated XML against `STEP.xsd`.
+- **Development**: When adding a feature, either extend an existing phase test or create a new phase file if it enters a new domain.
 
-### Creator Naming Pattern
-Use explicit mapping between XML element names and object attributes to avoid naming conflicts.
-
-### REST Client Configuration
-The client integrates with STEP REST API v2 via `requests-openapi`:
-```python
-auth = BasicAuthorisation('username', 'password')  
-client = StiboStepRestClient(
-    'https://server.com/restapiv2',  # REST API v2 endpoint
-    auth, 
-    cache_openapi=True,              # Cache openapi.json locally
-    nocert=True                      # For development environments
-)
-```
-
-## Development Workflows
-
-### Building & Distribution
-- **Build wheel**: Run `build_wheel.bat` (calls `python setup.py bdist_wheel`)
-- **Dependencies**: Install via `pip install -r requirements.txt`
-- **Testing**: Use `test.py` as the main test runner (connects to demo STEP server)
-
-### Current Development Focus
-- **Core Entity Support**: Products and Assets with their relationships - covers primary MDM use cases
-- **Product-Asset Relations**: Handles `AssetCrossReference` and `DeleteAssetCrossReference` for linking products to assets
-- **Essential Operations**: Create, parse, and delete operations for Products and Assets
-- **Strategic Scope**: Early development stage focused on most important STEP entities
-- **Future Expansion**: Use `STEP.xsd` as reference when adding Classifications, Entities, or other STEP objects
-
-### STEP REST API v2 Integration
-- **Client Wrapper**: `StiboStepRestClient` is a configuration wrapper around `requests-openapi` client
-- **No Direct API Methods**: Client does not expose specific REST operations - users must call `client.client` to access underlying API
-- **OpenAPI Integration**: Loads STEP REST API v2 specification from `/specification/openapi.json` endpoint
-- **Configuration Only**: Handles authentication, SSL settings, proxy configuration, and OpenAPI spec caching
-- **Usage Pattern**: `client = StiboStepRestClient(...); api_response = client.client.some_operation(...)`
-
-## Testing & Debugging
-
-### SSL & Certificate Handling
-The client supports `nocert=True` for development environments or when a `nocert` file exists in the working directory.
-
-### Proxy Support
-Pass proxy configuration as dict to `StiboStepRestClient(proxies={...})` for corporate environments.
-
-## File Organization
-- Keep model classes focused on XML serialization/deserialization only
-- Parser functions should handle XML namespace resolution
-- Creator classes manage object-to-XML conversion with proper parent-child relationships
-- Client classes handle REST communication and authentication exclusively
-
-When extending functionality, follow the established patterns: parser functions for XML input, model classes for data representation, and creator methods for XML output generation.
+## Key Files for Context
+- `stepxmlclient/model/__init__.py`: Base object logic.
+- `stepxmlclient/parser.py`: Implementation of all parsing logic.
+- `stepxmlclient/creator.py`: Document generation logic.
+- `STEP.xsd`: Reference for tag names and attribute validity.
