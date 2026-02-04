@@ -39,7 +39,12 @@ class TestAttributeModels(unittest.TestCase):
         attr = AttributeResponse(
             id="ATTR001",
             name="Color",
-            type="Text"
+            type="Text",
+            lovId=None,
+            multiValued=None,
+            metadata=None,
+            required=None,
+            description=None
         )
         self.assertEqual(attr.id, "ATTR001")
         self.assertEqual(attr.name, "Color")
@@ -49,12 +54,13 @@ class TestAttributeModels(unittest.TestCase):
         """Test AttributeListResponse model creation."""
         response = AttributeListResponse(
             items=[
-                AttributeResponse(id="ATTR001", name="Color", type="Text"),
-                AttributeResponse(id="ATTR002", name="Size", type="Text")
+                AttributeResponse(id="ATTR001", name="Color", type="Text", lovId=None, multiValued=None, metadata=None, required=None, description=None),
+                AttributeResponse(id="ATTR002", name="Size", type="Text", lovId=None, multiValued=None, metadata=None, required=None, description=None)
             ],
             total=50,
             limit=20,
-            offset=0
+            offset=0,
+            hasMore=None
         )
         self.assertEqual(len(response.items), 2)
         self.assertEqual(response.total, 50)
@@ -65,8 +71,8 @@ class TestAttributeModels(unittest.TestCase):
             id="LOV001",
             name="Colors",
             items=[
-                ListOfValueItem(id="RED", name="Red"),
-                ListOfValueItem(id="BLUE", name="Blue")
+                ListOfValueItem(id="RED", name="Red", description=None, sequence=None),
+                ListOfValueItem(id="BLUE", name="Blue", description=None, sequence=None)
             ],
             total=5
         )
@@ -78,7 +84,10 @@ class TestAttributeModels(unittest.TestCase):
         req = AttributeCreateRequest(
             name="Size",
             type="Text",
-            required=True
+            lovId=None,
+            multiValued=None,
+            required=True,
+            description=None
         )
         self.assertEqual(req.name, "Size")
         self.assertEqual(req.type, "Text")
@@ -87,8 +96,10 @@ class TestAttributeModels(unittest.TestCase):
     def test_attribute_update_request(self):
         """Test AttributeUpdateRequest creation."""
         req = AttributeUpdateRequest(
+            name=None,
             description="Product size",
-            required=True
+            required=True,
+            lovId=None
         )
         self.assertEqual(req.description, "Product size")
         self.assertTrue(req.required)
@@ -103,7 +114,9 @@ class TestMetadataModels(unittest.TestCase):
             version="2.0.1",
             apiVersion="2.0",
             capabilities=["Products", "Assets"],
-            maxPageSize=500
+            maxPageSize=500,
+            defaultPageSize=None,
+            supportedLanguages=None
         )
         self.assertEqual(meta.version, "2.0.1")
         self.assertEqual(meta.apiVersion, "2.0")
@@ -114,7 +127,10 @@ class TestMetadataModels(unittest.TestCase):
         context = ContextResponse(
             id="Context1",
             name="Primary Context",
-            isDefault=True
+            isDefault=True, 
+            description=None, 
+            metadata=None, 
+            type=None
         )
         self.assertEqual(context.id, "Context1")
         self.assertTrue(context.isDefault)
@@ -123,8 +139,8 @@ class TestMetadataModels(unittest.TestCase):
         """Test ContextListResponse creation."""
         response = ContextListResponse(
             items=[
-                ContextResponse(id="Context1", name="Primary"),
-                ContextResponse(id="Context2", name="Secondary")
+                ContextResponse(id="Context1", name="Primary", isDefault=None, description=None, metadata=None, type=None),
+                ContextResponse(id="Context2", name="Secondary", isDefault=None, description=None, metadata=None, type=None)
             ],
             total=2
         )
@@ -135,10 +151,12 @@ class TestMetadataModels(unittest.TestCase):
         qualifier = QualifierResponse(
             id="Qualifier1",
             name="Region",
-            values=["EMEA", "APAC"]
+            values=["EMEA", "APAC"],
+            description=None,
+            type=None
         )
         self.assertEqual(qualifier.id, "Qualifier1")
-        self.assertEqual(len(qualifier.values), 2)
+        self.assertEqual(len(qualifier.values), 2) #type: ignore
     
     def test_dimension_response(self):
         """Test DimensionResponse creation."""
@@ -146,7 +164,10 @@ class TestMetadataModels(unittest.TestCase):
             id="Dimension1",
             name="Size",
             type="Numeric",
-            unit="cm"
+            unit="cm",
+            description=None,
+            minValue=None,
+            maxValue=None
         )
         self.assertEqual(dimension.id, "Dimension1")
         self.assertEqual(dimension.unit, "cm")
@@ -156,17 +177,19 @@ class TestMetadataModels(unittest.TestCase):
         user_type = UserTypeResponse(
             id="UserType1",
             name="StandardProduct",
-            applicableEntities=["Product"]
+            applicableEntities=["Product"],
+            description=None
         )
         self.assertEqual(user_type.id, "UserType1")
-        self.assertEqual(len(user_type.applicableEntities), 1)
+        self.assertEqual(len(user_type.applicableEntities), 1) #type: ignore
     
     def test_workspace_response(self):
         """Test WorkspaceResponse creation."""
         workspace = WorkspaceResponse(
             id="Main",
             name="Main Workspace",
-            isDefault=True
+            isDefault=True,
+            description=None
         )
         self.assertEqual(workspace.id, "Main")
         self.assertTrue(workspace.isDefault)
@@ -261,7 +284,7 @@ class TestAttributeOperations(unittest.TestCase):
         }
         self.mock_client.createAttribute.return_value = mock_response
         
-        req = AttributeCreateRequest(name="New Attribute", type="Text")
+        req = AttributeCreateRequest(name="New Attribute", type="Text", description=None, required=None, lovId=None, multiValued=None)
         result = self.operations.create_attribute(req)
         
         self.assertIsInstance(result, AttributeResponse)
@@ -276,7 +299,7 @@ class TestAttributeOperations(unittest.TestCase):
         }
         self.mock_client.updateAttribute.return_value = mock_response
         
-        updates = AttributeUpdateRequest(description="Updated")
+        updates = AttributeUpdateRequest(description="Updated", required=None, lovId=None, name="Updated Attribute")
         result = self.operations.update_attribute("ATTR001", updates)
         
         self.assertEqual(result.name, "Updated Attribute")

@@ -30,7 +30,11 @@ class TestClassificationModels(unittest.TestCase):
             id="CLASS1",
             name="Color",
             description="Product color",
-            is_hierarchical=False
+            is_hierarchical=False,
+            classification_type=None,
+            is_system_owned=False,
+            values_count=None,
+            metadata=None
         )
         
         self.assertEqual(classification.id, "CLASS1")
@@ -43,24 +47,32 @@ class TestClassificationModels(unittest.TestCase):
         metadata = ClassificationMetadata(
             created_at=datetime.fromisoformat("2025-01-15T10:30:00+00:00"),
             created_by="admin",
+            modified_at=None,
+            modified_by=None,
             version=1
         )
         classification = ClassificationResponse(
             id="CLASS1",
             name="Color",
+            description=None,
+            classification_type=None,
+            is_hierarchical=False,
+            is_system_owned=False,
+            values_count=None,
             metadata=metadata
         )
         
-        self.assertEqual(classification.metadata.created_by, "admin")
-        self.assertEqual(classification.metadata.version, 1)
+        self.assertEqual(classification.metadata.created_by, "admin") #type: ignore
+        self.assertEqual(classification.metadata.version, 1) #type: ignore
     
     def test_classification_list_response(self):
         """Test classification list response."""
         list_response = ClassificationListResponse(
             items=[
-                ClassificationResponse(id="CLASS1", name="Color"),
-                ClassificationResponse(id="CLASS2", name="Size"),
+                ClassificationResponse(id="CLASS1", name="Color", description=None, classification_type=None, is_hierarchical=False, is_system_owned=False, values_count=None, metadata=None),
+                ClassificationResponse(id="CLASS2", name="Size", description=None, classification_type=None, is_hierarchical=False, is_system_owned=False, values_count=None, metadata=None),
             ],
+            pagination=None,
             total=2
         )
         
@@ -76,9 +88,9 @@ class TestClassificationModels(unittest.TestCase):
             total=50
         )
         
-        self.assertEqual(list_response.pagination.limit, 20)
-        self.assertEqual(list_response.pagination.total, 50)
-        self.assertTrue(list_response.pagination.has_more)
+        self.assertEqual(list_response.pagination.limit, 20) #type: ignore
+        self.assertEqual(list_response.pagination.total, 50) #type: ignore
+        self.assertTrue(list_response.pagination.has_more) #type: ignore
     
     def test_classification_hierarchy_node(self):
         """Test classification hierarchy node."""
@@ -86,14 +98,17 @@ class TestClassificationModels(unittest.TestCase):
             id="CHILD1",
             name="Red",
             parent_id="ROOT",
-            level=1
+            level=1,
+            metadata=None
         )
         
         root = ClassificationHierarchyNode(
             id="ROOT",
             name="Colors",
             level=0,
-            children=[child]
+            parent_id=None,
+            children=[child],
+            metadata=None
         )
         
         self.assertEqual(root.id, "ROOT")
@@ -106,7 +121,7 @@ class TestClassificationModels(unittest.TestCase):
             classification_id="CLASS1",
             classification_name="Color",
             root_nodes=[
-                ClassificationHierarchyNode(id="ROOT", name="Colors", level=0)
+                ClassificationHierarchyNode(id="ROOT", name="Colors", level=0, parent_id=None, metadata=None)
             ],
             total_nodes=10,
             max_depth=3
@@ -122,7 +137,8 @@ class TestClassificationModels(unittest.TestCase):
             query="color",
             limit=50,
             offset=0,
-            type_filter="Standard"
+            type_filter="Standard",
+            include_values=False
         )
         
         self.assertEqual(search.query, "color")
@@ -135,7 +151,9 @@ class TestClassificationModels(unittest.TestCase):
             id="NEW_CLASS",
             name="Material",
             description="Product material",
-            is_hierarchical=True
+            is_hierarchical=True,
+            classification_type=None,
+            attributes=None
         )
         
         self.assertEqual(create.id, "NEW_CLASS")
@@ -146,7 +164,9 @@ class TestClassificationModels(unittest.TestCase):
         """Test classification update request."""
         update = ClassificationUpdateRequest(
             name="Updated Name",
-            description="Updated description"
+            description="Updated description",
+            classification_type=None,
+            attributes=None
         )
         
         self.assertEqual(update.name, "Updated Name")
@@ -158,6 +178,7 @@ class TestClassificationModels(unittest.TestCase):
             id="VAL1",
             name="Red",
             description="Red color",
+            parent_id=None,
             is_leaf=True
         )
         
@@ -170,8 +191,17 @@ class TestClassificationModels(unittest.TestCase):
         response = ClassificationValueResponse(
             classification_id="CLASS1",
             values=[
-                ClassificationValue(id="VAL1", name="Red"),
-                ClassificationValue(id="VAL2", name="Blue"),
+                ClassificationValue(id="VAL1", name="Red", description=None, parent_id=None, is_leaf=False),
+                ClassificationValue(id="VAL2", name="Blue", description=None, parent_id=None, is_leaf=False),
+            ],
+            total=2
+        )
+        """Test classification value response."""
+        response = ClassificationValueResponse(
+            classification_id="CLASS1",
+            values=[
+                ClassificationValue(id="VAL1", name="Red", description=None, parent_id=None, is_leaf=False),
+                ClassificationValue(id="VAL2", name="Blue", description=None, parent_id=None, is_leaf=False),
             ],
             total=2
         )
@@ -279,7 +309,11 @@ class TestClassificationOperations(unittest.TestCase):
         """Test successful classification creation."""
         create_req = ClassificationCreateRequest(
             id="NEW_CLASS",
-            name="Material"
+            name="Material",
+            description=None,
+            classification_type=None,
+            is_hierarchical=False,
+            attributes=None
         )
         mock_response = {"id": "NEW_CLASS", "name": "Material"}
         self.mock_client.createClassification.return_value = mock_response
@@ -291,7 +325,14 @@ class TestClassificationOperations(unittest.TestCase):
     
     def test_create_classification_validation_error(self):
         """Test classification creation with validation error."""
-        create_req = ClassificationCreateRequest(id="CLASS", name="Test")
+        create_req = ClassificationCreateRequest(
+            id="CLASS",
+            name="Test",
+            description=None,
+            classification_type=None,
+            is_hierarchical=False,
+            attributes=None
+        )
         self.mock_client.createClassification.side_effect = Exception("400 bad request")
         
         with self.assertRaises(exc.ValidationError):
@@ -299,7 +340,12 @@ class TestClassificationOperations(unittest.TestCase):
     
     def test_update_classification_success(self):
         """Test successful classification update."""
-        update_req = ClassificationUpdateRequest(name="Updated")
+        update_req = ClassificationUpdateRequest(
+            name="Updated",
+            description=None,
+            classification_type=None,
+            attributes=None
+        )
         mock_response = {"id": "CLASS1", "name": "Updated"}
         self.mock_client.updateClassification.return_value = mock_response
         
@@ -309,7 +355,12 @@ class TestClassificationOperations(unittest.TestCase):
     
     def test_update_classification_not_found(self):
         """Test update when classification not found."""
-        update_req = ClassificationUpdateRequest(name="Updated")
+        update_req = ClassificationUpdateRequest(
+            name="Updated",
+            description=None,
+            classification_type=None,
+            attributes=None
+        )
         self.mock_client.updateClassification.side_effect = Exception("404 not found")
         
         with self.assertRaises(exc.NotFoundError):

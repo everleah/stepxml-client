@@ -148,8 +148,8 @@ class TestRelationshipOperations(unittest.TestCase):
             relationshipType="contains",
             sourceId="prod_1",
             targetId="prod_2",
-            sourceType="Product",
-            targetType="Product"
+            metadata=None,
+            status=None
         )
         
         mock_response = {
@@ -176,8 +176,8 @@ class TestRelationshipOperations(unittest.TestCase):
             relationshipType="contains",
             sourceId="prod_1",
             targetId="prod_2",
-            sourceType="Product",
-            targetType="Product"
+            metadata=None,
+            status=None
         )
         
         with self.assertRaises(ValidationError):
@@ -186,7 +186,7 @@ class TestRelationshipOperations(unittest.TestCase):
     def test_update_relationship_success(self):
         """Test updating a relationship."""
         relationship_id = "rel_123"
-        update_data = RelationshipUpdateRequest(status="inactive")
+        update_data = RelationshipUpdateRequest(status="inactive", metadata={"note": "Updated"})
         
         mock_response = {
             "relationshipId": relationship_id,
@@ -212,7 +212,7 @@ class TestRelationshipOperations(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             self.ops.update_relationship(
                 "nonexistent",
-                RelationshipUpdateRequest(status="inactive")
+                RelationshipUpdateRequest(status="inactive", metadata=None)
             )
     
     def test_delete_relationship_success(self):
@@ -369,7 +369,9 @@ class TestCrossReferenceOperations(unittest.TestCase):
         create_data = CrossReferenceCreateRequest(
             sourceEntityId="prod_1",
             targetEntityId="prod_2",
-            referenceType="competitor"
+            referenceType="competitor",
+            description=None,
+            sequence=None
         )
         
         mock_response = {
@@ -393,7 +395,9 @@ class TestCrossReferenceOperations(unittest.TestCase):
         create_data = CrossReferenceCreateRequest(
             sourceEntityId="prod_1",
             targetEntityId="prod_2",
-            referenceType="competitor"
+            referenceType="competitor",
+            description=None,
+            sequence=None
         )
         
         with self.assertRaises(ValidationError):
@@ -499,7 +503,9 @@ class TestLinkOperations(unittest.TestCase):
         create_data = LinkCreateRequest(
             sourceId="prod_1",
             targetId="asset_1",
-            linkType="has_asset"
+            linkType="has_asset",
+            sequence=None,
+            metadata=None
         )
         
         mock_response = {
@@ -523,7 +529,9 @@ class TestLinkOperations(unittest.TestCase):
         create_data = LinkCreateRequest(
             sourceId="prod_1",
             targetId="asset_1",
-            linkType="has_asset"
+            linkType="has_asset",
+            sequence=None,
+            metadata=None
         )
         
         with self.assertRaises(ValidationError):

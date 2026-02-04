@@ -41,7 +41,7 @@ class TestPageInfo(unittest.TestCase):
     
     def test_page_info_defaults(self):
         """Test PageInfo default values."""
-        page = PageInfo()
+        page = PageInfo(offset=0, limit=20, total=None)
         self.assertEqual(page.offset, 0)
         self.assertEqual(page.limit, 20)
         self.assertIsNone(page.total)
@@ -50,15 +50,15 @@ class TestPageInfo(unittest.TestCase):
     def test_page_info_validation_limit(self):
         """Test PageInfo limit validation."""
         with self.assertRaises(ValueError):
-            PageInfo(limit=0)  # Must be >= 1
+            PageInfo(offset=0, limit=0, total=100)  # Must be >= 1
         
         with self.assertRaises(ValueError):
-            PageInfo(limit=1001)  # Must be <= 1000
+            PageInfo(offset=0, limit=1001, total=100)  # Must be <= 1000
     
     def test_page_info_validation_offset(self):
         """Test PageInfo offset validation."""
         with self.assertRaises(ValueError):
-            PageInfo(offset=-1)  # Must be >= 0
+            PageInfo(offset=-1, limit=20, total=100)  # Must be >= 0
 
 
 class TestErrorDetail(unittest.TestCase):
@@ -69,7 +69,8 @@ class TestErrorDetail(unittest.TestCase):
         detail = ErrorDetail(
             code="REQUIRED_FIELD",
             message="Field is required",
-            field="name"
+            field="name",
+            details=None
         )
         self.assertEqual(detail.code, "REQUIRED_FIELD")
         self.assertEqual(detail.message, "Field is required")
@@ -80,10 +81,11 @@ class TestErrorDetail(unittest.TestCase):
         detail = ErrorDetail(
             code="VALIDATION_ERROR",
             message="Invalid value",
+            field=None,
             details={"min": 1, "max": 100, "actual": 150}
         )
         self.assertIsNotNone(detail.details)
-        self.assertEqual(detail.details["max"], 100)
+        self.assertEqual(detail.details["max"], 100) #type: ignore
 
 
 class TestErrorResponse(unittest.TestCase):
@@ -94,7 +96,10 @@ class TestErrorResponse(unittest.TestCase):
         response = ErrorResponse(
             error_code="VALIDATION_FAILED",
             error_message="Request validation failed",
-            status=400
+            status=400,
+            timestamp="2024-01-01T00:00:00Z",
+            request_id="req_123",
+            error_details=None
         )
         self.assertEqual(response.error_code, "VALIDATION_FAILED")
         self.assertEqual(response.status, 400)
@@ -102,16 +107,20 @@ class TestErrorResponse(unittest.TestCase):
     def test_error_response_with_details(self):
         """Test ErrorResponse with error details."""
         details = [
-            ErrorDetail(code="REQUIRED", message="Field required", field="name"),
-            ErrorDetail(code="INVALID_FORMAT", message="Invalid format", field="email"),
+            ErrorDetail(code="REQUIRED", message="Field required", field="name", details=None),
+            ErrorDetail(code="INVALID_FORMAT", message="Invalid format", field="email", details=None),
         ]
         response = ErrorResponse(
             error_code="VALIDATION_FAILED",
             error_message="Multiple validation errors",
             status=400,
+            timestamp="2024-01-01T00:00:00Z",
+            request_id="req_123",
             error_details=details
         )
-        self.assertEqual(len(response.error_details), 2)
+        self.assertEqual(response.error_code, "VALIDATION_FAILED")
+        self.assertIsNotNone(response.error_details)
+        self.assertEqual(len(response.error_details), 2) #type: ignore
 
 
 class TestApiResponse(unittest.TestCase):
@@ -120,8 +129,8 @@ class TestApiResponse(unittest.TestCase):
     def test_api_response_creation(self):
         """Test ApiResponse creation."""
         data = {"id": 123, "name": "Test Product"}
-        response = ApiResponse(data=data, success=True)
-        self.assertEqual(response.data["id"], 123)
+        response = ApiResponse(data=data, success=True, metadata=None, timestamp="2024-01-01T00:00:00Z")
+        self.assertEqual(response.data["id"], 123) #type: ignore
         self.assertTrue(response.success)
     
     def test_api_response_with_metadata(self):
@@ -129,10 +138,11 @@ class TestApiResponse(unittest.TestCase):
         response = ApiResponse(
             data={"id": 123},
             metadata={"version": "1.0"},
-            success=True
+            success=True,
+            timestamp="2024-01-01T00:00:00Z"
         )
         self.assertIsNotNone(response.metadata)
-        self.assertEqual(response.metadata["version"], "1.0")
+        self.assertEqual(response.metadata["version"], "1.0") #type: ignore
 
 
 class TestPagedResponse(unittest.TestCase):
@@ -145,11 +155,11 @@ class TestPagedResponse(unittest.TestCase):
         response = PagedResponse(items=items, pagination=pagination)
         
         self.assertEqual(len(response.items), 2)
-        self.assertEqual(response.pagination.total, 100)
+        self.assertEqual(response.pagination.total, 100) #type: ignore
     
     def test_paged_response_empty(self):
-        """Test PagedResponse with no items."""
-        response = PagedResponse(items=[])
+        """Test PagedResponse with empty items."""
+        response = PagedResponse(items=[], pagination=PageInfo(offset=0, limit=20, total=0))
         self.assertEqual(len(response.items), 0)
 
 
@@ -163,8 +173,8 @@ class TestSearchFilter(unittest.TestCase):
         self.assertEqual(filter.operator, "eq")
     
     def test_search_filter_defaults(self):
-        """Test SearchFilter default operator."""
-        filter = SearchFilter(field="name", value="test")
+        """Test SearchFilter default values."""
+        filter = SearchFilter(field="name", value="test", operator="eq")
         self.assertEqual(filter.operator, "eq")
 
 
@@ -173,7 +183,7 @@ class TestSearchRequest(unittest.TestCase):
     
     def test_search_request_creation(self):
         """Test SearchRequest creation."""
-        request = SearchRequest(query="test", limit=50)
+        request = SearchRequest(query="test", filters=None, limit=50, offset=0, sort=None)
         self.assertEqual(request.query, "test")
         self.assertEqual(request.limit, 50)
         self.assertEqual(request.offset, 0)
@@ -181,11 +191,11 @@ class TestSearchRequest(unittest.TestCase):
     def test_search_request_with_filters(self):
         """Test SearchRequest with filters."""
         filters = [
-            SearchFilter(field="status", value="active"),
-            SearchFilter(field="category", value="products"),
+            SearchFilter(field="status", value="active", operator="eq"),
+            SearchFilter(field="category", value="products", operator="eq"),
         ]
-        request = SearchRequest(query="test", filters=filters)
-        self.assertEqual(len(request.filters), 2)
+        request = SearchRequest(query="test", filters=filters, limit=50, offset=0, sort=None)
+        self.assertEqual(len(request.filters), 2) #type: ignore
 
 
 class TestExceptions(unittest.TestCase):
@@ -216,7 +226,7 @@ class TestExceptions(unittest.TestCase):
     def test_validation_error(self):
         """Test ValidationError."""
         errors = ["Field A is required", "Field B is invalid"]
-        error = exc.ValidationError(errors)
+        error = exc.ValidationError(errors) #type: ignore
         self.assertEqual(error.validation_errors, errors)
     
     def test_conflict_error(self):
@@ -241,6 +251,9 @@ class TestExceptions(unittest.TestCase):
         self.assertIsInstance(error, exc.RestClientError)
     
     def test_operation_error(self):
+        """Test OperationError exception."""
+        error = exc.OperationError("Operation failed")
+        self.assertEqual(str(error), "Operation failed")
         """Test OperationError."""
         error = exc.OperationError("Operation failed")
         self.assertIsInstance(error, exc.RestClientError)

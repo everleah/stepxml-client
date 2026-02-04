@@ -246,7 +246,8 @@ class TestWorkflowOperations(unittest.TestCase):
         entity_id = "PROD_001"
         transition_data = WorkflowTransitionRequest(
             targetState="APPROVED",
-            reason="Approved by manager"
+            reason="Approved by manager",
+            metadata={"approvedBy": "manager_123"}
         )
         
         mock_response = {
@@ -270,7 +271,7 @@ class TestWorkflowOperations(unittest.TestCase):
         with self.assertRaises(NotFoundError):
             self.ops.transition_workflow(
                 "nonexistent",
-                WorkflowTransitionRequest(targetState="APPROVED")
+                WorkflowTransitionRequest(targetState="APPROVED", reason=None, metadata=None)
             )
 
 
@@ -287,7 +288,11 @@ class TestAdvancedSearchOperations(unittest.TestCase):
         search_request = AdvancedSearchRequest(
             entityType="Product",
             facets=["status", "category"],
-            limit=20
+            limit=20,
+            offset=None,
+            sort=None,
+            query=None,
+            filters=None
         )
         
         mock_response = {
@@ -320,7 +325,13 @@ class TestAdvancedSearchOperations(unittest.TestCase):
         self.mock_client.advancedSearch.side_effect = Exception("400 Bad Request")
         
         search_request = AdvancedSearchRequest(
-            entityType="Product"
+            entityType="Product",
+            facets=None,
+            limit=20,
+            offset=None,
+            sort=None,
+            query=None,
+            filters=None
         )
         
         with self.assertRaises(ValidationError):
@@ -357,7 +368,9 @@ class TestCacheOperations(unittest.TestCase):
         """Test configuring cache."""
         config = CacheConfigRequest(
             enableCache=True,
-            ttlSeconds=300
+            ttlSeconds=300,
+            cacheKey=None,
+            invalidatePrevious=None
         )
         
         self.mock_client.configureCache.return_value = None
@@ -373,7 +386,9 @@ class TestCacheOperations(unittest.TestCase):
         
         config = CacheConfigRequest(
             enableCache=True,
-            ttlSeconds=300
+            ttlSeconds=300,
+            cacheKey=None,
+            invalidatePrevious=None
         )
         
         with self.assertRaises(ValidationError):
@@ -427,7 +442,9 @@ class TestStreamingOperations(unittest.TestCase):
         stream_request = StreamingRequest(
             entityType="Product",
             chunkSize=1000,
-            format="JSON"
+            format="JSON",
+            filters=None,
+            includeMetadata=None
         )
         
         mock_response = {
@@ -451,7 +468,11 @@ class TestStreamingOperations(unittest.TestCase):
         self.mock_client.startStreaming.side_effect = Exception("400 Bad Request")
         
         stream_request = StreamingRequest(
-            entityType="Product"
+            entityType="Product",
+            chunkSize=1000,
+            format="JSON",
+            filters=None,
+            includeMetadata=None
         )
         
         with self.assertRaises(ValidationError):

@@ -38,7 +38,10 @@ class TestAssetModels(unittest.TestCase):
         meta = AssetMetadata(
             filename="image.jpg",
             mime_type="image/jpeg",
-            size=102400
+            size=102400,
+            creation_date=None,
+            modification_date=None,
+            checksum=None
         )
         self.assertEqual(meta.filename, "image.jpg")
         self.assertEqual(meta.mime_type, "image/jpeg")
@@ -48,6 +51,8 @@ class TestAssetModels(unittest.TestCase):
         """Test AssetMetadata with timestamp fields."""
         meta = AssetMetadata(
             filename="image.jpg",
+            mime_type="image/jpeg",
+            size=102400,
             creation_date="2024-01-01T00:00:00Z",
             modification_date="2024-02-04T10:00:00Z",
             checksum="abc123"
@@ -60,49 +65,75 @@ class TestAssetModels(unittest.TestCase):
         asset = AssetResponse(
             id="ASSET123",
             user_type_id="Image",
-            name="Product Image"
+            name="Product Image",
+            attributes=None,
+            metadata=None,
+            created_date=None,
+            modified_date=None,
+            version=None
         )
         self.assertEqual(asset.id, "ASSET123")
         self.assertEqual(asset.name, "Product Image")
     
     def test_asset_response_with_metadata(self):
         """Test AssetResponse with metadata."""
-        meta = AssetMetadata(filename="image.jpg")
+        meta = AssetMetadata(
+            filename="image.jpg",
+            mime_type="image/jpeg",
+            size=102400,
+            creation_date=None,
+            modification_date=None,
+            checksum=None
+        )
         asset = AssetResponse(
             id="ASSET123",
-            metadata=meta
+            user_type_id=None,
+            name=None,
+            metadata=meta,
+            attributes=None,
+            created_date=None,
+            modified_date=None,
+            version=None
         )
         self.assertIsNotNone(asset.metadata)
-        self.assertEqual(asset.metadata.filename, "image.jpg")
+        self.assertEqual(asset.metadata.filename, "image.jpg") #type: ignore
     
     def test_asset_response_with_key_values(self):
         """Test AssetResponse with key-values."""
         kvs = [AssetKeyValue(key="Usage", value="ProductImage")]
         asset = AssetResponse(
             id="ASSET123",
-            key_values=kvs
+            user_type_id=None,
+            name=None,
+            key_values=kvs,
+            attributes=None,
+            metadata=None,
+            created_date=None,
+            modified_date=None,
+            version=None
         )
-        self.assertEqual(len(asset.key_values), 1)
-        self.assertEqual(asset.key_values[0].value, "ProductImage")
+        self.assertEqual(len(asset.key_values), 1) #type: ignore
+        self.assertEqual(asset.key_values[0].value, "ProductImage") #type: ignore
     
     def test_asset_list_response_creation(self):
         """Test AssetListResponse creation."""
         assets = [
-            AssetResponse(id="ASSET1"),
-            AssetResponse(id="ASSET2"),
+            AssetResponse(id="ASSET1", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None),
+            AssetResponse(id="ASSET2", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None),
         ]
         response = AssetListResponse(
             items=assets,
             total=50,
             limit=20,
-            offset=0
+            offset=0,
+            has_more=False
         )
         self.assertEqual(len(response.items), 2)
         self.assertEqual(response.total, 50)
     
     def test_asset_list_response_has_more(self):
         """Test AssetListResponse has_more calculation."""
-        assets = [AssetResponse(id=f"ASSET{i}") for i in range(20)]
+        assets = [AssetResponse(id=f"ASSET{i}", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None) for i in range(20)]
         
         response = AssetListResponse(
             items=assets,
@@ -117,15 +148,27 @@ class TestAssetModels(unittest.TestCase):
         """Test AssetSearchRequest creation."""
         request = AssetSearchRequest(
             query="image",
+            user_type_id=None,
+            modified_since=None,
             limit=50,
-            offset=10
+            offset=10,
+            include_metadata=True,
+            include_content=False
         )
         self.assertEqual(request.query, "image")
         self.assertEqual(request.limit, 50)
     
     def test_asset_search_request_defaults(self):
         """Test AssetSearchRequest defaults."""
-        request = AssetSearchRequest()
+        request = AssetSearchRequest(
+            query="*",
+            user_type_id=None,
+            modified_since=None,
+            limit=20,
+            offset=0,
+            include_metadata=True,
+            include_content=False
+        )
         self.assertEqual(request.query, "*")
         self.assertTrue(request.include_metadata)
         self.assertFalse(request.include_content)
@@ -135,20 +178,28 @@ class TestAssetModels(unittest.TestCase):
         request = AssetCreateRequest(
             id="NEWASSET",
             user_type_id="Image",
-            name="New Asset"
+            name="New Asset",
+            key_values=None,
+            attributes=None
         )
         self.assertEqual(request.id, "NEWASSET")
     
     def test_asset_update_request(self):
         """Test AssetUpdateRequest creation."""
-        request = AssetUpdateRequest(name="Updated Name")
+        request = AssetUpdateRequest(
+            name="Updated Name",
+            user_type_id=None,
+            key_values=None,
+            attributes=None
+        )
         self.assertEqual(request.name, "Updated Name")
     
     def test_asset_upload_request(self):
         """Test AssetUploadRequest creation."""
         request = AssetUploadRequest(
             filename="image.jpg",
-            mime_type="image/jpeg"
+            mime_type="image/jpeg",
+            description=None
         )
         self.assertEqual(request.filename, "image.jpg")
     
@@ -157,7 +208,10 @@ class TestAssetModels(unittest.TestCase):
         response = AssetDownloadResponse(
             asset_id="ASSET123",
             filename="image.jpg",
-            size=102400
+            mime_type="image/jpeg",
+            size=102400,
+            content_url=None,
+            expires_at=None
         )
         self.assertEqual(response.asset_id, "ASSET123")
         self.assertEqual(response.size, 102400)
@@ -267,7 +321,10 @@ class TestAssetOperations(unittest.TestCase):
         """Test successful asset creation."""
         request = AssetCreateRequest(
             id="NEWASSET",
-            name="New Asset"
+            user_type_id=None,
+            name="New Asset",
+            key_values=None,
+            attributes=None
         )
         mock_response = {
             "id": "NEWASSET",
@@ -281,7 +338,13 @@ class TestAssetOperations(unittest.TestCase):
     
     def test_create_asset_conflict(self):
         """Test asset creation with existing ID."""
-        request = AssetCreateRequest(id="EXISTING")
+        request = AssetCreateRequest(
+            id="EXISTING",
+            user_type_id=None,
+            name=None,
+            key_values=None,
+            attributes=None
+        )
         self.mock_client.createAsset.side_effect = Exception("409 conflict")
         
         with self.assertRaises(exc.ConflictError):
@@ -289,7 +352,12 @@ class TestAssetOperations(unittest.TestCase):
     
     def test_update_asset_success(self):
         """Test successful asset update."""
-        updates = AssetUpdateRequest(name="Updated")
+        updates = AssetUpdateRequest(
+            name="Updated",
+            user_type_id=None,
+            key_values=None,
+            attributes=None
+        )
         mock_response = {
             "id": "ASSET123",
             "name": "Updated"
@@ -302,7 +370,12 @@ class TestAssetOperations(unittest.TestCase):
     
     def test_update_asset_not_found(self):
         """Test asset update when not found."""
-        updates = AssetUpdateRequest(name="Updated")
+        updates = AssetUpdateRequest(
+            name="Updated",
+            user_type_id=None,
+            key_values=None,
+            attributes=None
+        )
         self.mock_client.updateAsset.side_effect = Exception("404 not found")
         
         with self.assertRaises(exc.NotFoundError):

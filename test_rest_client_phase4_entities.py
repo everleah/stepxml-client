@@ -25,7 +25,7 @@ class TestEntityModels(unittest.TestCase):
     
     def test_entity_attribute_creation(self):
         """Test EntityAttribute model creation."""
-        attr = EntityAttribute(name="Color", value="Blue", type="Text")
+        attr = EntityAttribute(name="Color", value="Blue", type="Text", unit=None)
         self.assertEqual(attr.name, "Color")
         self.assertEqual(attr.value, "Blue")
         self.assertEqual(attr.type, "Text")
@@ -36,6 +36,7 @@ class TestEntityModels(unittest.TestCase):
             createdAt="2025-01-01T00:00:00Z",
             modifiedAt="2025-01-02T00:00:00Z",
             createdBy="admin",
+            modifiedBy="admin",
             version=1
         )
         self.assertEqual(meta.createdAt, "2025-01-01T00:00:00Z")
@@ -47,7 +48,10 @@ class TestEntityModels(unittest.TestCase):
             id="ENT001",
             name="Product A",
             type="Product",
-            description="Test product"
+            description="Test product",
+            attributes=None,
+            relationships=None,
+            metadata=None
         )
         self.assertEqual(entity.id, "ENT001")
         self.assertEqual(entity.name, "Product A")
@@ -58,30 +62,44 @@ class TestEntityModels(unittest.TestCase):
         entity = EntityResponse(
             id="ENT001",
             name="Product A",
+            description=None,
+            type=None,
             attributes=[
-                EntityAttribute(name="Color", value="Blue"),
-                EntityAttribute(name="Size", value="Large")
-            ]
+                EntityAttribute(name="Color", value="Blue", type=None, unit=None),
+                EntityAttribute(name="Size", value="Large", type=None, unit=None)
+            ],
+            relationships=None,
+            metadata=None
         )
-        self.assertEqual(len(entity.attributes), 2)
-        self.assertEqual(entity.attributes[0].name, "Color")
+        self.assertEqual(len(entity.attributes), 2) #type: ignore
+        self.assertEqual(entity.attributes[0].name, "Color") #type: ignore
     
     def test_entity_response_with_metadata(self):
         """Test EntityResponse with metadata."""
-        meta = EntityMetadata(version=2, createdBy="admin")
+        meta = EntityMetadata(
+            createdAt="2025-01-01T00:00:00Z",
+            modifiedAt="2025-01-02T00:00:00Z",
+            createdBy="admin",
+            modifiedBy="admin",
+            version=2
+        )
         entity = EntityResponse(
             id="ENT001",
             name="Product A",
+            description=None,
+            type=None,
+            attributes=None,
+            relationships=None,
             metadata=meta
         )
-        self.assertEqual(entity.metadata.version, 2)
+        self.assertEqual(entity.metadata.version, 2) #type: ignore
     
     def test_entity_list_response_creation(self):
         """Test EntityListResponse model creation."""
         response = EntityListResponse(
             items=[
-                EntityResponse(id="ENT001", name="Product A"),
-                EntityResponse(id="ENT002", name="Product B")
+                EntityResponse(id="ENT001", name="Product A", description=None, type=None, attributes=None, relationships=None, metadata=None),
+                EntityResponse(id="ENT002", name="Product B", description=None, type=None, attributes=None, relationships=None, metadata=None)
             ],
             total=100,
             limit=20,
@@ -98,7 +116,8 @@ class TestEntityModels(unittest.TestCase):
             query="*",
             type="Product",
             limit=50,
-            offset=0
+            offset=0,
+            attributes=None
         )
         self.assertEqual(req.query, "*")
         self.assertEqual(req.type, "Product")
@@ -109,7 +128,9 @@ class TestEntityModels(unittest.TestCase):
         req = EntityCreateRequest(
             name="New Product",
             type="Product",
-            description="Test"
+            description="Test",
+            attributes=None,
+            relationships=None
         )
         self.assertEqual(req.name, "New Product")
         self.assertEqual(req.type, "Product")
@@ -118,7 +139,9 @@ class TestEntityModels(unittest.TestCase):
         """Test EntityUpdateRequest model creation."""
         req = EntityUpdateRequest(
             name="Updated Product",
-            description="Updated"
+            description="Updated",
+            attributes=None,
+            relationships=None
         )
         self.assertEqual(req.name, "Updated Product")
     
@@ -285,7 +308,7 @@ class TestEntityOperations(unittest.TestCase):
         }
         self.mock_client.createEntity.return_value = mock_response
         
-        req = EntityCreateRequest(name="New Product", type="Product")
+        req = EntityCreateRequest(name="New Product", type="Product", description=None, attributes=None, relationships=None)
         result = self.operations.create_entity(req)
         
         self.assertIsInstance(result, EntityResponse)
@@ -296,7 +319,7 @@ class TestEntityOperations(unittest.TestCase):
         """Test create_entity with validation error."""
         self.mock_client.createEntity.side_effect = Exception("400 Bad Request")
         
-        req = EntityCreateRequest(name="Product")
+        req = EntityCreateRequest(name="Product", type=None, description=None, attributes=None, relationships=None)
         with self.assertRaises(ValidationError):
             self.operations.create_entity(req)
     
@@ -309,7 +332,7 @@ class TestEntityOperations(unittest.TestCase):
         }
         self.mock_client.updateEntity.return_value = mock_response
         
-        updates = EntityUpdateRequest(name="Updated Product")
+        updates = EntityUpdateRequest(name="Updated Product", description=None, attributes=None, relationships=None)
         result = self.operations.update_entity("ENT001", updates)
         
         self.assertIsInstance(result, EntityResponse)
@@ -319,13 +342,13 @@ class TestEntityOperations(unittest.TestCase):
         """Test update_entity raises NotFoundError."""
         self.mock_client.updateEntity.side_effect = Exception("404")
         
-        updates = EntityUpdateRequest(name="Updated")
+        updates = EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)
         with self.assertRaises(NotFoundError):
             self.operations.update_entity("NONEXISTENT", updates)
     
     def test_update_entity_missing_id(self):
         """Test update_entity with missing ID."""
-        updates = EntityUpdateRequest(name="Updated")
+        updates = EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)
         with self.assertRaises(ValidationError):
             self.operations.update_entity(None, updates)
     
@@ -403,8 +426,8 @@ class TestEntityOperations(unittest.TestCase):
         self.mock_client.bulkCreateEntities.return_value = mock_response
         
         entities = [
-            EntityCreateRequest(name="Product 1"),
-            EntityCreateRequest(name="Product 2")
+            EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None),
+            EntityCreateRequest(name="Product 2", type=None, description=None, attributes=None, relationships=None)
         ]
         result = self.operations.bulk_create_entities(entities)
         
@@ -422,7 +445,7 @@ class TestEntityOperations(unittest.TestCase):
         self.mock_client.bulkCreateEntities.return_value = mock_response
         
         entities = [
-            EntityCreateRequest(name="Product 1")
+            EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None)
         ]
         result = self.operations.bulk_create_entities(entities)
         
@@ -432,7 +455,7 @@ class TestEntityOperations(unittest.TestCase):
         """Test bulk_create_entities with validation error."""
         self.mock_client.bulkCreateEntities.side_effect = Exception("400")
         
-        entities = [EntityCreateRequest(name="Product 1")]
+        entities = [EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None)]
         with self.assertRaises(ValidationError):
             self.operations.bulk_create_entities(entities)
     
@@ -446,8 +469,8 @@ class TestEntityOperations(unittest.TestCase):
         self.mock_client.bulkUpdateEntities.return_value = mock_response
         
         updates = {
-            "ENT001": EntityUpdateRequest(name="Updated 1"),
-            "ENT002": EntityUpdateRequest(name="Updated 2")
+            "ENT001": EntityUpdateRequest(name="Updated 1", description=None, attributes=None, relationships=None),
+            "ENT002": EntityUpdateRequest(name="Updated 2", description=None, attributes=None, relationships=None)
         }
         result = self.operations.bulk_update_entities(updates)
         
@@ -457,7 +480,7 @@ class TestEntityOperations(unittest.TestCase):
         """Test bulk_update_entities with validation error."""
         self.mock_client.bulkUpdateEntities.side_effect = Exception("400")
         
-        updates = {"ENT001": EntityUpdateRequest(name="Updated")}
+        updates = {"ENT001": EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)}
         with self.assertRaises(ValidationError):
             self.operations.bulk_update_entities(updates)
     

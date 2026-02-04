@@ -26,7 +26,7 @@ class TestProductModels(unittest.TestCase):
     
     def test_product_attribute_creation(self):
         """Test ProductAttribute creation."""
-        attr = ProductAttribute(name="Color", value="Red")
+        attr = ProductAttribute(name="Color", value="Red", context=None, language=None)
         self.assertEqual(attr.name, "Color")
         self.assertEqual(attr.value, "Red")
     
@@ -43,19 +43,19 @@ class TestProductModels(unittest.TestCase):
     
     def test_product_value_creation(self):
         """Test ProductValue creation."""
-        value = ProductValue(id="SKU123")
+        value = ProductValue(id="SKU123", attributes=None, key_values=None)
         self.assertEqual(value.id, "SKU123")
     
     def test_product_value_with_attributes(self):
         """Test ProductValue with attributes."""
-        attrs = [ProductAttribute(name="Size", value="Large")]
-        value = ProductValue(id="SKU123", attributes=attrs)
-        self.assertEqual(len(value.attributes), 1)
-        self.assertEqual(value.attributes[0].value, "Large")
+        attrs = [ProductAttribute(name="Size", value="Large", context=None, language=None)]
+        value = ProductValue(id="SKU123", attributes=attrs, key_values=None)
+        self.assertEqual(len(value.attributes), 1) #type: ignore
+        self.assertEqual(value.attributes[0].value, "Large") #type: ignore
     
     def test_cross_reference_creation(self):
         """Test CrossReference creation."""
-        xref = CrossReference(type="Product", target_id="RELATED123")
+        xref = CrossReference(type="Product", target_id="RELATED123", attributes=None)
         self.assertEqual(xref.type, "Product")
         self.assertEqual(xref.target_id, "RELATED123")
     
@@ -64,42 +64,53 @@ class TestProductModels(unittest.TestCase):
         product = ProductResponse(
             id="PROD123",
             user_type_id="Product",
-            name="Test Product"
+            name="Test Product",
+            created_date=None,
+            modified_date=None,
+            version=None,
+            metadata=None
         )
         self.assertEqual(product.id, "PROD123")
         self.assertEqual(product.name, "Test Product")
     
     def test_product_response_with_attributes_and_values(self):
         """Test ProductResponse with attributes and values."""
-        attrs = [ProductAttribute(name="Color", value="Blue")]
-        values = [ProductValue(id="SKU001")]
+        attrs = [ProductAttribute(name="Color", value="Blue", context=None, language=None)]
+        values = [ProductValue(id="SKU001", attributes=None, key_values=None)]
         
         product = ProductResponse(
             id="PROD123",
+            user_type_id=None,
+            name=None,
             attributes=attrs,
-            values=values
+            values=values,
+            created_date=None,
+            modified_date=None,
+            version=None,
+            metadata=None
         )
-        self.assertEqual(len(product.attributes), 1)
-        self.assertEqual(len(product.values), 1)
+        self.assertEqual(len(product.attributes), 1) #type: ignore
+        self.assertEqual(len(product.values), 1) #type: ignore  
     
     def test_product_list_response_creation(self):
         """Test ProductListResponse creation."""
         products = [
-            ProductResponse(id="PROD1"),
-            ProductResponse(id="PROD2"),
+            ProductResponse(id="PROD1", user_type_id=None, name=None, created_date=None, modified_date=None, version=None, metadata=None),
+            ProductResponse(id="PROD2", user_type_id=None, name=None, created_date=None, modified_date=None, version=None, metadata=None),
         ]
         response = ProductListResponse(
             items=products,
             total=100,
             limit=20,
-            offset=0
+            offset=0,
+            has_more=True
         )
         self.assertEqual(len(response.items), 2)
         self.assertEqual(response.total, 100)
     
     def test_product_list_response_has_more(self):
         """Test ProductListResponse has_more calculation."""
-        products = [ProductResponse(id=f"PROD{i}") for i in range(20)]
+        products = [ProductResponse(id=f"PROD{i}", user_type_id=None, name=None, created_date=None, modified_date=None, version=None, metadata=None) for i in range(20)]
         
         # Has more results
         response = ProductListResponse(
@@ -125,8 +136,12 @@ class TestProductModels(unittest.TestCase):
         """Test ProductSearchRequest creation."""
         request = ProductSearchRequest(
             query="widget",
+            user_type_id=None,
+            modified_since=None,
             limit=50,
-            offset=10
+            offset=10,
+            include_values=True,
+            include_attributes=True
         )
         self.assertEqual(request.query, "widget")
         self.assertEqual(request.limit, 50)
@@ -134,7 +149,15 @@ class TestProductModels(unittest.TestCase):
     
     def test_product_search_request_defaults(self):
         """Test ProductSearchRequest defaults."""
-        request = ProductSearchRequest()
+        request = ProductSearchRequest(
+            query="*",
+            user_type_id=None,
+            modified_since=None,
+            limit=20,
+            offset=0,
+            include_values=True,
+            include_attributes=True
+        )
         self.assertEqual(request.query, "*")
         self.assertEqual(request.limit, 20)
         self.assertEqual(request.offset, 0)
@@ -146,14 +169,23 @@ class TestProductModels(unittest.TestCase):
         request = ProductCreateRequest(
             id="NEWPROD123",
             user_type_id="Product",
-            name="New Product"
+            name="New Product",
+            attributes=None,
+            values=None,
+            cross_references=None
         )
         self.assertEqual(request.id, "NEWPROD123")
         self.assertEqual(request.name, "New Product")
     
     def test_product_update_request(self):
         """Test ProductUpdateRequest creation."""
-        request = ProductUpdateRequest(name="Updated Name")
+        request = ProductUpdateRequest(
+            name="Updated Name",
+            user_type_id=None,
+            attributes=None,
+            values=None,
+            cross_references=None
+        )
         self.assertEqual(request.name, "Updated Name")
         self.assertIsNone(request.user_type_id)
 
@@ -282,7 +314,11 @@ class TestProductOperations(unittest.TestCase):
         """Test successful product creation."""
         request = ProductCreateRequest(
             id="NEWPROD",
-            name="New Product"
+            user_type_id=None,
+            name="New Product",
+            attributes=None,
+            values=None,
+            cross_references=None
         )
         mock_response = {
             "id": "NEWPROD",
@@ -297,7 +333,14 @@ class TestProductOperations(unittest.TestCase):
     
     def test_create_product_conflict(self):
         """Test product creation with existing ID."""
-        request = ProductCreateRequest(id="EXISTING")
+        request = ProductCreateRequest(
+            id="EXISTING",
+            user_type_id=None,
+            name=None,
+            attributes=None,
+            values=None,
+            cross_references=None
+        )
         self.mock_client.createProduct.side_effect = Exception("409 conflict")
         
         with self.assertRaises(exc.ConflictError):
@@ -305,7 +348,14 @@ class TestProductOperations(unittest.TestCase):
     
     def test_create_product_validation_error(self):
         """Test product creation with invalid data."""
-        request = ProductCreateRequest(id="NEWPROD")
+        request = ProductCreateRequest(
+            id="NEWPROD",
+            user_type_id=None,
+            name=None,
+            attributes=None,
+            values=None,
+            cross_references=None
+        )
         self.mock_client.createProduct.side_effect = Exception("400 invalid")
         
         with self.assertRaises(exc.ValidationError):
@@ -317,11 +367,24 @@ class TestProductOperations(unittest.TestCase):
         from pydantic import ValidationError as PydanticValidationError
         
         with self.assertRaises(PydanticValidationError):
-            ProductCreateRequest(id=None)
+            ProductCreateRequest(
+                id=None, #type: ignore
+                user_type_id=None,
+                name=None,
+                attributes=None,
+                values=None,
+                cross_references=None
+            )
     
     def test_update_product_success(self):
         """Test successful product update."""
-        updates = ProductUpdateRequest(name="Updated Name")
+        updates = ProductUpdateRequest(
+            name="Updated Name",
+            user_type_id=None,
+            attributes=None,
+            values=None,
+            cross_references=None
+        )
         mock_response = {
             "id": "PROD123",
             "name": "Updated Name"
@@ -335,7 +398,7 @@ class TestProductOperations(unittest.TestCase):
     
     def test_update_product_not_found(self):
         """Test product update when not found."""
-        updates = ProductUpdateRequest(name="Updated")
+        updates = ProductUpdateRequest(name="Updated", user_type_id=None, attributes=None, values=None, cross_references=None)
         self.mock_client.updateProduct.side_effect = Exception("404 not found")
         
         with self.assertRaises(exc.NotFoundError):

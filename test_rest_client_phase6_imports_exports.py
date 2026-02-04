@@ -37,7 +37,8 @@ class TestImportExportModels(unittest.TestCase):
             totalItems=1000,
             processedItems=500,
             failedItems=10,
-            percentComplete=50.0
+            percentComplete=50.0,
+            successfulItems=None
         )
         assert progress.totalItems == 1000
         assert progress.processedItems == 500
@@ -51,7 +52,8 @@ class TestImportExportModels(unittest.TestCase):
             errorMessage="Invalid product ID",
             entityId="PROD123",
             severity="ERROR",
-            timestamp=datetime.now().isoformat()
+            timestamp=datetime.now().isoformat(),
+            details=None
         )
         assert error.errorCode == "INVALID_DATA"
         assert error.errorMessage == "Invalid product ID"
@@ -64,7 +66,8 @@ class TestImportExportModels(unittest.TestCase):
             entityType="Product",
             sourceType="S3",
             sourceData={"bucket": "my-bucket", "key": "products.xml"},
-            updateStrategy="REPLACE"
+            updateStrategy="REPLACE",
+            config=None
         )
         assert request.entityType == "Product"
         assert request.sourceType == "S3"
@@ -75,8 +78,14 @@ class TestImportExportModels(unittest.TestCase):
             jobId="IMP123456",
             status="PROCESSING",
             entityType="Product",
-            createdAt=datetime.now().isoformat()
-        )
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=None,
+            updateStrategy=None,
+            progress=None,
+            errorMessage=None,
+            config=None        
+            )
         assert job.jobId == "IMP123456"
         assert job.status == "PROCESSING"
         assert job.entityType == "Product"
@@ -87,13 +96,25 @@ class TestImportExportModels(unittest.TestCase):
             jobId="IMP001",
             status="COMPLETED",
             entityType="Product",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=None,
+            updateStrategy=None,
+            progress=None,
+            errorMessage=None,
+            config=None            
         )
         job2 = ImportJobResponse(
             jobId="IMP002",
             status="PROCESSING",
             entityType="Asset",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=None,
+            updateStrategy=None,
+            progress=None,
+            errorMessage=None,
+            config=None
         )
         
         response = ImportJobListResponse(
@@ -110,7 +131,8 @@ class TestImportExportModels(unittest.TestCase):
         request = ExportJobCreateRequest(
             entityType="Product",
             format="XML",
-            filters={"status": "ACTIVE"}
+            filters={"status": "ACTIVE"},
+            config=None
         )
         assert request.entityType == "Product"
         assert request.format == "XML"
@@ -122,7 +144,13 @@ class TestImportExportModels(unittest.TestCase):
             status="COMPLETED",
             entityType="Product",
             format="XML",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=datetime.now().isoformat(),
+            progress=None,
+            downloadUrl=None,
+            fileSize=None,
+            errorMessage=None
         )
         assert job.jobId == "EXP123456"
         assert job.status == "COMPLETED"
@@ -133,12 +161,18 @@ class TestImportExportModels(unittest.TestCase):
             JobErrorResponse(
                 errorCode="ERR001",
                 errorMessage="Invalid data",
-                entityId="PROD001"
+                entityId="PROD001",
+                severity=None,
+                timestamp=datetime.now().isoformat(),
+                details=None
             ),
             JobErrorResponse(
                 errorCode="ERR002",
                 errorMessage="Duplicate entry",
-                entityId="PROD002"
+                entityId="PROD002",
+                severity=None,
+                timestamp=datetime.now().isoformat(),
+                details=None
             )
         ]
         
@@ -166,7 +200,9 @@ class TestImportOperations(unittest.TestCase):
         request = ImportJobCreateRequest(
             entityType="Product",
             sourceType="S3",
-            sourceData={"bucket": "my-bucket", "key": "products.xml"}
+            sourceData={"bucket": "my-bucket", "key": "products.xml"},
+            updateStrategy=None,
+            config=None
         )
         expected_response = {
             "jobId": "IMP123456",
@@ -382,7 +418,9 @@ class TestExportOperations(unittest.TestCase):
         # Setup
         request = ExportJobCreateRequest(
             entityType="Product",
-            format="XML"
+            format="XML",
+            filters=None,
+            config=None
         )
         expected_response = {
             "jobId": "EXP123456",
@@ -517,7 +555,13 @@ class TestExportOperations(unittest.TestCase):
             status="COMPLETED",
             entityType="Product",
             format="XML",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=datetime.now().isoformat(),
+            progress=None,
+            downloadUrl=None,
+            fileSize=None,
+            errorMessage=None
         )
         
         self.exports.get_export_job = Mock(return_value=completed_job)
@@ -541,7 +585,13 @@ class TestExportOperations(unittest.TestCase):
             status="PROCESSING",
             entityType="Product",
             format="XML",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=None,
+            progress=None,
+            downloadUrl=None,
+            fileSize=None,
+            errorMessage=None
         )
         
         self.exports.get_export_job = Mock(return_value=processing_job)
@@ -561,7 +611,13 @@ class TestExportOperations(unittest.TestCase):
             status="COMPLETED",
             entityType="Product",
             format="XML",
-            createdAt=datetime.now().isoformat()
+            createdAt=datetime.now().isoformat(),
+            startedAt=None,
+            completedAt=datetime.now().isoformat(),
+            progress=None,
+            downloadUrl=None,
+            fileSize=None,
+            errorMessage=None
         )
         
         self.exports.get_export_job = Mock(return_value=completed_job)
@@ -652,7 +708,9 @@ class TestImportExportIntegration(unittest.TestCase):
         request = ImportJobCreateRequest(
             entityType="Product",
             sourceType="S3",
-            sourceData={"bucket": "my-bucket", "key": "products.xml"}
+            sourceData={"bucket": "my-bucket", "key": "products.xml"},
+            updateStrategy=None,
+            config=None
         )
         created_job = self.imports.create_import_job(request)
         assert created_job.jobId == "IMP123"
@@ -695,7 +753,9 @@ class TestImportExportIntegration(unittest.TestCase):
         
         request = ExportJobCreateRequest(
             entityType="Product",
-            format="XML"
+            format="XML",
+            filters=None,
+            config=None
         )
         created_job = self.exports.create_export_job(request)
         assert created_job.jobId == "EXP123"
