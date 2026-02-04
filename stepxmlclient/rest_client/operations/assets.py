@@ -37,7 +37,7 @@ class AssetOperations(BaseOperation):
     - Downloading binary content
     """
     
-    def __init__(self, client: roa.Client, logger: logging.Logger = None):
+    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None):
         """Initialize AssetOperations.
         
         Args:
@@ -385,12 +385,16 @@ class AssetOperations(BaseOperation):
         filename = getattr(response, 'filename', None) or asset_id
         size = getattr(response, 'size', None)
         mime_type = getattr(response, 'mime_type', None)
+        content_url = getattr(response, 'content_url', None)
+        expires_at = getattr(response, 'expires_at', None)
         
         return AssetDownloadResponse(
             asset_id=asset_id,
             filename=filename,
             size=size,
-            mime_type=mime_type
+            mime_type=mime_type,
+            content_url=content_url,
+            expires_at=expires_at
         )
     
     @handle_rest_errors
@@ -422,12 +426,18 @@ class AssetOperations(BaseOperation):
             raise
         
         # Handle response
+        url = None
         if isinstance(response, dict):
-            return response.get("url") or response.get("content_url")
+            url = response.get("url") or response.get("content_url")
         elif isinstance(response, str):
             return response
         else:
-            return getattr(response, "url", None) or getattr(response, "content_url", None)
+            url = getattr(response, "url", None) or getattr(response, "content_url", None)
+
+        if not url:
+            raise exc.ValidationError(f"Could not retrieve content URL for asset {asset_id}")
+
+        return str(url)
     
     def list_assets(self, limit: int = 20, offset: int = 0,
                    include_metadata: bool = True) -> AssetListResponse:

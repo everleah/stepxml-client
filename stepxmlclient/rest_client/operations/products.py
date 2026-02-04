@@ -32,7 +32,7 @@ class ProductOperations(BaseOperation):
     - Accessing product attributes and values
     """
     
-    def __init__(self, client: roa.Client, logger: logging.Logger = None):
+    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None):
         """Initialize ProductOperations.
         
         Args:
