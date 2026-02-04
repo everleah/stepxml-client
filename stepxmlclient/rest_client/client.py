@@ -13,6 +13,8 @@ from .operations.products import ProductOperations
 from .operations.assets import AssetOperations
 from .operations.classifications import ClassificationOperations
 from .operations.entities import EntityOperations
+from .operations.attributes import AttributeOperations
+from .operations.metadata import MetadataOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -71,8 +73,8 @@ class StepRestClient(StiboStepRestClient):
         self.assets = AssetOperations(self.client, logger=op_logger)
         self.classifications = ClassificationOperations(self.client, logger=op_logger)
         self.entities = EntityOperations(self.client, logger=op_logger)
-        self.attributes = None  # AttributeOperations(self.client, logger=op_logger)
-        self.metadata = None    # MetadataOperations(self.client, logger=op_logger)
+        self.attributes = AttributeOperations(self.client, logger=op_logger)
+        self.metadata = MetadataOperations(self.client, logger=op_logger)
         self.imports = None     # ImportOperations(self.client, logger=op_logger)
         self.exports = None     # ExportOperations(self.client, logger=op_logger)
     
