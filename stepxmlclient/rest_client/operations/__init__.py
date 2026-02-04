@@ -3,7 +3,8 @@
 Operation groups for different STEP entity types.
 """
 
-# Import and expose operation classes as they are implemented
-# For now, this is a placeholder for future operations
+from .products import ProductOperations
 
-__all__ = []
+__all__ = [
+    'ProductOperations',
+]

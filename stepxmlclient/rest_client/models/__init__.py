@@ -14,6 +14,16 @@ from .common import (
     SuccessResponse,
     ListResponse,
 )
+from .product import (
+    ProductResponse,
+    ProductListResponse,
+    ProductSearchRequest,
+    ProductCreateRequest,
+    ProductUpdateRequest,
+    ProductAttribute,
+    ProductValue,
+    CrossReference,
+)
 
 __all__ = [
     'PageInfo',
@@ -25,4 +35,12 @@ __all__ = [
     'SearchRequest',
     'SuccessResponse',
     'ListResponse',
+    'ProductResponse',
+    'ProductListResponse',
+    'ProductSearchRequest',
+    'ProductCreateRequest',
+    'ProductUpdateRequest',
+    'ProductAttribute',
+    'ProductValue',
+    'CrossReference',
 ]

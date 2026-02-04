@@ -9,6 +9,7 @@ from typing import Optional
 
 from ..client import StiboStepRestClient
 from .base import BaseOperation
+from .operations.products import ProductOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -19,13 +20,13 @@ class StepRestClient(StiboStepRestClient):
     
     Attributes:
         products: ProductOperations instance
-        assets: AssetOperations instance
-        classifications: ClassificationOperations instance
-        entities: EntityOperations instance
-        attributes: AttributeOperations instance
-        metadata: MetadataOperations instance
-        imports: ImportOperations instance
-        exports: ExportOperations instance
+        assets: AssetOperations instance (planned)
+        classifications: ClassificationOperations instance (planned)
+        entities: EntityOperations instance (planned)
+        attributes: AttributeOperations instance (planned)
+        metadata: MetadataOperations instance (planned)
+        imports: ImportOperations instance (planned)
+        exports: ExportOperations instance (planned)
     """
     
     def __init__(self, location_base, authorisation,
@@ -62,16 +63,17 @@ class StepRestClient(StiboStepRestClient):
         else:
             op_logger = logger
         
-        # Initialize operation groups (will be implemented in subsequent phases)
-        # These are placeholders showing the intended structure
-        self.products = None  # ProductOperations(self.client, logger=op_logger)
-        self.assets = None    # AssetOperations(self.client, logger=op_logger)
+        # Initialize operation groups
+        self.products = ProductOperations(self.client, logger=op_logger)
+        
+        # These are placeholders for future phases
+        self.assets = None      # AssetOperations(self.client, logger=op_logger)
         self.classifications = None  # ClassificationOperations(self.client, logger=op_logger)
-        self.entities = None  # EntityOperations(self.client, logger=op_logger)
+        self.entities = None    # EntityOperations(self.client, logger=op_logger)
         self.attributes = None  # AttributeOperations(self.client, logger=op_logger)
-        self.metadata = None  # MetadataOperations(self.client, logger=op_logger)
-        self.imports = None   # ImportOperations(self.client, logger=op_logger)
-        self.exports = None   # ExportOperations(self.client, logger=op_logger)
+        self.metadata = None    # MetadataOperations(self.client, logger=op_logger)
+        self.imports = None     # ImportOperations(self.client, logger=op_logger)
+        self.exports = None     # ExportOperations(self.client, logger=op_logger)
     
     def get_operation_group(self, group_name: str) -> Optional[BaseOperation]:
         """Get an operation group by name.
