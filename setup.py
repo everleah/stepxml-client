@@ -8,5 +8,5 @@ setup(name='stepxmlclient',
       author='Claudius Hansch',
       author_email='claudius.hansch@hoerl-im.de',
       packages=find_packages(include=["stepxmlclient*"]),
-      install_requires=['requests-openapi', 'requests' ]
+      install_requires=['requests-openapi', 'requests', 'pydantic>=2.0']
       )

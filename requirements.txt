@@ -2,4 +2,5 @@ pip
 setuptools
 requests
 requests-openapi
+pydantic>=2.0
 wheel
