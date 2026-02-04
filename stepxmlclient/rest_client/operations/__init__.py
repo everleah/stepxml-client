@@ -9,6 +9,8 @@ from .classifications import ClassificationOperations
 from .entities import EntityOperations
 from .attributes import AttributeOperations
 from .metadata import MetadataOperations
+from .imports import ImportOperations
+from .exports import ExportOperations
 
 __all__ = [
     'ProductOperations',
@@ -17,4 +19,6 @@ __all__ = [
     'EntityOperations',
     'AttributeOperations',
     'MetadataOperations',
+    'ImportOperations',
+    'ExportOperations',
 ]

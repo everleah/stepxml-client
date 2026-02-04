@@ -84,6 +84,17 @@ from .metadata import (
     WorkspaceResponse,
     WorkspaceListResponse,
 )
+from .import_export import (
+    ImportJobResponse,
+    ImportJobListResponse,
+    ImportJobCreateRequest,
+    ExportJobResponse,
+    ExportJobListResponse,
+    ExportJobCreateRequest,
+    JobProgressResponse,
+    JobErrorResponse,
+    JobErrorListResponse,
+)
 
 __all__ = [
     'PageInfo',
@@ -153,4 +164,13 @@ __all__ = [
     'UserTypeListResponse',
     'WorkspaceResponse',
     'WorkspaceListResponse',
+    'ImportJobResponse',
+    'ImportJobListResponse',
+    'ImportJobCreateRequest',
+    'ExportJobResponse',
+    'ExportJobListResponse',
+    'ExportJobCreateRequest',
+    'JobProgressResponse',
+    'JobErrorResponse',
+    'JobErrorListResponse',
 ]

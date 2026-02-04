@@ -15,6 +15,8 @@ from .operations.classifications import ClassificationOperations
 from .operations.entities import EntityOperations
 from .operations.attributes import AttributeOperations
 from .operations.metadata import MetadataOperations
+from .operations.imports import ImportOperations
+from .operations.exports import ExportOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -75,8 +77,8 @@ class StepRestClient(StiboStepRestClient):
         self.entities = EntityOperations(self.client, logger=op_logger)
         self.attributes = AttributeOperations(self.client, logger=op_logger)
         self.metadata = MetadataOperations(self.client, logger=op_logger)
-        self.imports = None     # ImportOperations(self.client, logger=op_logger)
-        self.exports = None     # ExportOperations(self.client, logger=op_logger)
+        self.imports = ImportOperations(self.client, logger=op_logger)
+        self.exports = ExportOperations(self.client, logger=op_logger)
     
     def get_operation_group(self, group_name: str) -> Optional[BaseOperation]:
         """Get an operation group by name.
