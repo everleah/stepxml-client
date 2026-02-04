@@ -8,6 +8,7 @@ import logging
 from typing import Any, Optional, Dict, Callable, TypeVar, Generic
 from functools import wraps
 
+import requests
 import requests_openapi as roa
 
 from . import exceptions as exc
@@ -25,7 +26,7 @@ def handle_rest_errors(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except roa.exceptions.RequestException as e:
+        except requests.exceptions.RequestException as e:
             # Handle requests library exceptions
             if hasattr(e, 'response') and e.response is not None:
                 status = e.response.status_code
@@ -77,8 +78,8 @@ class BaseOperation:
         operation_name: Name of this operation group (for logging)
     """
     
-    def __init__(self, client: roa.Client, operation_name: str = None, 
-                 logger: logging.Logger = None):
+    def __init__(self, client: roa.Client, operation_name: Optional[str] = None, 
+                 logger: Optional[logging.Logger] = None):
         """Initialize base operation.
         
         Args:
@@ -94,7 +95,7 @@ class BaseOperation:
         else:
             self.logger = logger
     
-    def _log_operation(self, operation_id: str, params: Dict[str, Any] = None) -> None:
+    def _log_operation(self, operation_id: str, params: Optional[Dict[str, Any]] = None) -> None:
         """Log an API operation.
         
         Args:
@@ -146,18 +147,13 @@ class BaseOperation:
         Returns:
             PageInfo instance
         """
-        has_more = False
-        if total is not None:
-            has_more = (offset + limit) < total
-        
         return PageInfo(
             limit=limit,
             offset=offset,
-            total=total,
-            has_more=has_more
+            total=total
         )
     
-    def _get_paginated_results(self, operation_id: str, params: Dict[str, Any],
+    def _get_paginated_results(self, operation_id: str, params: Optional[Dict[str, Any]] = None,
                               item_key: str = "items",
                               total_key: str = "total") -> tuple:
         """Execute paginated API call and extract items and total count.
@@ -174,7 +170,7 @@ class BaseOperation:
         self._log_operation(operation_id, params)
         
         operation = getattr(self.client, operation_id)
-        response = operation(**params)
+        response = operation(**(params or {}))
         
         # Handle different response formats
         if isinstance(response, dict):
