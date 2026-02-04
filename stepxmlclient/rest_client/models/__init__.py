@@ -109,6 +109,22 @@ from .relations import (
     LinkCreateRequest,
     RelationshipGraphResponse,
 )
+from .bulk import (
+    BulkOperationRequest,
+    BulkOperationResponse,
+    BulkOperationResult,
+    BulkOperationResultResponse,
+    WorkflowDefinition,
+    WorkflowInstance,
+    WorkflowTransitionRequest,
+    AdvancedSearchRequest,
+    SearchAggregation,
+    AdvancedSearchResponse,
+    CacheConfigRequest,
+    CacheStatistics,
+    StreamingRequest,
+    StreamingResponse,
+)
 
 __all__ = [
     'PageInfo',
@@ -199,4 +215,18 @@ __all__ = [
     'LinkListResponse',
     'LinkCreateRequest',
     'RelationshipGraphResponse',
+    'BulkOperationRequest',
+    'BulkOperationResponse',
+    'BulkOperationResult',
+    'BulkOperationResultResponse',
+    'WorkflowDefinition',
+    'WorkflowInstance',
+    'WorkflowTransitionRequest',
+    'AdvancedSearchRequest',
+    'SearchAggregation',
+    'AdvancedSearchResponse',
+    'CacheConfigRequest',
+    'CacheStatistics',
+    'StreamingRequest',
+    'StreamingResponse',
 ]

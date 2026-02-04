@@ -18,6 +18,13 @@ from .operations.metadata import MetadataOperations
 from .operations.imports import ImportOperations
 from .operations.exports import ExportOperations
 from .operations.relations import RelationOperations
+from .operations.bulk import (
+    BulkOperations,
+    WorkflowOperations,
+    AdvancedSearchOperations,
+    CacheOperations,
+    StreamingOperations,
+)
 
 
 class StepRestClient(StiboStepRestClient):
@@ -31,6 +38,16 @@ class StepRestClient(StiboStepRestClient):
         assets: AssetOperations instance
         classifications: ClassificationOperations instance
         entities: EntityOperations instance
+        attributes: AttributeOperations instance
+        metadata: MetadataOperations instance
+        imports: ImportOperations instance
+        exports: ExportOperations instance
+        relations: RelationOperations instance
+        bulk: BulkOperations instance
+        workflows: WorkflowOperations instance
+        search: AdvancedSearchOperations instance
+        cache: CacheOperations instance
+        streaming: StreamingOperations instance
         attributes: AttributeOperations instance
         metadata: MetadataOperations instance
         imports: ImportOperations instance
@@ -82,6 +99,11 @@ class StepRestClient(StiboStepRestClient):
         self.imports = ImportOperations(self.client, logger=op_logger)
         self.exports = ExportOperations(self.client, logger=op_logger)
         self.relations = RelationOperations(self.client, logger=op_logger)
+        self.bulk = BulkOperations(self.client, logger=op_logger)
+        self.workflows = WorkflowOperations(self.client, logger=op_logger)
+        self.search = AdvancedSearchOperations(self.client, logger=op_logger)
+        self.cache = CacheOperations(self.client, logger=op_logger)
+        self.streaming = StreamingOperations(self.client, logger=op_logger)
     
     def get_operation_group(self, group_name: str) -> Optional[BaseOperation]:
         """Get an operation group by name.
