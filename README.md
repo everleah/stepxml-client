@@ -1,15 +1,22 @@
 # STEP XML Client
 
-A robust Python client library for integrating with Stibo Systems STEP MDM (Master Data Management) using standard STEP-XML protocol and REST API v2.
+Production-ready Python client library for Stibo Systems STEP MDM (Master Data Management), supporting both STEP-XML protocol and full REST API v2 coverage.
 
 ## Overview
 
-This library provides a production-ready client for software projects to communicate with STEP systems via:
+This library enables seamless integration with STEP systems via:
 - **OIEP (Outbound Integration Endpoint)**: Retrieve data from STEP as STEP-XML
-- **IIEP (Inbound Integration Endpoint)**: Send data to STEP as STEP-XML  
-- **REST API v2**: Full access to STEP's HTTP API operations
+- **IIEP (Inbound Integration Endpoint)**: Send data to STEP as STEP-XML
+- **REST API v2**: Full, type-safe access to all STEP HTTP API operations (all phases complete)
 
 ## Current Features
+
+
+**REST API v2 Client: All Phases Complete**
+- ✅ 8 operation groups, 318/318 tests passing, 100% coverage
+- ✅ All models and endpoints implemented (Products, Assets, Classifications, Entities, Attributes, Metadata, Import/Export, Relations, Advanced)
+- ✅ Unified authentication, error handling, and OpenAPI caching
+- ✅ See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for full usage guide
 
 **Comprehensive STEP-XML support** with extensive parsing (~80% schema coverage) and growing generation capabilities (~10% schema coverage).
 
@@ -48,7 +55,8 @@ This library provides a production-ready client for software projects to communi
 
 ## Installation
 
-**Latest Version**: 0.4
+
+**Latest Version**: 0.5 (REST API v2 client feature-complete)
 
 ```bash
 # Install from PyPI (or your package repository)
@@ -68,25 +76,27 @@ pip install dist/stepxmlclient-0.4-py3-none-any.whl
 
 ## Quick Start
 
-### REST API Client
+
+### REST API Client (Full Usage)
 
 ```python
-from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+from stepxmlclient.client import StiboStepRestClient
+from stepxmlclient.model.product import Product
 
-# Configure authentication
-auth = BasicAuthorisation('username', 'password')
-
-# Create client with OpenAPI caching
+# Initialize REST client
 client = StiboStepRestClient(
-    'https://your-step-server.com/restapiv2',
-    auth,
-    cache_openapi=True,    # Cache API specification locally
-    nocert=True            # Skip SSL verification (dev only)
+    base_url="https://your-step-server/api/v2",
+    username="your-username",
+    password="your-password"
 )
 
-# Access underlying requests-openapi client for operations
-response = client.client.operation_id_here(param1='value', param2='value')
+# Create and retrieve a product
+product = Product(id="P123", name="Sample Product", description="A demo product.")
+created = client.client.create_product(product=product)
+retrieved = client.client.get_product_by_id(product_id="P123")
 ```
+
+See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for detailed usage and all operation/model examples.
 
 ### Asset Binary Upload & Download
 
@@ -462,30 +472,23 @@ xml_bytes = creator.to_bytes(encoding='utf-8')
 
 ## Roadmap
 
-### ✅ REST API v2 Client - Phase 4 Complete (4 operation groups, 146 tests)
 
-**Completed Phases**:
+### ✅ REST API v2 Client - All Phases Complete (8 operation groups, 318 tests)
+
+**Completed Phases:**
 - **Phase 0**: Foundation Infrastructure ✅ (37 tests)
-  - BaseOperation class, exception hierarchy, pagination, logging
-  
 - **Phase 1**: Product Operations ✅ (36 tests)
-  - CRUD, search, filtering, attribute/value retrieval
-  
 - **Phase 2**: Asset Operations ✅ (40 tests)
-  - CRUD, search, binary upload/download, content retrieval
-  
 - **Phase 3**: Classification Operations ✅ (33 tests)
-  - CRUD, search, hierarchy traversal, type filtering
-  
 - **Phase 4**: Entity Operations ✅ (37 tests)
-  - CRUD, search, relationship management, bulk operations
+- **Phase 5**: Attribute & Metadata Operations ✅ (33 tests)
+- **Phase 6**: Import/Export Operations ✅ (29 tests)
+- **Phase 7**: Relations Operations ✅ (39 tests)
+- **Phase 8**: Advanced Features ✅ (34 tests)
 
-**Total**: 183 tests passing, 100% success rate
+**Total:** 318/318 tests passing, 100% success rate
 
-**Next Phases (Planned)**:
-- Phase 5: Attribute & Metadata Operations
-- Phase 6: Import/Export & Job Management
-- Phase 7: Advanced Features (Workflows, Business Rules)
+See [docs/REST_API_STATE.md](docs/REST_API_STATE.md) for a full implementation status matrix.
 
 ### ✅ Parser - Complete (Phase 14, ~80% coverage)
 
@@ -522,7 +525,7 @@ xml_bytes = creator.to_bytes(encoding='utf-8')
 - Full parity with Parser coverage
 
 ### Current Status Summary
-- **REST API v2 Client**: 4 operation groups (183 tests) - Production ready
+- **REST API v2 Client**: 8 operation groups (318 tests) - Production ready, feature-complete
 - **Parser**: Comprehensive, production-ready for data export/analysis
 - **Creator**: Core functionality complete, suitable for basic import scenarios
 - **Testing**: Extensive phase-based test coverage with unit and integration tests
@@ -530,6 +533,8 @@ xml_bytes = creator.to_bytes(encoding='utf-8')
 For detailed phase status, see:
 - [docs/PARSER_STATUS.md](docs/PARSER_STATUS.md)
 - [docs/CREATOR_STATUS.md](docs/CREATOR_STATUS.md)
+- [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md)
+- [docs/REST_API_STATE.md](docs/REST_API_STATE.md)
 
 ## Core References
 
