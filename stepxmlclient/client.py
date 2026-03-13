@@ -3,6 +3,7 @@ import requests_openapi as roa
 import logging
 import os
 import json
+from pathlib import Path
 
 class StiboStepRestClient:
 
@@ -41,11 +42,34 @@ class StiboStepRestClient:
         authorisation.do_authorisation(self.client)
         return
 
+    @staticmethod
+    def _get_bundled_openapi_file():
+        """Get the path to the bundled openapi.json file.
+        
+        Returns:
+            Path to bundled openapi.json if it exists, None otherwise
+        """
+        try:
+            # Get the directory of this module
+            module_dir = Path(__file__).parent
+            bundled_file = module_dir / 'openapi.json'
+            if bundled_file.exists():
+                return str(bundled_file)
+        except Exception:
+            pass
+        return None
+
     def __create_client(self, location_base, openapi_file, cache_openapi):
         """Create and initialize the OpenAPI client.
         
         Internal method that loads the OpenAPI specification and creates the
         requests-openapi client instance.
+        
+        Priority order for loading spec:
+        1. Specified openapi_file (if exists)
+        2. Cache file (if caching enabled and exists)
+        3. Bundled openapi.json (shipped with package)
+        4. Fetch from STEP server (if caching enabled, save to cache)
         
         Args:
             location_base: Base URL of the STEP API server
@@ -53,27 +77,48 @@ class StiboStepRestClient:
             cache_openapi: Whether to cache the OpenAPI spec if fetched
             
         Raises:
-            FileNotFoundError: If specified openapi_file doesn't exist and caching is False
+            FileNotFoundError: If specified openapi_file doesn't exist and no other source available
         """
-        if cache_openapi:
-            if openapi_file is None:
-                openapi_file = self._OPENAPI_CACHE_FILE
+        # Determine which file to try to load
+        cache_file = self._OPENAPI_CACHE_FILE if cache_openapi else None
+        bundled_file = self._get_bundled_openapi_file()
+        
+        # Try specified openapi_file first
         if openapi_file:
             if os.path.exists(openapi_file):
                 self.client = roa.Client().load_spec_from_file(openapi_file)
-            elif cache_openapi:
-                spec = roa.core.load_spec_from_url(
-                    f'{location_base}/specification/openapi.json')
-                with open(openapi_file,'w') as oaf:
-                    json.dump(spec, oaf)
-                self.client = roa.Client()
-                self.client.load_spec(spec)
-            else:
+                return
+            elif not cache_openapi:
+                # User specified a file that doesn't exist and isn't caching, so fail
                 raise FileNotFoundError(
                     f"Open API JSON File '{openapi_file}' not found!")
-        else:
-            self.client = roa.Client().load_spec_from_url(
-                f'{location_base}/specification/openapi.json')
+            # else: continue to try other sources
+        
+        # Try cache file if caching is enabled
+        if cache_file and os.path.exists(cache_file):
+            self.logger.debug(f"Loading OpenAPI spec from cache: {cache_file}")
+            self.client = roa.Client().load_spec_from_file(cache_file)
+            return
+        
+        # Try bundled file (always available as fallback)
+        if bundled_file:
+            self.logger.debug(f"Loading OpenAPI spec from bundled file: {bundled_file}")
+            self.client = roa.Client().load_spec_from_file(bundled_file)
+            return
+        
+        # Last resort: fetch from server
+        self.logger.debug(f"Loading OpenAPI spec from server: {location_base}/specification/openapi.json")
+        spec = roa.core.load_spec_from_url(
+            f'{location_base}/specification/openapi.json')
+        
+        # If caching is enabled, save the spec
+        if cache_openapi and cache_file:
+            self.logger.debug(f"Caching OpenAPI spec to: {cache_file}")
+            with open(cache_file, 'w') as f:
+                json.dump(spec, f)
+        
+        self.client = roa.Client()
+        self.client.load_spec(spec)
         return
 
 class __Authorisation:
