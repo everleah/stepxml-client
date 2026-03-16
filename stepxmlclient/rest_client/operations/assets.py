@@ -313,8 +313,11 @@ class AssetOperations(BaseOperation):
             mime_type, _ = mimetypes.guess_type(file_path)
             mime_type = mime_type or "application/octet-stream"
         
-        self._log_operation("uploadAssetContent", {
-            "assetId": asset_id,
+        # Extract filename for fileName query parameter
+        file_name = os.path.basename(file_path)
+        
+        self._log_operation("putAssetContent", {
+            "id": asset_id,
             "file_path": file_path,
             "size": file_size,
             "mime_type": mime_type
@@ -322,11 +325,13 @@ class AssetOperations(BaseOperation):
         
         try:
             # Open file in binary mode and upload
+            # Use putAssetContent (PUT /assets/{id}/content)
+            # Path parameter is 'id', not 'assetId'
             with open(file_path, 'rb') as f:
-                response = self.client.uploadAssetContent(
-                    assetId=asset_id,
-                    file=f,
-                    mimeType=mime_type
+                response = self.client.putAssetContent(
+                    id=asset_id,
+                    fileName=file_name,
+                    body=f
                 )
         except FileNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e
@@ -363,13 +368,15 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        self._log_operation("downloadAssetContent", {
-            "assetId": asset_id,
+        self._log_operation("getAssetContent", {
+            "id": asset_id,
             "save_to": output_path
         })
         
         try:
-            response = self.client.downloadAssetContent(assetId=asset_id)
+            # Use getAssetContent (GET /assets/{id}/content)
+            # Path parameter is 'id', not 'assetId'
+            response = self.client.getAssetContent(id=asset_id)
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -397,47 +404,42 @@ class AssetOperations(BaseOperation):
             expires_at=expires_at
         )
     
-    @handle_rest_errors
     def get_asset_content_url(self, asset_id: str) -> str:
         """Get download URL for asset binary content.
+        
+        Constructs the API endpoint URL for downloading asset content.
+        Note: This returns the direct API endpoint URL, not a temporary/signed URL.
+        Use this URL with appropriate authentication credentials.
         
         Args:
             asset_id: The asset ID
             
         Returns:
-            Download URL for the asset content
+            Download URL for the asset content (API endpoint)
             
         Raises:
-            NotFoundError: If asset not found
-            RestApiError: For API errors
+            ValidationError: If asset_id is invalid
         """
         self._validate_required_params(
             {"asset_id": asset_id},
             ["asset_id"]
         )
         
-        self._log_operation("getAssetContentUrl", {"assetId": asset_id})
-        
-        try:
-            response = self.client.getAssetContentUrl(assetId=asset_id)
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(asset_id, "Asset")
-            raise
-        
-        # Handle response
-        url = None
-        if isinstance(response, dict):
-            url = response.get("url") or response.get("content_url")
-        elif isinstance(response, str):
-            return response
+        # Get the base URL from the client's server URL
+        if hasattr(self.client, 'server') and self.client.server:
+            base_url = self.client.server.url
+        elif hasattr(self.client, '_server') and self.client._server:
+            base_url = self.client._server.url
         else:
-            url = getattr(response, "url", None) or getattr(response, "content_url", None)
-
-        if not url:
-            raise exc.ValidationError(f"Could not retrieve content URL for asset {asset_id}")
-
-        return str(url)
+            # Fallback: try to extract from a requestor URL
+            raise exc.ValidationError(
+                "Cannot determine API server URL. Ensure client is properly initialized."
+            )
+        
+        # Construct and return the content URL
+        content_url = f"{base_url}/assets/{asset_id}/content"
+        self._log_operation("getAssetContentUrl", {"url": content_url})
+        return content_url
     
     def list_assets(self, limit: int = 20, offset: int = 0,
                    include_metadata: bool = True) -> AssetListResponse:
