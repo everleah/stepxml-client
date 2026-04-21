@@ -217,259 +217,160 @@ class TestAssetModels(unittest.TestCase):
         self.assertEqual(response.size, 102400)
 
 
+
+
 class TestAssetOperations(unittest.TestCase):
-    """Tests for AssetOperations class."""
-    
     def setUp(self):
-        """Set up test fixtures."""
         self.mock_client = Mock()
         self.logger = logging.getLogger(__name__)
         self.operations = AssetOperations(self.mock_client, logger=self.logger)
-    
+
     def test_asset_operations_initialization(self):
-        """Test AssetOperations initialization."""
         self.assertEqual(self.operations.operation_name, "AssetOperations")
-        self.assertIsNotNone(self.operations.logger)
-    
+
     def test_get_asset_success(self):
-        """Test successful asset retrieval."""
-        mock_response = {
-            "id": "ASSET123",
-            "user_type_id": "Image",
-            "name": "Test Asset"
-        }
-        self.mock_client.getAsset.return_value = mock_response
-        
+        self.mock_client.getAsset.return_value = {"id": "ASSET123", "user_type_id": "Image", "name": "Test Asset"}
         result = self.operations.get_asset("ASSET123")
-        
         self.assertEqual(result.id, "ASSET123")
-        self.assertEqual(result.name, "Test Asset")
-    
+        call_args = self.mock_client.getAsset.call_args
+        self.assertEqual(call_args[1]["id"], "ASSET123")
+        self.assertNotIn("assetId", call_args[1])
+
     def test_get_asset_not_found(self):
-        """Test asset retrieval when not found."""
         self.mock_client.getAsset.side_effect = Exception("404 not found")
-        
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_asset("NONEXISTENT")
-    
+
     def test_get_asset_validation(self):
-        """Test asset retrieval validation."""
         with self.assertRaises(exc.ValidationError):
             self.operations.get_asset(None)
-    
-    def test_get_asset_includes_params(self):
-        """Test that get_asset passes include parameters."""
-        mock_response = {"id": "ASSET123"}
-        self.mock_client.getAsset.return_value = mock_response
-        
-        self.operations.get_asset(
-            "ASSET123",
-            include_metadata=False,
-            include_content_reference=True
-        )
-        
+
+    def test_get_asset_with_key_id(self):
+        self.mock_client.getAsset.return_value = {"id": "ASSET123"}
+        self.operations.get_asset("ASSET123", key_id="MyKey")
         call_args = self.mock_client.getAsset.call_args
-        self.assertEqual(call_args[1]["includeMetadata"], False)
-        self.assertEqual(call_args[1]["includeContentReference"], True)
-    
+        self.assertEqual(call_args[1]["keyId"], "MyKey")
+
     def test_search_assets_success(self):
-        """Test successful asset search."""
-        mock_response = {
-            "items": [
-                {"id": "ASSET1", "name": "Asset 1"},
-                {"id": "ASSET2", "name": "Asset 2"},
-            ],
-            "total": 50
-        }
-        self.mock_client.searchAssets.return_value = mock_response
-        
-        result = self.operations.search_assets(query="test")
-        
+        self.mock_client.postAssetsSearch.return_value = {"items": [{"id": "ASSET1"}, {"id": "ASSET2"}], "total": 2}
+        condition = {"conditionType": "objecttype", "objectTypeId": "Image"}
+        result = self.operations.search_assets(condition=condition)
         self.assertEqual(len(result.items), 2)
-        self.assertEqual(result.total, 50)
-    
-    def test_search_assets_defaults(self):
-        """Test search with default parameters."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchAssets.return_value = mock_response
-        
-        self.operations.search_assets()
-        
-        call_args = self.mock_client.searchAssets.call_args
-        self.assertEqual(call_args[1]["q"], "*")
-        self.assertEqual(call_args[1]["limit"], 20)
-    
-    def test_search_assets_with_filters(self):
-        """Test search with optional filters."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchAssets.return_value = mock_response
-        
-        self.operations.search_assets(
-            query="image",
-            user_type_id="ImageType",
-            modified_since="2024-01-01T00:00:00Z",
-            limit=50,
-            offset=10
-        )
-        
-        call_args = self.mock_client.searchAssets.call_args
-        self.assertEqual(call_args[1]["q"], "image")
-        self.assertEqual(call_args[1]["userTypeId"], "ImageType")
-        self.assertEqual(call_args[1]["modifiedSince"], "2024-01-01T00:00:00Z")
-    
+        call_args = self.mock_client.postAssetsSearch.call_args
+        self.assertEqual(call_args[1]["body"]["condition"], condition)
+
+    def test_search_assets_requires_condition(self):
+        with self.assertRaises(exc.ValidationError):
+            self.operations.search_assets(condition=None)
+
     def test_create_asset_success(self):
-        """Test successful asset creation."""
-        request = AssetCreateRequest(
-            id="NEWASSET",
-            user_type_id=None,
-            name="New Asset",
-            key_values=None,
-            attributes=None
-        )
-        mock_response = {
-            "id": "NEWASSET",
-            "name": "New Asset"
-        }
-        self.mock_client.createAsset.return_value = mock_response
-        
+        self.mock_client.postAssets.return_value = {"id": "NEWASSET", "name": "New Asset"}
+        request = AssetCreateRequest(id="NEWASSET", user_type_id=None, name="New Asset", key_values=None, attributes=None)
         result = self.operations.create_asset(request)
-        
         self.assertEqual(result.id, "NEWASSET")
-    
+        self.mock_client.postAssets.assert_called_once()
+
     def test_create_asset_conflict(self):
-        """Test asset creation with existing ID."""
-        request = AssetCreateRequest(
-            id="EXISTING",
-            user_type_id=None,
-            name=None,
-            key_values=None,
-            attributes=None
-        )
-        self.mock_client.createAsset.side_effect = Exception("409 conflict")
-        
+        self.mock_client.postAssets.side_effect = Exception("409 conflict")
+        request = AssetCreateRequest(id="EXISTING", user_type_id=None, name=None, key_values=None, attributes=None)
         with self.assertRaises(exc.ConflictError):
             self.operations.create_asset(request)
-    
+
     def test_update_asset_success(self):
-        """Test successful asset update."""
-        updates = AssetUpdateRequest(
-            name="Updated",
-            user_type_id=None,
-            key_values=None,
-            attributes=None
-        )
-        mock_response = {
-            "id": "ASSET123",
-            "name": "Updated"
-        }
-        self.mock_client.updateAsset.return_value = mock_response
-        
+        self.mock_client.patchAsset.return_value = {"id": "ASSET123", "name": "Updated"}
+        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
         result = self.operations.update_asset("ASSET123", updates)
-        
         self.assertEqual(result.name, "Updated")
-    
+        call_args = self.mock_client.patchAsset.call_args
+        self.assertEqual(call_args[1]["id"], "ASSET123")
+        self.assertNotIn("assetId", call_args[1])
+
     def test_update_asset_not_found(self):
-        """Test asset update when not found."""
-        updates = AssetUpdateRequest(
-            name="Updated",
-            user_type_id=None,
-            key_values=None,
-            attributes=None
-        )
-        self.mock_client.updateAsset.side_effect = Exception("404 not found")
-        
+        self.mock_client.patchAsset.side_effect = Exception("404 not found")
+        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_asset("NONEXISTENT", updates)
-    
+
+    def test_update_asset_with_key_id(self):
+        self.mock_client.patchAsset.return_value = {"id": "ASSET123"}
+        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
+        self.operations.update_asset("ASSET123", updates, key_id="MyKey")
+        call_args = self.mock_client.patchAsset.call_args
+        self.assertEqual(call_args[1]["keyId"], "MyKey")
+
+    def test_replace_asset_success(self):
+        self.mock_client.putAsset.return_value = {"id": "ASSET123", "name": "Replaced"}
+        data = AssetCreateRequest(id="ASSET123", user_type_id=None, name="Replaced", key_values=None, attributes=None)
+        result = self.operations.replace_asset("ASSET123", data)
+        self.assertEqual(result.id, "ASSET123")
+        call_args = self.mock_client.putAsset.call_args
+        self.assertEqual(call_args[1]["id"], "ASSET123")
+
+    def test_replace_asset_with_allow_overwrite(self):
+        self.mock_client.putAsset.return_value = {"id": "ASSET123"}
+        data = AssetCreateRequest(id="ASSET123", user_type_id=None, name=None, key_values=None, attributes=None)
+        self.operations.replace_asset("ASSET123", data, allow_overwrite=True)
+        call_args = self.mock_client.putAsset.call_args
+        self.assertEqual(call_args[1]["allow-overwrite"], True)
+
     def test_delete_asset_success(self):
-        """Test successful asset deletion."""
         self.mock_client.deleteAsset.return_value = None
-        
         result = self.operations.delete_asset("ASSET123")
-        
         self.assertTrue(result)
-        self.mock_client.deleteAsset.assert_called_once_with(assetId="ASSET123")
-    
+        call_args = self.mock_client.deleteAsset.call_args
+        self.assertEqual(call_args[1]["id"], "ASSET123")
+        self.assertNotIn("assetId", call_args[1])
+
     def test_delete_asset_not_found(self):
-        """Test asset deletion when not found."""
         self.mock_client.deleteAsset.side_effect = Exception("404 not found")
-        
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_asset("NONEXISTENT")
-    
-    @patch('stepxmlclient.rest_client.operations.assets.open', new_callable=mock_open, read_data=b'fake image data')
-    @patch('os.path.getsize', return_value=102400)
-    @patch('os.path.exists', return_value=True)
+
+    def test_delete_asset_with_key_id(self):
+        self.mock_client.deleteAsset.return_value = None
+        self.operations.delete_asset("ASSET123", key_id="MyKey")
+        call_args = self.mock_client.deleteAsset.call_args
+        self.assertEqual(call_args[1]["keyId"], "MyKey")
+
+    @patch("stepxmlclient.rest_client.operations.assets.open", new_callable=mock_open, read_data=b"image data")
+    @patch("os.path.getsize", return_value=102400)
+    @patch("os.path.exists", return_value=True)
     def test_upload_asset_content_success(self, mock_exists, mock_getsize, mock_file):
-        """Test successful asset content upload."""
-        mock_response = {"id": "ASSET123"}
-        self.mock_client.uploadAssetContent.return_value = mock_response
-        
-        result = self.operations.upload_asset_content(
-            "ASSET123",
-            "/path/to/file.jpg",
-            mime_type="image/jpeg"
-        )
-        
+        self.mock_client.putAssetContent.return_value = {"id": "ASSET123"}
+        result = self.operations.upload_asset_content("ASSET123", "/path/to/file.jpg", mime_type="image/jpeg")
         self.assertEqual(result.id, "ASSET123")
-        self.mock_client.uploadAssetContent.assert_called_once()
-        mock_file.assert_called_once_with("/path/to/file.jpg", 'rb')
-    
-    @patch('os.path.exists')
+        self.mock_client.putAssetContent.assert_called_once()
+        call_args = self.mock_client.putAssetContent.call_args
+        self.assertEqual(call_args[1]["id"], "ASSET123")
+
+    @patch("os.path.exists")
     def test_upload_asset_content_file_not_found(self, mock_exists):
-        """Test upload when file doesn't exist."""
         mock_exists.return_value = False
-        
         with self.assertRaises(FileNotFoundError):
             self.operations.upload_asset_content("ASSET123", "/nonexistent/file.jpg")
-    
-    @patch('stepxmlclient.rest_client.operations.assets.open', new_callable=mock_open, read_data=b'fake image data')
-    @patch('os.path.getsize', return_value=102400)
-    @patch('os.path.exists', return_value=True)
-    def test_upload_asset_content_asset_not_found(self, mock_exists, mock_getsize, mock_file):
-        """Test upload when asset not found."""
-        self.mock_client.uploadAssetContent.side_effect = Exception("404 not found")
 
+    @patch("stepxmlclient.rest_client.operations.assets.open", new_callable=mock_open, read_data=b"image data")
+    @patch("os.path.getsize", return_value=102400)
+    @patch("os.path.exists", return_value=True)
+    def test_upload_asset_content_asset_not_found(self, mock_exists, mock_getsize, mock_file):
+        self.mock_client.putAssetContent.side_effect = Exception("404 not found")
         with self.assertRaises(exc.NotFoundError):
             self.operations.upload_asset_content("NONEXISTENT", "/path/to/file.jpg")
-    
-    @patch('stepxmlclient.rest_client.operations.assets.open', new_callable=mock_open, read_data=b'fake image data')
-    @patch('os.path.getsize', return_value=102400)
-    @patch('os.path.exists', return_value=True)
-    def test_upload_asset_mime_type_detection(self, mock_exists, mock_getsize, mock_file):
-        """Test MIME type auto-detection."""
-        mock_response = {"id": "ASSET123"}
-        self.mock_client.uploadAssetContent.return_value = mock_response
-        
-        self.operations.upload_asset_content(
-            "ASSET123",
-            "/path/to/file.jpg"  # No mime_type provided
-        )
-        
-        call_args = self.mock_client.uploadAssetContent.call_args
-        # Should detect image/jpeg or application/octet-stream
-        mime_type = call_args[1]["mimeType"]
-        self.assertIsNotNone(mime_type)
-    
+
     def test_download_asset_content_success(self):
-        """Test successful asset content download."""
         mock_response = Mock()
         mock_response.filename = "image.jpg"
         mock_response.size = 102400
         mock_response.mime_type = "image/jpeg"
         mock_response.content_url = None
         mock_response.expires_at = None
-        self.mock_client.downloadAssetContent.return_value = mock_response
-        
+        self.mock_client.getAssetContent.return_value = mock_response
         result = self.operations.download_asset_content("ASSET123")
-        
         self.assertEqual(result.asset_id, "ASSET123")
         self.assertEqual(result.filename, "image.jpg")
-    
-    @patch('stepxmlclient.rest_client.operations.assets.open', new_callable=mock_open)
+
+    @patch("stepxmlclient.rest_client.operations.assets.open", new_callable=mock_open)
     def test_download_asset_content_save_to_file(self, mock_file):
-        """Test downloading and saving asset content."""
-        # Create a mock response object with required attributes
         mock_response = MagicMock()
         mock_response.filename = "image.jpg"
         mock_response.size = 102400
@@ -477,73 +378,30 @@ class TestAssetOperations(unittest.TestCase):
         mock_response.content = b"binary content"
         mock_response.content_url = None
         mock_response.expires_at = None
-        
-        self.mock_client.downloadAssetContent.return_value = mock_response
-        
-        result = self.operations.download_asset_content(
-            "ASSET123",
-            output_path="/tmp/image.jpg"
-        )
-        
+        self.mock_client.getAssetContent.return_value = mock_response
+        result = self.operations.download_asset_content("ASSET123", output_path="/tmp/image.jpg")
         self.assertEqual(result.asset_id, "ASSET123")
-        self.assertEqual(result.filename, "image.jpg")
-        mock_file.assert_called_once_with("/tmp/image.jpg", 'wb')
-    
+        mock_file.assert_called_once_with("/tmp/image.jpg", "wb")
+
     def test_download_asset_content_not_found(self):
-        """Test download when asset not found."""
-        self.mock_client.downloadAssetContent.side_effect = Exception("404 not found")
-        
+        self.mock_client.getAssetContent.side_effect = Exception("404 not found")
         with self.assertRaises(exc.NotFoundError):
             self.operations.download_asset_content("NONEXISTENT")
-    
-    def test_get_asset_content_url(self):
-        """Test getting asset content URL."""
-        mock_response = {"url": "https://example.com/assets/ASSET123"}
-        self.mock_client.getAssetContentUrl.return_value = mock_response
-        
-        result = self.operations.get_asset_content_url("ASSET123")
-        
-        self.assertEqual(result, "https://example.com/assets/ASSET123")
-    
-    def test_get_asset_content_url_alternate_key(self):
-        """Test getting asset content URL with alternate key."""
-        mock_response = {"content_url": "https://example.com/content/ASSET123"}
-        self.mock_client.getAssetContentUrl.return_value = mock_response
-        
-        result = self.operations.get_asset_content_url("ASSET123")
-        
-        self.assertEqual(result, "https://example.com/content/ASSET123")
-    
-    def test_list_assets(self):
-        """Test list_assets convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchAssets.return_value = mock_response
-        
-        self.operations.list_assets()
-        
-        call_args = self.mock_client.searchAssets.call_args
-        self.assertEqual(call_args[1]["q"], "*")
-    
+
     def test_search_by_type(self):
-        """Test search_by_type convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchAssets.return_value = mock_response
-        
+        self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("ImageType")
-        
-        call_args = self.mock_client.searchAssets.call_args
-        self.assertEqual(call_args[1]["userTypeId"], "ImageType")
-    
-    def test_search_modified_since(self):
-        """Test search_modified_since convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchAssets.return_value = mock_response
-        
-        self.operations.search_modified_since("2024-01-01T00:00:00Z")
-        
-        call_args = self.mock_client.searchAssets.call_args
-        self.assertEqual(call_args[1]["modifiedSince"], "2024-01-01T00:00:00Z")
+        call_args = self.mock_client.postAssetsSearch.call_args
+        body = call_args[1]["body"]
+        self.assertEqual(body["condition"]["conditionType"], "objecttype")
+        self.assertEqual(body["condition"]["objectTypeId"], "ImageType")
+
+    def test_list_assets(self):
+        self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
+        self.operations.list_assets()
+        self.mock_client.postAssetsSearch.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    import unittest
     unittest.main()

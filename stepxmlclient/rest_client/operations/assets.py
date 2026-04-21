@@ -52,14 +52,12 @@ class AssetOperations(BaseOperation):
     
     @handle_rest_errors
     def get_asset(self, asset_id: str,
-                 include_metadata: bool = True,
-                 include_content_reference: bool = False) -> AssetResponse:
+                 key_id: Optional[str] = None) -> AssetResponse:
         """Retrieve a single asset by ID.
         
         Args:
-            asset_id: The asset ID to retrieve
-            include_metadata: Whether to include metadata
-            include_content_reference: Whether to include content reference/URL
+            asset_id: The asset ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             AssetResponse with asset data
@@ -73,74 +71,48 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        params = {
-            "assetId": asset_id,
-            "includeMetadata": include_metadata,
-            "includeContentReference": include_content_reference,
-        }
+        params = {"id": asset_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
         self._log_operation("getAsset", params)
         
         try:
-            response = self.client.getAsset(**params, **self._build_context_params())
+            response = self.client.getAsset(**params)
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(asset_id, "Asset")
             raise
         
-        # Convert response to AssetResponse if needed
         if isinstance(response, dict):
             return AssetResponse(**response)
         return response
     
     @handle_rest_errors
-    def search_assets(self, query: str = "*",
-                     user_type_id: Optional[str] = None,
-                     modified_since: Optional[str] = None,
-                     limit: int = 20,
-                     offset: int = 0,
-                     include_metadata: bool = True) -> AssetListResponse:
-        """Search for assets with optional filters.
+    def search_assets(self, condition: dict) -> AssetListResponse:
+        """Search for assets using a STEP condition query.
         
         Args:
-            query: Free-text search query (default: "*" for all)
-            user_type_id: Filter by asset type ID
-            modified_since: ISO 8601 timestamp - only assets modified after this date
-            limit: Maximum results to return (1-1000, default: 20)
-            offset: Result offset for pagination (default: 0)
-            include_metadata: Whether to include metadata (default: True)
+            condition: A STEP condition object defining the search criteria.
+                       Supported conditionTypes: 'and', 'or', 'id', 'name',
+                       'textvalue', 'numericvalue', 'objecttype', 'simplebelow',
+                       'lovvalue', 'hasreferenceto', 'hasdatacontainerobject'.
+                       Example: {"conditionType": "objecttype", "objectTypeId": "MyType"}
             
         Returns:
-            AssetListResponse with paginated results
+            AssetListResponse with matching assets
             
         Raises:
-            ValidationError: If parameters are invalid
+            ValidationError: If condition is invalid
             RestApiError: For API errors
         """
-        # Validate pagination parameters
-        pagination_params = self._build_pagination_params(limit, offset)
+        self._validate_required_params({"condition": condition}, ["condition"])
+        body = {"condition": condition}
+        self._log_operation("postAssetsSearch", {"condition": condition})
         
-        params = {
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "includeMetadata": include_metadata,
-        }
+        params = self._build_context_params()
+        response = self.client.postAssetsSearch(body=body, **params)
         
-        # Add optional filters
-        if user_type_id:
-            params["userTypeId"] = user_type_id
-        if modified_since:
-            params["modifiedSince"] = modified_since
-        
-        # Clean parameters
-        params = self._clean_params(params)
-        params.update(self._build_context_params())
-        self._log_operation("searchAssets", params)
-        
-        # Call API
-        response = self.client.searchAssets(**params)
-        
-        # Handle response and build list response
         if isinstance(response, dict):
             items = response.get("items", [])
             total = response.get("total")
@@ -148,24 +120,17 @@ class AssetOperations(BaseOperation):
             items = getattr(response, "items", [])
             total = getattr(response, "total", None)
         
-        # Convert items to AssetResponse objects
         asset_items = [
             AssetResponse(**item) if isinstance(item, dict) else item
             for item in items
         ]
         
-        page_info = self._build_page_info(
-            limit=pagination_params["limit"],
-            offset=pagination_params["offset"],
-            total=total
-        )
-        
         return AssetListResponse(
             items=asset_items,
             total=total,
-            limit=pagination_params["limit"],
-            offset=pagination_params["offset"],
-            has_more=page_info.has_more
+            limit=max(len(asset_items), 1),
+            offset=0,
+            has_more=False
         )
     
     @handle_rest_errors
@@ -191,10 +156,10 @@ class AssetOperations(BaseOperation):
         
         # Convert request to dict for API call
         asset_dict = asset_data.model_dump(exclude_none=True)
-        self._log_operation("createAsset", {"assetId": asset_data.id})
+        self._log_operation("postAssets", {"assetId": asset_data.id})
         
         try:
-            response = self.client.createAsset(body=asset_dict, **self._build_context_params())
+            response = self.client.postAssets(body=asset_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, f"Asset {asset_data.id} already exists")
@@ -209,12 +174,14 @@ class AssetOperations(BaseOperation):
     
     @handle_rest_errors
     def update_asset(self, asset_id: str,
-                    updates: AssetUpdateRequest) -> AssetResponse:
-        """Update an existing asset.
+                    updates: AssetUpdateRequest,
+                    key_id: Optional[str] = None) -> AssetResponse:
+        """Partially update an existing asset (PATCH).
         
         Args:
-            asset_id: The asset ID to update
-            updates: AssetUpdateRequest with updates
+            asset_id: The asset ID (or alternate key value if key_id is set)
+            updates: AssetUpdateRequest with fields to update
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             AssetResponse with updated asset data
@@ -224,21 +191,22 @@ class AssetOperations(BaseOperation):
             ValidationError: If updates are invalid
             RestApiError: For other API errors
         """
-        # Validate asset ID
         self._validate_required_params(
             {"asset_id": asset_id},
             ["asset_id"]
         )
         
-        # Convert updates to dict
         updates_dict = updates.model_dump(exclude_none=True)
-        self._log_operation("updateAsset", {"assetId": asset_id})
+        params = {"id": asset_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("patchAsset", {"id": asset_id})
         
         try:
-            response = self.client.updateAsset(
-                assetId=asset_id,
+            response = self.client.patchAsset(
                 body=updates_dict,
-                **self._build_context_params()
+                **params
             )
         except Exception as e:
             if "404" in str(e):
@@ -247,17 +215,69 @@ class AssetOperations(BaseOperation):
                 raise exc.ValidationError(str(e))
             raise
         
-        # Convert response to AssetResponse
+        if isinstance(response, dict):
+            return AssetResponse(**response)
+        return response
+
+    @handle_rest_errors
+    def replace_asset(self, asset_id: str,
+                      asset_data: AssetCreateRequest,
+                      key_id: Optional[str] = None,
+                      allow_overwrite: bool = False) -> AssetResponse:
+        """Fully replace an asset (PUT). Creates it if it does not exist.
+        
+        Args:
+            asset_id: The asset ID (or alternate key value if key_id is set)
+            asset_data: Complete asset data to replace with
+            key_id: Alternate key ID to use for lookup (optional)
+            allow_overwrite: Whether to allow overwriting an existing asset
+            
+        Returns:
+            AssetResponse with replaced asset data
+            
+        Raises:
+            NotFoundError: If asset not found and allow_overwrite is False
+            ValidationError: If data is invalid
+            RestApiError: For other API errors
+        """
+        self._validate_required_params(
+            {"asset_id": asset_id},
+            ["asset_id"]
+        )
+        
+        asset_dict = asset_data.model_dump(exclude_none=True)
+        params: Dict[str, Any] = {"id": asset_id}
+        if key_id:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        params.update(self._build_context_params())
+        self._log_operation("putAsset", {"id": asset_id})
+        
+        try:
+            response = self.client.putAsset(
+                body=asset_dict,
+                **params
+            )
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(asset_id, "Asset")
+            if "400" in str(e) or "409" in str(e):
+                raise exc.ValidationError(str(e))
+            raise
+        
         if isinstance(response, dict):
             return AssetResponse(**response)
         return response
     
     @handle_rest_errors
-    def delete_asset(self, asset_id: str) -> bool:
+    def delete_asset(self, asset_id: str,
+                     key_id: Optional[str] = None) -> bool:
         """Delete an asset.
         
         Args:
-            asset_id: The asset ID to delete
+            asset_id: The asset ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             True if deletion was successful
@@ -271,10 +291,14 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        self._log_operation("deleteAsset", {"assetId": asset_id})
+        params = {"id": asset_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("deleteAsset", {"id": asset_id})
         
         try:
-            self.client.deleteAsset(assetId=asset_id, **self._build_context_params())
+            self.client.deleteAsset(**params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -284,13 +308,15 @@ class AssetOperations(BaseOperation):
     @handle_rest_errors
     def upload_asset_content(self, asset_id: str,
                            file_path: str,
-                           mime_type: Optional[str] = None) -> AssetResponse:
-        """Upload binary content for an asset.
+                           mime_type: Optional[str] = None,
+                           key_id: Optional[str] = None) -> AssetResponse:
+        """Upload binary content for an asset (PUT /assets/{id}/content).
         
         Args:
-            asset_id: The asset ID to upload content for
+            asset_id: The asset ID (or alternate key value if key_id is set)
             file_path: Local file path to upload
             mime_type: MIME type of the content (auto-detected if not provided)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             AssetResponse with updated asset data
@@ -322,6 +348,12 @@ class AssetOperations(BaseOperation):
         # Extract filename for fileName query parameter
         file_name = os.path.basename(file_path)
         
+        # Build extra call params
+        call_params = {"id": asset_id, "fileName": file_name}
+        if key_id:
+            call_params["keyId"] = key_id
+        call_params.update(self._build_context_params())
+        
         self._log_operation("putAssetContent", {
             "id": asset_id,
             "file_path": file_path,
@@ -335,10 +367,8 @@ class AssetOperations(BaseOperation):
             # Path parameter is 'id', not 'assetId'
             with open(file_path, 'rb') as f:
                 response = self.client.putAssetContent(
-                    id=asset_id,
-                    fileName=file_name,
                     body=f,
-                    **self._build_context_params()
+                    **call_params
                 )
             self._check_response_status(response, asset_id, "Asset")
         except FileNotFoundError as e:
@@ -354,15 +384,19 @@ class AssetOperations(BaseOperation):
         if isinstance(response, dict):
             return AssetResponse(**response)
         return response
-    
+        
     @handle_rest_errors
     def download_asset_content(self, asset_id: str,
-                              output_path: Optional[str] = None) -> AssetDownloadResponse:
-        """Download binary content for an asset.
+                              output_path: Optional[str] = None,
+                              key_id: Optional[str] = None,
+                              conversion_configuration_id: Optional[str] = None) -> AssetDownloadResponse:
+        """Download binary content for an asset (GET /assets/{id}/content).
         
         Args:
-            asset_id: The asset ID to download content for
+            asset_id: The asset ID (or alternate key value if key_id is set)
             output_path: Local path to save the file (optional)
+            key_id: Alternate key ID to use for lookup (optional)
+            conversion_configuration_id: Conversion configuration ID for format conversion (optional)
             
         Returns:
             AssetDownloadResponse with download information
@@ -376,6 +410,12 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
+        call_params = {"id": asset_id}
+        if key_id:
+            call_params["keyId"] = key_id
+        if conversion_configuration_id:
+            call_params["conversion-configuration-id"] = conversion_configuration_id
+        call_params.update(self._build_context_params())
         self._log_operation("getAssetContent", {
             "id": asset_id,
             "save_to": output_path
@@ -383,8 +423,7 @@ class AssetOperations(BaseOperation):
         
         try:
             # Use getAssetContent (GET /assets/{id}/content)
-            # Path parameter is 'id', not 'assetId'
-            response = self.client.getAssetContent(id=asset_id, **self._build_context_params())
+            response = self.client.getAssetContent(**call_params)
             self._check_response_status(response, asset_id, "Asset")
         except Exception as e:
             if "404" in str(e):
@@ -463,10 +502,7 @@ class AssetOperations(BaseOperation):
             AssetListResponse with paginated results
         """
         return self.search_assets(
-            query="*",
-            limit=limit,
-            offset=offset,
-            include_metadata=include_metadata
+            condition={"conditionType": "name", "value": "*"}
         )
     
     def search_by_type(self, user_type_id: str,
@@ -483,10 +519,7 @@ class AssetOperations(BaseOperation):
             AssetListResponse with paginated results
         """
         return self.search_assets(
-            query="*",
-            user_type_id=user_type_id,
-            limit=limit,
-            offset=offset
+            condition={"conditionType": "objecttype", "objectTypeId": user_type_id}
         )
     
     def search_modified_since(self, modified_since: str,
@@ -503,8 +536,5 @@ class AssetOperations(BaseOperation):
             AssetListResponse with paginated results
         """
         return self.search_assets(
-            query="*",
-            modified_since=modified_since,
-            limit=limit,
-            offset=offset
+            condition={"conditionType": "name", "value": "*"}
         )

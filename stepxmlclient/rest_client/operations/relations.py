@@ -1,7 +1,17 @@
-"""Relationship operations for STEP REST API v2."""
+"""Reference (relation) operations for STEP REST API v2.
+
+In the STEP REST API, references are modeled as sub-resources on entity types:
+  GET/PUT/DELETE /products/{id}/references/{referenceTypeId}/{targetId}
+  GET/PUT/DELETE /assets/{id}/references/{referenceTypeId}/{targetId}
+  GET/PUT/DELETE /classifications/{id}/references/{referenceTypeId}/{targetId}
+  GET/PUT/DELETE /entities/{id}/references/{referenceTypeId}/{targetId}
+  GET /reference-types/{id}
+
+There is no standalone "relationship" or "cross-reference" resource in the spec.
+"""
 
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError, RestApiError
@@ -20,10 +30,35 @@ from ..models.relations import (
     LinkCreateRequest,
 )
 
+# Supported entity types for reference operations
+EntityType = Literal["products", "assets", "classifications", "entities"]
+
+# Map entity type to operation-ID prefix (singular capitalised)
+_OP_PREFIX = {
+    "products": "Product",
+    "assets": "Asset",
+    "classifications": "Classification",
+    "entities": "Entity",
+}
+
+# Map entity type to plural capitalised form used in list-reference operation IDs
+# e.g. getProducts{id}References, getEntities{id}References
+_OP_PLURAL = {
+    "products": "Products",
+    "assets": "Assets",
+    "classifications": "Classifications",
+    "entities": "Entities",
+}
+
 
 class RelationOperations(BaseOperation):
-    """Operations for managing relationships, cross-references, and links between entities."""
-    
+    """Operations for managing references between STEP entities.
+
+    The STEP REST API models references as sub-resources attached to a source entity.
+    All methods require specifying the ``entity_type`` ('products', 'assets',
+    'classifications', or 'entities') of the *source* object.
+    """
+
     def __init__(self, client, logger: Optional[logging.Logger] = None,
                  context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize relation operations.
@@ -36,541 +71,293 @@ class RelationOperations(BaseOperation):
         """
         super().__init__(client, operation_name="RelationOperations", logger=logger,
                          context=context, workspace=workspace)
-    
+
     # ============================================================================
-    # Relationship Operations
+    # Reference Operations
     # ============================================================================
-    
+
     @handle_rest_errors
-    def get_relationship(self, relationship_id: str) -> RelationshipResponse:
-        """Get a single relationship by ID.
-        
+    def list_references(self, entity_type: EntityType,
+                        entity_id: str,
+                        reference_type_id: str,
+                        key_id: Optional[str] = None) -> RelationshipListResponse:
+        """List all outgoing references of a given type for a source entity.
+
+        Calls: GET /{entity_type}/{id}/references/{referenceTypeId}
+
         Args:
-            relationship_id: The relationship ID
-            
+            entity_type: Source entity type ('products', 'assets', 'classifications', 'entities')
+            entity_id: Source entity ID (or alternate key value if key_id is set)
+            reference_type_id: The reference type ID to list
+            key_id: Alternate key ID for the source entity (optional)
+
         Returns:
-            RelationshipResponse with relationship details
-            
-        Raises:
-            ValidationError: If relationship_id is missing
-            NotFoundError: If relationship not found
-            RestApiError: For API errors
+            RelationshipListResponse with list of references
         """
         self._validate_required_params(
-            {"relationship_id": relationship_id},
-            ["relationship_id"]
+            {"entity_id": entity_id, "reference_type_id": reference_type_id},
+            ["entity_id", "reference_type_id"]
         )
-        
-        self._log_operation("getRelationship", {"relationshipId": relationship_id})
-        
+
+        plural = _OP_PLURAL.get(entity_type)
+        if not plural:
+            raise ValidationError(f"Invalid entity_type: {entity_type!r}. Must be one of {list(_OP_PLURAL)}")
+        # Spec operationId uses literal braces: e.g. getProducts{id}References
+        op_id = "get" + plural + "{id}References"
+
+        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation(op_id, params)
+
         try:
-            response = self.client.getRelationship(relationshipId=relationship_id, **self._build_context_params())
+            op_func = getattr(self.client, op_id)
+            response = op_func(**params)
         except Exception as e:
             if "404" in str(e):
-                raise NotFoundError(relationship_id, "Relationship")
+                raise NotFoundError(entity_id, prefix)
             raise
-        
-        if isinstance(response, dict):
-            return RelationshipResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def list_relationships(self,
-                          source_id: Optional[str] = None,
-                          target_id: Optional[str] = None,
-                          relationship_type: Optional[str] = None,
-                          limit: int = 20,
-                          offset: int = 0) -> RelationshipListResponse:
-        """List relationships with optional filters.
-        
-        Args:
-            source_id: Filter by source entity ID
-            target_id: Filter by target entity ID
-            relationship_type: Filter by relationship type
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            
-        Returns:
-            RelationshipListResponse with list of relationships
-            
-        Raises:
-            RestApiError: For API errors
-        """
-        pagination_params = self._build_pagination_params(limit, offset)
-        
-        self._log_operation("listRelationships", {
-            "sourceId": source_id,
-            "targetId": target_id,
-            "relationshipType": relationship_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params = self._clean_params({
-            "sourceId": source_id,
-            "targetId": target_id,
-            "relationshipType": relationship_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params.update(self._build_context_params())
-        response = self.client.listRelationships(**params)
-        
+
         if isinstance(response, dict):
             return RelationshipListResponse(**response)
         return response
-    
+
     @handle_rest_errors
-    def create_relationship(self, data: RelationshipCreateRequest) -> RelationshipResponse:
-        """Create a new relationship.
-        
+    def get_reference(self, entity_type: EntityType,
+                      entity_id: str,
+                      reference_type_id: str,
+                      target_id: str,
+                      key_id: Optional[str] = None,
+                      target_key_id: Optional[str] = None,
+                      include_inherited_data: bool = False) -> RelationshipResponse:
+        """Get a single outgoing reference.
+
+        Calls: GET /{entity_type}/{id}/references/{referenceTypeId}/{targetId}
+
         Args:
-            data: RelationshipCreateRequest with relationship details
-            
+            entity_type: Source entity type
+            entity_id: Source entity ID (or alternate key if key_id is set)
+            reference_type_id: The reference type ID
+            target_id: Target entity ID (or alternate key if target_key_id is set)
+            key_id: Alternate key ID for source entity (optional)
+            target_key_id: Alternate key ID for target entity (optional)
+            include_inherited_data: Whether to include inherited attribute values (default: False)
+
         Returns:
-            RelationshipResponse with created relationship
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
+            RelationshipResponse with reference details
         """
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("createRelationship", {
-            "relationshipType": create_data.get("relationshipType"),
-            "sourceId": create_data.get("sourceId"),
-            "targetId": create_data.get("targetId")
-        })
-        
+        self._validate_required_params(
+            {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id},
+            ["entity_id", "reference_type_id", "target_id"]
+        )
+
+        prefix = _OP_PREFIX.get(entity_type, "Product")
+        op_id = f"get{prefix}Reference"
+
+        params: Dict[str, Any] = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        if key_id:
+            params["keyId"] = key_id
+        if target_key_id:
+            params["targetKeyId"] = target_key_id
+        if include_inherited_data:
+            params["includeInheritedData"] = include_inherited_data
+        params.update(self._build_context_params())
+        self._log_operation(op_id, {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id})
+
         try:
-            response = self.client.createRelationship(body=create_data, **self._build_context_params())
+            op_func = getattr(self.client, op_id)
+            response = op_func(**params)
         except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Create relationship failed: {str(e)}")
+            if "404" in str(e):
+                raise NotFoundError(entity_id, prefix)
             raise
-        
+
         if isinstance(response, dict):
             return RelationshipResponse(**response)
         return response
-    
+
     @handle_rest_errors
-    def update_relationship(self, relationship_id: str, data: RelationshipUpdateRequest) -> RelationshipResponse:
-        """Update an existing relationship.
-        
+    def put_reference(self, entity_type: EntityType,
+                      entity_id: str,
+                      reference_type_id: str,
+                      target_id: str,
+                      data: Optional[Dict[str, Any]] = None,
+                      key_id: Optional[str] = None,
+                      target_key_id: Optional[str] = None,
+                      allow_overwrite: bool = False) -> RelationshipResponse:
+        """Create or replace an outgoing reference (PUT).
+
+        Calls: PUT /{entity_type}/{id}/references/{referenceTypeId}/{targetId}
+
         Args:
-            relationship_id: The relationship ID to update
-            data: RelationshipUpdateRequest with updates
-            
+            entity_type: Source entity type
+            entity_id: Source entity ID (or alternate key if key_id is set)
+            reference_type_id: The reference type ID
+            target_id: Target entity ID (or alternate key if target_key_id is set)
+            data: Optional body with reference attribute values
+            key_id: Alternate key ID for source entity (optional)
+            target_key_id: Alternate key ID for target entity (optional)
+            allow_overwrite: Whether to allow overwriting an existing reference
+
         Returns:
-            RelationshipResponse with updated relationship
-            
-        Raises:
-            ValidationError: If data invalid
-            NotFoundError: If relationship not found
-            RestApiError: For API errors
+            RelationshipResponse with created/replaced reference
         """
         self._validate_required_params(
-            {"relationship_id": relationship_id},
-            ["relationship_id"]
+            {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id},
+            ["entity_id", "reference_type_id", "target_id"]
         )
-        
-        if hasattr(data, 'model_dump'):
-            update_data = data.model_dump(exclude_none=True)
-        else:
-            update_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("updateRelationship", {
-            "relationshipId": relationship_id,
-            "updates": list(update_data.keys())
-        })
-        
+
+        prefix = _OP_PREFIX.get(entity_type, "Product")
+        op_id = f"put{prefix}Reference"
+
+        params: Dict[str, Any] = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        if key_id:
+            params["keyId"] = key_id
+        if target_key_id:
+            params["targetKeyId"] = target_key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        params.update(self._build_context_params())
+        if data:
+            params["body"] = data
+        self._log_operation(op_id, {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id})
+
         try:
-            response = self.client.updateRelationship(relationshipId=relationship_id, body=update_data, **self._build_context_params())
+            op_func = getattr(self.client, op_id)
+            response = op_func(**params)
         except Exception as e:
             if "404" in str(e):
-                raise NotFoundError(relationship_id, "Relationship")
+                raise NotFoundError(entity_id, prefix)
+            if "400" in str(e):
+                raise ValidationError(str(e))
             raise
-        
+
         if isinstance(response, dict):
             return RelationshipResponse(**response)
         return response
-    
+
     @handle_rest_errors
-    def delete_relationship(self, relationship_id: str) -> bool:
-        """Delete a relationship.
-        
+    def delete_reference(self, entity_type: EntityType,
+                         entity_id: str,
+                         reference_type_id: str,
+                         target_id: str,
+                         key_id: Optional[str] = None,
+                         target_key_id: Optional[str] = None) -> bool:
+        """Delete an outgoing reference.
+
+        Calls: DELETE /{entity_type}/{id}/references/{referenceTypeId}/{targetId}
+
         Args:
-            relationship_id: The relationship ID to delete
-            
+            entity_type: Source entity type
+            entity_id: Source entity ID (or alternate key if key_id is set)
+            reference_type_id: The reference type ID
+            target_id: Target entity ID (or alternate key if target_key_id is set)
+            key_id: Alternate key ID for source entity (optional)
+            target_key_id: Alternate key ID for target entity (optional)
+
         Returns:
-            True if deletion successful
-            
-        Raises:
-            ValidationError: If relationship_id missing
-            NotFoundError: If relationship not found
-            RestApiError: For API errors
+            True if deletion was successful
         """
         self._validate_required_params(
-            {"relationship_id": relationship_id},
-            ["relationship_id"]
+            {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id},
+            ["entity_id", "reference_type_id", "target_id"]
         )
-        
-        self._log_operation("deleteRelationship", {"relationshipId": relationship_id})
-        
-        try:
-            self.client.deleteRelationship(relationshipId=relationship_id, **self._build_context_params())
-            return True
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(relationship_id, "Relationship")
-            raise
-    
-    @handle_rest_errors
-    def get_relationship_types(self) -> Dict[str, RelationshipTypeResponse]:
-        """Get available relationship types.
-        
-        Returns:
-            Dictionary of relationship types
-            
-        Raises:
-            RestApiError: For API errors
-        """
-        self._log_operation("getRelationshipTypes", {})
-        
-        response = self.client.getRelationshipTypes(**self._build_context_params())
-        
-        if isinstance(response, dict):
-            return {k: RelationshipTypeResponse(**v) if isinstance(v, dict) else v 
-                    for k, v in response.items()}
-        return response
-    
-    @handle_rest_errors
-    def get_relationship_graph(self, entity_id: str, depth: int = 2) -> RelationshipGraphResponse:
-        """Get relationship graph for an entity.
-        
-        Args:
-            entity_id: The root entity ID
-            depth: Graph traversal depth (default: 2)
-            
-        Returns:
-            RelationshipGraphResponse with graph structure
-            
-        Raises:
-            ValidationError: If entity_id missing
-            NotFoundError: If entity not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"entity_id": entity_id},
-            ["entity_id"]
-        )
-        
-        self._log_operation("getRelationshipGraph", {
-            "entityId": entity_id,
-            "depth": depth
-        })
-        
-        try:
-            response = self.client.getRelationshipGraph(entityId=entity_id, depth=depth, **self._build_context_params())
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, "Entity")
-            raise
-        
-        if isinstance(response, dict):
-            return RelationshipGraphResponse(**response)
-        return response
-    
-    # ============================================================================
-    # Cross-Reference Operations
-    # ============================================================================
-    
-    @handle_rest_errors
-    def get_cross_reference(self, cross_reference_id: str) -> CrossReferenceResponse:
-        """Get a single cross-reference by ID.
-        
-        Args:
-            cross_reference_id: The cross-reference ID
-            
-        Returns:
-            CrossReferenceResponse with details
-            
-        Raises:
-            ValidationError: If ID missing
-            NotFoundError: If not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"cross_reference_id": cross_reference_id},
-            ["cross_reference_id"]
-        )
-        
-        self._log_operation("getCrossReference", {"crossReferenceId": cross_reference_id})
-        
-        try:
-            response = self.client.getCrossReference(crossReferenceId=cross_reference_id, **self._build_context_params())
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(cross_reference_id, "CrossReference")
-            raise
-        
-        if isinstance(response, dict):
-            return CrossReferenceResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def list_cross_references(self,
-                             source_id: Optional[str] = None,
-                             reference_type: Optional[str] = None,
-                             limit: int = 20,
-                             offset: int = 0) -> CrossReferenceListResponse:
-        """List cross-references with optional filters.
-        
-        Args:
-            source_id: Filter by source entity ID
-            reference_type: Filter by reference type
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            
-        Returns:
-            CrossReferenceListResponse with list
-            
-        Raises:
-            RestApiError: For API errors
-        """
-        pagination_params = self._build_pagination_params(limit, offset)
-        
-        self._log_operation("listCrossReferences", {
-            "sourceId": source_id,
-            "referenceType": reference_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params = self._clean_params({
-            "sourceId": source_id,
-            "referenceType": reference_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
+
+        prefix = _OP_PREFIX.get(entity_type, "Product")
+        op_id = f"delete{prefix}Reference"
+
+        params = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        if key_id:
+            params["keyId"] = key_id
+        if target_key_id:
+            params["targetKeyId"] = target_key_id
         params.update(self._build_context_params())
-        response = self.client.listCrossReferences(**params)
-        
-        if isinstance(response, dict):
-            return CrossReferenceListResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def create_cross_reference(self, data: CrossReferenceCreateRequest) -> CrossReferenceResponse:
-        """Create a new cross-reference.
-        
-        Args:
-            data: CrossReferenceCreateRequest with details
-            
-        Returns:
-            CrossReferenceResponse with created reference
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
-        """
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("createCrossReference", {
-            "sourceId": create_data.get("sourceEntityId"),
-            "referenceType": create_data.get("referenceType")
-        })
-        
+        self._log_operation(op_id, params)
+
         try:
-            response = self.client.createCrossReference(body=create_data, **self._build_context_params())
-        except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Create cross-reference failed: {str(e)}")
-            raise
-        
-        if isinstance(response, dict):
-            return CrossReferenceResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def delete_cross_reference(self, cross_reference_id: str) -> bool:
-        """Delete a cross-reference.
-        
-        Args:
-            cross_reference_id: The cross-reference ID to delete
-            
-        Returns:
-            True if deletion successful
-            
-        Raises:
-            ValidationError: If ID missing
-            NotFoundError: If not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"cross_reference_id": cross_reference_id},
-            ["cross_reference_id"]
-        )
-        
-        self._log_operation("deleteCrossReference", {"crossReferenceId": cross_reference_id})
-        
-        try:
-            self.client.deleteCrossReference(crossReferenceId=cross_reference_id, **self._build_context_params())
+            op_func = getattr(self.client, op_id)
+            op_func(**params)
             return True
         except Exception as e:
             if "404" in str(e):
-                raise NotFoundError(cross_reference_id, "CrossReference")
+                raise NotFoundError(entity_id, prefix)
             raise
-    
-    # ============================================================================
-    # Link Operations
-    # ============================================================================
-    
+
     @handle_rest_errors
-    def get_link(self, link_id: str) -> LinkResponse:
-        """Get a single link by ID.
-        
+    def get_incoming_references(self, entity_type: EntityType,
+                                entity_id: str,
+                                reference_type_id: str,
+                                key_id: Optional[str] = None) -> RelationshipListResponse:
+        """List incoming references of a given type for a target entity.
+
+        Calls: GET /{entity_type}/{id}/incoming-references/{referenceTypeId}
+
         Args:
-            link_id: The link ID
-            
+            entity_type: Target entity type
+            entity_id: Target entity ID (or alternate key if key_id is set)
+            reference_type_id: The reference type ID to list
+            key_id: Alternate key ID for the target entity (optional)
+
         Returns:
-            LinkResponse with link details
-            
-        Raises:
-            ValidationError: If ID missing
-            NotFoundError: If not found
-            RestApiError: For API errors
+            RelationshipListResponse with list of incoming references
         """
         self._validate_required_params(
-            {"link_id": link_id},
-            ["link_id"]
+            {"entity_id": entity_id, "reference_type_id": reference_type_id},
+            ["entity_id", "reference_type_id"]
         )
-        
-        self._log_operation("getLink", {"linkId": link_id})
-        
-        try:
-            response = self.client.getLink(linkId=link_id, **self._build_context_params())
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(link_id, "Link")
-            raise
-        
-        if isinstance(response, dict):
-            return LinkResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def list_links(self,
-                  source_id: Optional[str] = None,
-                  link_type: Optional[str] = None,
-                  limit: int = 20,
-                  offset: int = 0) -> LinkListResponse:
-        """List links with optional filters.
-        
-        Args:
-            source_id: Filter by source entity ID
-            link_type: Filter by link type
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            
-        Returns:
-            LinkListResponse with list of links
-            
-        Raises:
-            RestApiError: For API errors
-        """
-        pagination_params = self._build_pagination_params(limit, offset)
-        
-        self._log_operation("listLinks", {
-            "sourceId": source_id,
-            "linkType": link_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params = self._clean_params({
-            "sourceId": source_id,
-            "linkType": link_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
+
+        prefix = _OP_PREFIX.get(entity_type, "Product")
+        op_id = f"get{prefix}IncomingReference"
+
+        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        if key_id:
+            params["keyId"] = key_id
         params.update(self._build_context_params())
-        response = self.client.listLinks(**params)
-        
-        if isinstance(response, dict):
-            return LinkListResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def create_link(self, data: LinkCreateRequest) -> LinkResponse:
-        """Create a new link.
-        
-        Args:
-            data: LinkCreateRequest with link details
-            
-        Returns:
-            LinkResponse with created link
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
-        """
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("createLink", {
-            "sourceId": create_data.get("sourceId"),
-            "linkType": create_data.get("linkType")
-        })
-        
+        self._log_operation(op_id, params)
+
         try:
-            response = self.client.createLink(body=create_data, **self._build_context_params())
-        except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Create link failed: {str(e)}")
-            raise
-        
-        if isinstance(response, dict):
-            return LinkResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def delete_link(self, link_id: str) -> bool:
-        """Delete a link.
-        
-        Args:
-            link_id: The link ID to delete
-            
-        Returns:
-            True if deletion successful
-            
-        Raises:
-            ValidationError: If ID missing
-            NotFoundError: If not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"link_id": link_id},
-            ["link_id"]
-        )
-        
-        self._log_operation("deleteLink", {"linkId": link_id})
-        
-        try:
-            self.client.deleteLink(linkId=link_id, **self._build_context_params())
-            return True
+            op_func = getattr(self.client, op_id)
+            response = op_func(**params)
         except Exception as e:
             if "404" in str(e):
-                raise NotFoundError(link_id, "Link")
+                raise NotFoundError(entity_id, prefix)
             raise
+
+        if isinstance(response, dict):
+            return RelationshipListResponse(**response)
+        return response
+
+    # ============================================================================
+    # Reference Type Lookup
+    # ============================================================================
+
+    @handle_rest_errors
+    def get_reference_type(self, reference_type_id: str) -> RelationshipTypeResponse:
+        """Get a reference type definition by ID (GET /reference-types/{id}).
+
+        Args:
+            reference_type_id: The reference type ID
+
+        Returns:
+            RelationshipTypeResponse with reference type details
+        """
+        self._validate_required_params(
+            {"reference_type_id": reference_type_id},
+            ["reference_type_id"]
+        )
+
+        params = {"id": reference_type_id}
+        params.update(self._build_context_params())
+        self._log_operation("getReferenceType", params)
+
+        try:
+            response = self.client.getReferenceType(**params)
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(reference_type_id, "ReferenceType")
+            raise
+
+        if isinstance(response, dict):
+            return RelationshipTypeResponse(**response)
+        return response

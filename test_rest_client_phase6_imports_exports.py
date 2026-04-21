@@ -5,8 +5,10 @@ Covers job creation, status tracking, downloading exports, and error handling.
 """
 
 import unittest
+import logging
 from unittest.mock import Mock, MagicMock, patch, call
 from datetime import datetime
+from stepxmlclient.rest_client import exceptions as exc
 
 from stepxmlclient.rest_client.models.import_export import (
     ImportJobResponse,
@@ -186,601 +188,66 @@ class TestImportExportModels(unittest.TestCase):
         assert response.totalCount == 2
 
 
+
+
 class TestImportOperations(unittest.TestCase):
-    """Tests for import operations."""
-    
     def setUp(self):
-        """Set up test fixtures."""
         self.mock_client = Mock()
-        self.imports = ImportOperations(self.mock_client)
-    
-    def test_create_import_job_success(self):
-        """Test successful import job creation."""
-        # Setup
-        request = ImportJobCreateRequest(
-            entityType="Product",
-            sourceType="S3",
-            sourceData={"bucket": "my-bucket", "key": "products.xml"},
-            updateStrategy=None,
-            config=None
-        )
-        expected_response = {
-            "jobId": "IMP123456",
-            "status": "PENDING",
-            "entityType": "Product",
-            "createdAt": datetime.now().isoformat()
-        }
-        self.mock_client.createImportJob = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.create_import_job(request)
-        
-        # Assert
-        assert isinstance(result, ImportJobResponse)
-        assert result.jobId == "IMP123456"
-        assert result.status == "PENDING"
-    
-    def test_get_import_job_success(self):
-        """Test getting import job status."""
-        # Setup
-        job_id = "IMP123456"
-        expected_response = {
-            "jobId": job_id,
-            "status": "PROCESSING",
-            "entityType": "Product",
-            "createdAt": datetime.now().isoformat(),
-            "progress": {
-                "totalItems": 1000,
-                "processedItems": 500,
-                "failedItems": 10,
-                "percentComplete": 50.0
-            }
-        }
-        self.mock_client.getImportJob = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.get_import_job(job_id)
-        
-        # Assert
-        assert isinstance(result, ImportJobResponse)
-        assert result.jobId == job_id
-        assert result.status == "PROCESSING"
-    
-    def test_get_import_job_not_found(self):
-        """Test get import job with invalid ID."""
-        # Setup
-        job_id = "INVALID_ID"
-        self.mock_client.getImportJob = Mock(side_effect=Exception("404 Not Found"))
-        
-        # Execute & Assert
-        with self.assertRaises(NotFoundError):
-            self.imports.get_import_job(job_id)
-    
-    def test_list_import_jobs_success(self):
-        """Test listing import jobs with pagination."""
-        # Setup
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "IMP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "createdAt": datetime.now().isoformat()
-                },
-                {
-                    "jobId": "IMP002",
-                    "status": "PROCESSING",
-                    "entityType": "Asset",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 2,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listImportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.list_import_jobs(limit=20, offset=0)
-        
-        # Assert
-        assert isinstance(result, ImportJobListResponse)
-        assert len(result.jobs) == 2
-        assert result.totalCount == 2
-    
-    def test_list_import_jobs_with_status_filter(self):
-        """Test listing import jobs with status filter."""
-        # Setup
-        status_filter = "COMPLETED"
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "IMP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listImportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.list_import_jobs(status_filter=status_filter)
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert result.jobs[0].status == "COMPLETED"
-    
-    def test_cancel_import_job_success(self):
-        """Test cancelling an import job."""
-        # Setup
-        job_id = "IMP123456"
-        self.mock_client.cancelImportJob = Mock(return_value=True)
-        
-        # Execute
-        result = self.imports.cancel_import_job(job_id)
-        
-        # Assert
-        assert result is True
-    
-    def test_get_import_job_errors(self):
-        """Test retrieving import job errors."""
-        # Setup
-        job_id = "IMP123456"
-        expected_response = {
-            "errors": [
-                {
-                    "errorCode": "INVALID_DATA",
-                    "errorMessage": "Invalid product ID",
-                    "entityId": "PROD001",
-                    "severity": "ERROR"
-                }
-            ],
-            "totalCount": 1,
-            "limit": 100,
-            "offset": 0
-        }
-        self.mock_client.getImportJobErrors = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.get_import_job_errors(job_id)
-        
-        # Assert
-        assert isinstance(result, JobErrorListResponse)
-        assert len(result.errors) == 1
-        assert result.errors[0].errorCode == "INVALID_DATA"
-    
-    def test_get_completed_imports(self):
-        """Test convenience method for listing completed imports."""
-        # Setup
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "IMP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listImportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.get_completed_imports()
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert all(job.status == "COMPLETED" for job in result.jobs)
-    
-    def test_get_failed_imports(self):
-        """Test convenience method for listing failed imports."""
-        # Setup
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "IMP002",
-                    "status": "FAILED",
-                    "entityType": "Asset",
-                    "createdAt": datetime.now().isoformat(),
-                    "errorMessage": "Source file not found"
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listImportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.imports.get_failed_imports()
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert all(job.status == "FAILED" for job in result.jobs)
+        self.logger = logging.getLogger(__name__)
+        self.operations = ExportOperations(self.mock_client, logger=self.logger, context="Main")
 
+    def test_initialization(self):
+        self.assertEqual(self.operations.operation_name, "ExportOperations")
 
-class TestExportOperations(unittest.TestCase):
-    """Tests for export operations."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.mock_client = Mock()
-        self.exports = ExportOperations(self.mock_client)
-    
     def test_create_export_job_success(self):
-        """Test successful export job creation."""
-        # Setup
-        request = ExportJobCreateRequest(
-            entityType="Product",
-            format="XML",
-            filters=None,
-            config=None
-        )
-        expected_response = {
-            "jobId": "EXP123456",
-            "status": "PENDING",
-            "entityType": "Product",
-            "format": "XML",
-            "createdAt": datetime.now().isoformat()
-        }
-        self.mock_client.createExportJob = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.create_export_job(request)
-        
-        # Assert
-        assert isinstance(result, ExportJobResponse)
-        assert result.jobId == "EXP123456"
-        assert result.status == "PENDING"
-    
-    def test_get_export_job_success(self):
-        """Test getting export job status."""
-        # Setup
-        job_id = "EXP123456"
-        expected_response = {
-            "jobId": job_id,
-            "status": "COMPLETED",
-            "entityType": "Product",
-            "format": "XML",
-            "createdAt": datetime.now().isoformat(),
-            "completedAt": datetime.now().isoformat(),
-            "progress": {
-                "totalItems": 1000,
-                "processedItems": 1000,
-                "failedItems": 0,
-                "percentComplete": 100.0
-            }
-        }
-        self.mock_client.getExportJob = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.get_export_job(job_id)
-        
-        # Assert
-        assert isinstance(result, ExportJobResponse)
-        assert result.jobId == job_id
-        assert result.status == "COMPLETED"
-    
-    def test_get_export_job_not_found(self):
-        """Test get export job with invalid ID."""
-        # Setup
-        job_id = "INVALID_ID"
-        self.mock_client.getExportJob = Mock(side_effect=Exception("404 Not Found"))
-        
-        # Execute & Assert
-        with self.assertRaises(NotFoundError):
-            self.exports.get_export_job(job_id)
-    
-    def test_list_export_jobs_success(self):
-        """Test listing export jobs with pagination."""
-        # Setup
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "EXP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "format": "XML",
-                    "createdAt": datetime.now().isoformat()
-                },
-                {
-                    "jobId": "EXP002",
-                    "status": "PROCESSING",
-                    "entityType": "Asset",
-                    "format": "JSON",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 2,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listExportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.list_export_jobs(limit=20, offset=0)
-        
-        # Assert
-        assert isinstance(result, ExportJobListResponse)
-        assert len(result.jobs) == 2
-        assert result.totalCount == 2
-    
-    def test_list_export_jobs_with_filters(self):
-        """Test listing export jobs with multiple filters."""
-        # Setup
-        status_filter = "COMPLETED"
-        entity_type_filter = "Product"
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "EXP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "format": "XML",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listExportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.list_export_jobs(
-            status_filter=status_filter,
-            entity_type_filter=entity_type_filter
-        )
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert result.jobs[0].status == "COMPLETED"
-        assert result.jobs[0].entityType == "Product"
-    
-    def test_download_export_data_success(self):
-        """Test downloading exported data."""
-        # Setup
-        job_id = "EXP123456"
-        export_data = b"<products>...</products>"
-        
-        # Mock the get_export_job to return completed job
-        completed_job = ExportJobResponse(
-            jobId=job_id,
-            status="COMPLETED",
-            entityType="Product",
-            format="XML",
-            createdAt=datetime.now().isoformat(),
-            startedAt=None,
-            completedAt=datetime.now().isoformat(),
-            progress=None,
-            downloadUrl=None,
-            fileSize=None,
-            errorMessage=None
-        )
-        
-        self.exports.get_export_job = Mock(return_value=completed_job)
-        self.mock_client.downloadExportData = Mock(return_value=export_data)
-        
-        # Execute
-        result = self.exports.download_export_data(job_id)
-        
-        # Assert
-        assert result == export_data
-        assert isinstance(result, bytes)
-    
-    def test_download_export_data_not_completed(self):
-        """Test download fails for non-completed job."""
-        # Setup
-        job_id = "EXP123456"
-        
-        # Mock get_export_job to return processing job
-        processing_job = ExportJobResponse(
-            jobId=job_id,
-            status="PROCESSING",
-            entityType="Product",
-            format="XML",
-            createdAt=datetime.now().isoformat(),
-            startedAt=None,
-            completedAt=None,
-            progress=None,
-            downloadUrl=None,
-            fileSize=None,
-            errorMessage=None
-        )
-        
-        self.exports.get_export_job = Mock(return_value=processing_job)
-        
-        # Execute & Assert
-        with self.assertRaises(ValidationError):
-            self.exports.download_export_data(job_id)
-    
-    def test_download_export_data_save_to_file(self):
-        """Test downloading and saving export data to file."""
-        # Setup
-        job_id = "EXP123456"
-        export_data = b"<products>...</products>"
-        
-        completed_job = ExportJobResponse(
-            jobId=job_id,
-            status="COMPLETED",
-            entityType="Product",
-            format="XML",
-            createdAt=datetime.now().isoformat(),
-            startedAt=None,
-            completedAt=datetime.now().isoformat(),
-            progress=None,
-            downloadUrl=None,
-            fileSize=None,
-            errorMessage=None
-        )
-        
-        self.exports.get_export_job = Mock(return_value=completed_job)
-        self.mock_client.downloadExportData = Mock(return_value=export_data)
-        
-        # Execute with save_to_file
-        with patch('builtins.open', create=True) as mock_open:
-            result = self.exports.download_export_data(job_id, save_to_file="/tmp/export.xml")
-        
-        # Assert
-        assert result == export_data
-        mock_open.assert_called_once_with("/tmp/export.xml", 'wb')
-    
-    def test_get_completed_exports(self):
-        """Test convenience method for listing completed exports."""
-        # Setup
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "EXP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "format": "XML",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listExportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.get_completed_exports()
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert all(job.status == "COMPLETED" for job in result.jobs)
-    
-    def test_export_by_entity_type(self):
-        """Test convenience method for filtering by entity type."""
-        # Setup
-        entity_type = "Product"
-        expected_response = {
-            "jobs": [
-                {
-                    "jobId": "EXP001",
-                    "status": "COMPLETED",
-                    "entityType": "Product",
-                    "format": "XML",
-                    "createdAt": datetime.now().isoformat()
-                }
-            ],
-            "totalCount": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.listExportJobs = Mock(return_value=expected_response)
-        
-        # Execute
-        result = self.exports.export_by_entity_type(entity_type)
-        
-        # Assert
-        assert len(result.jobs) == 1
-        assert all(job.entityType == "Product" for job in result.jobs)
+        self.mock_client.postExport.return_value = {
+            "jobId": "JOB123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
+        result = self.operations.create_export_job("MyExportConfig")
+        self.assertIsNotNone(result)
+        call_args = self.mock_client.postExport.call_args
+        self.assertEqual(call_args[1]["exportConfigurationId"], "MyExportConfig")
+        self.assertEqual(call_args[1]["context"], "Main")
+
+    def test_create_export_job_requires_config_id(self):
+        with self.assertRaises(exc.ValidationError):
+            self.operations.create_export_job(None)
+
+    def test_create_export_job_with_workspace(self):
+        self.mock_client.postExport.return_value = {
+            "jobId": "JOB123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
+        self.operations.create_export_job("MyExportConfig", use_request_context_workspace=True)
+        call_args = self.mock_client.postExport.call_args
+        self.assertEqual(call_args[1]["useRequestContextWorkspace"], True)
+
+    def test_create_import_job_success(self):
+        self.mock_client.postImport.return_value = {
+            "jobId": "IMPORT123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
+        result = self.operations.create_import_job("MyImportConfig")
+        self.assertIsNotNone(result)
+        call_args = self.mock_client.postImport.call_args
+        self.assertEqual(call_args[1]["importConfigurationId"], "MyImportConfig")
+
+    def test_create_import_job_requires_config_id(self):
+        with self.assertRaises(exc.ValidationError):
+            self.operations.create_import_job(None)
+
+    def test_create_import_job_with_description(self):
+        self.mock_client.postImport.return_value = {
+            "jobId": "IMPORT123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
+        self.operations.create_import_job("MyImportConfig", process_description="Test run")
+        call_args = self.mock_client.postImport.call_args
+        self.assertEqual(call_args[1]["processDescription"], "Test run")
+
+    def test_create_export_job_not_found(self):
+        self.mock_client.postExport.side_effect = Exception("404 not found")
+        with self.assertRaises(exc.NotFoundError):
+            self.operations.create_export_job("NONEXISTENT")
+
+    def test_create_import_job_not_found(self):
+        self.mock_client.postImport.side_effect = Exception("404 not found")
+        with self.assertRaises(exc.NotFoundError):
+            self.operations.create_import_job("NONEXISTENT")
 
 
-class TestImportExportIntegration(unittest.TestCase):
-    """Integration tests for import/export workflows."""
-    
-    def setUp(self):
-        """Set up test fixtures."""
-        self.mock_client = Mock()
-        self.imports = ImportOperations(self.mock_client)
-        self.exports = ExportOperations(self.mock_client)
-    
-    def test_full_import_workflow(self):
-        """Test complete import job workflow: create, check status, check errors."""
-        # Create job
-        create_response = {
-            "jobId": "IMP123",
-            "status": "PENDING",
-            "entityType": "Product",
-            "createdAt": datetime.now().isoformat()
-        }
-        self.mock_client.createImportJob = Mock(return_value=create_response)
-        
-        request = ImportJobCreateRequest(
-            entityType="Product",
-            sourceType="S3",
-            sourceData={"bucket": "my-bucket", "key": "products.xml"},
-            updateStrategy=None,
-            config=None
-        )
-        created_job = self.imports.create_import_job(request)
-        assert created_job.jobId == "IMP123"
-        
-        # Check status
-        status_response = {
-            "jobId": "IMP123",
-            "status": "COMPLETED",
-            "entityType": "Product",
-            "createdAt": datetime.now().isoformat()
-        }
-        self.mock_client.getImportJob = Mock(return_value=status_response)
-        
-        job_status = self.imports.get_import_job("IMP123")
-        assert job_status.status == "COMPLETED"
-        
-        # Check errors
-        errors_response = {
-            "errors": [],
-            "totalCount": 0,
-            "limit": 100,
-            "offset": 0
-        }
-        self.mock_client.getImportJobErrors = Mock(return_value=errors_response)
-        
-        errors = self.imports.get_import_job_errors("IMP123")
-        assert errors.totalCount == 0
-    
-    def test_full_export_workflow(self):
-        """Test complete export job workflow: create, check status, download."""
-        # Create export
-        create_response = {
-            "jobId": "EXP123",
-            "status": "PENDING",
-            "entityType": "Product",
-            "format": "XML",
-            "createdAt": datetime.now().isoformat()
-        }
-        self.mock_client.createExportJob = Mock(return_value=create_response)
-        
-        request = ExportJobCreateRequest(
-            entityType="Product",
-            format="XML",
-            filters=None,
-            config=None
-        )
-        created_job = self.exports.create_export_job(request)
-        assert created_job.jobId == "EXP123"
-        
-        # Check status
-        status_response = {
-            "jobId": "EXP123",
-            "status": "COMPLETED",
-            "entityType": "Product",
-            "format": "XML",
-            "createdAt": datetime.now().isoformat(),
-            "completedAt": datetime.now().isoformat()
-        }
-        self.mock_client.getExportJob = Mock(return_value=status_response)
-        
-        job_status = self.exports.get_export_job("EXP123")
-        assert job_status.status == "COMPLETED"
-        
-        # Download data
-        export_data = b"<products>...</products>"
-        self.mock_client.downloadExportData = Mock(return_value=export_data)
-        
-        data = self.exports.download_export_data("EXP123")
-        assert data == export_data
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,8 +1,10 @@
 """Tests for Classification operations in STEP REST API v2."""
 
 import unittest
+import logging
 from unittest.mock import MagicMock, Mock, patch
 from datetime import datetime
+from stepxmlclient.rest_client import exceptions as exc
 
 from stepxmlclient.rest_client.models.classification import (
     ClassificationResponse,
@@ -211,274 +213,142 @@ class TestClassificationModels(unittest.TestCase):
         self.assertEqual(response.total, 2)
 
 
+
+
 class TestClassificationOperations(unittest.TestCase):
-    """Test classification operations."""
-    
     def setUp(self):
-        """Set up test fixtures."""
-        self.mock_client = MagicMock()
-        self.operations = ClassificationOperations(self.mock_client)
-    
-    def test_classification_operations_initialization(self):
-        """Test ClassificationOperations initialization."""
-        self.assertIsNotNone(self.operations)
-        self.assertEqual(self.operations.client, self.mock_client)
-    
+        self.mock_client = Mock()
+        self.logger = logging.getLogger(__name__)
+        self.operations = ClassificationOperations(self.mock_client, logger=self.logger)
+
+    def test_initialization(self):
+        self.assertEqual(self.operations.operation_name, "ClassificationOperations")
+
     def test_get_classification_success(self):
-        """Test successful classification retrieval."""
-        mock_response = {
-            "id": "CLASS1",
-            "name": "Color",
-            "description": "Product color"
-        }
-        self.mock_client.getClassification.return_value = mock_response
-        
+        self.mock_client.getClassification.return_value = {
+            "id": "CLASS1", "user_type_id": "ClassType", "name": "Root"}
         result = self.operations.get_classification("CLASS1")
-        
         self.assertEqual(result.id, "CLASS1")
-        self.assertEqual(result.name, "Color")
-        self.mock_client.getClassification.assert_called_once()
-    
-    def test_get_classification_validation(self):
-        """Test classification retrieval validation."""
-        with self.assertRaises(exc.ValidationError):
-            self.operations.get_classification(None)
-    
+        call_args = self.mock_client.getClassification.call_args
+        self.assertEqual(call_args[1]["id"], "CLASS1")
+        self.assertNotIn("classificationId", call_args[1])
+
     def test_get_classification_not_found(self):
-        """Test retrieval when classification not found."""
         self.mock_client.getClassification.side_effect = Exception("404 not found")
-        
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_classification("NONEXISTENT")
-    
-    def test_search_classifications_success(self):
-        """Test successful classification search."""
-        mock_response = {
-            "items": [
-                {"id": "CLASS1", "name": "Color"},
-                {"id": "CLASS2", "name": "Size"},
-            ],
-            "total": 50
-        }
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        result = self.operations.search_classifications(query="class", limit=20, offset=0)
-        
-        self.assertEqual(len(result.items), 2)
-        self.assertEqual(result.total, 50)
-    
-    def test_search_classifications_defaults(self):
-        """Test search with default parameters."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        self.operations.search_classifications()
-        
-        call_args = self.mock_client.searchClassifications.call_args
-        # Check the arguments passed to the client call
-        self.assertEqual(call_args[1].get("q"), "*")
-        self.assertIn("limit", call_args[1])
-    
-    def test_search_classifications_with_filters(self):
-        """Test search with optional filters."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        self.operations.search_classifications(
-            query="test",
-            type_filter="Standard",
-            include_values=True
-        )
-        
-        call_args = self.mock_client.searchClassifications.call_args
-        self.assertEqual(call_args[1]["q"], "test")
-        self.assertEqual(call_args[1]["typeFilter"], "Standard")
-        self.assertTrue(call_args[1]["includeValues"])
-    
-    def test_list_classifications(self):
-        """Test list_classifications convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        self.operations.list_classifications()
-        
-        call_args = self.mock_client.searchClassifications.call_args
-        self.assertEqual(call_args[1]["q"], "*")
-    
-    def test_create_classification_success(self):
-        """Test successful classification creation."""
-        create_req = ClassificationCreateRequest(
-            id="NEW_CLASS",
-            name="Material",
-            description=None,
-            classification_type=None,
-            is_hierarchical=False,
-            attributes=None
-        )
-        mock_response = {"id": "NEW_CLASS", "name": "Material"}
-        self.mock_client.createClassification.return_value = mock_response
-        
-        result = self.operations.create_classification(create_req)
-        
-        self.assertEqual(result.id, "NEW_CLASS")
-        self.mock_client.createClassification.assert_called_once()
-    
-    def test_create_classification_validation_error(self):
-        """Test classification creation with validation error."""
-        create_req = ClassificationCreateRequest(
-            id="CLASS",
-            name="Test",
-            description=None,
-            classification_type=None,
-            is_hierarchical=False,
-            attributes=None
-        )
-        self.mock_client.createClassification.side_effect = Exception("400 bad request")
-        
+
+    def test_get_classification_validation(self):
         with self.assertRaises(exc.ValidationError):
-            self.operations.create_classification(create_req)
-    
+            self.operations.get_classification(None)
+
+    def test_get_classification_with_key_id(self):
+        self.mock_client.getClassification.return_value = {"id": "CLASS1", "name": "Root"}
+        self.operations.get_classification("CLASS1", key_id="MyKey")
+        call_args = self.mock_client.getClassification.call_args
+        self.assertEqual(call_args[1]["keyId"], "MyKey")
+
+    def test_get_classification_with_include_inherited(self):
+        self.mock_client.getClassification.return_value = {"id": "CLASS1", "name": "Root"}
+        self.operations.get_classification("CLASS1", include_inherited_data=True)
+        call_args = self.mock_client.getClassification.call_args
+        self.assertEqual(call_args[1]["includeInheritedData"], True)
+
+    def test_search_classifications_success(self):
+        self.mock_client.postClassificationsSearch.return_value = {
+            "items": [{"id": "CLASS1", "name": "Class 1"}, {"id": "CLASS2", "name": "Class 2"}], "total": 2}
+        condition = {"conditionType": "objecttype", "objectTypeId": "ClassType"}
+        result = self.operations.search_classifications(condition=condition)
+        self.assertEqual(len(result.items), 2)
+        call_args = self.mock_client.postClassificationsSearch.call_args
+        self.assertEqual(call_args[1]["body"]["condition"], condition)
+
+    def test_search_classifications_requires_condition(self):
+        with self.assertRaises(exc.ValidationError):
+            self.operations.search_classifications(condition=None)
+
+    def test_create_classification_success(self):
+        self.mock_client.postClassifications.return_value = {"id": "NEWCLASS", "name": "New"}
+        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
+        request = ClassificationCreateRequest(id="NEWCLASS", name="New")
+        result = self.operations.create_classification(request)
+        self.assertEqual(result.id, "NEWCLASS")
+        self.mock_client.postClassifications.assert_called_once()
+
+    def test_create_classification_conflict(self):
+        self.mock_client.postClassifications.side_effect = Exception("409 conflict")
+        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
+        request = ClassificationCreateRequest(id="EXISTING", name="Existing")
+        with self.assertRaises(exc.ConflictError):
+            self.operations.create_classification(request)
+
     def test_update_classification_success(self):
-        """Test successful classification update."""
-        update_req = ClassificationUpdateRequest(
-            name="Updated",
-            description=None,
-            classification_type=None,
-            attributes=None
-        )
-        mock_response = {"id": "CLASS1", "name": "Updated"}
-        self.mock_client.updateClassification.return_value = mock_response
-        
-        result = self.operations.update_classification("CLASS1", update_req)
-        
+        self.mock_client.patchClassification.return_value = {"id": "CLASS1", "name": "Updated"}
+        from stepxmlclient.rest_client.models.classification import ClassificationUpdateRequest
+        updates = ClassificationUpdateRequest(name="Updated")
+        result = self.operations.update_classification("CLASS1", updates)
         self.assertEqual(result.name, "Updated")
-    
+        call_args = self.mock_client.patchClassification.call_args
+        self.assertEqual(call_args[1]["id"], "CLASS1")
+
     def test_update_classification_not_found(self):
-        """Test update when classification not found."""
-        update_req = ClassificationUpdateRequest(
-            name="Updated",
-            description=None,
-            classification_type=None,
-            attributes=None
-        )
-        self.mock_client.updateClassification.side_effect = Exception("404 not found")
-        
+        self.mock_client.patchClassification.side_effect = Exception("404 not found")
+        from stepxmlclient.rest_client.models.classification import ClassificationUpdateRequest
+        updates = ClassificationUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
-            self.operations.update_classification("NONEXISTENT", update_req)
-    
+            self.operations.update_classification("NONEXISTENT", updates)
+
+    def test_replace_classification_success(self):
+        self.mock_client.putClassification.return_value = {"id": "CLASS1", "name": "Root"}
+        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
+        data = ClassificationCreateRequest(id="CLASS1", name="Root")
+        result = self.operations.replace_classification("CLASS1", data)
+        self.assertEqual(result.id, "CLASS1")
+        call_args = self.mock_client.putClassification.call_args
+        self.assertEqual(call_args[1]["id"], "CLASS1")
+
+    def test_replace_classification_with_allow_overwrite(self):
+        self.mock_client.putClassification.return_value = {"id": "CLASS1", "name": "Root"}
+        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
+        data = ClassificationCreateRequest(id="CLASS1", name="Root")
+        self.operations.replace_classification("CLASS1", data, allow_overwrite=True)
+        call_args = self.mock_client.putClassification.call_args
+        self.assertEqual(call_args[1]["allow-overwrite"], True)
+
     def test_delete_classification_success(self):
-        """Test successful classification deletion."""
         self.mock_client.deleteClassification.return_value = None
-        
         result = self.operations.delete_classification("CLASS1")
-        
         self.assertTrue(result)
-        self.mock_client.deleteClassification.assert_called_once_with(classificationId="CLASS1")
-    
+        call_args = self.mock_client.deleteClassification.call_args
+        self.assertEqual(call_args[1]["id"], "CLASS1")
+
     def test_delete_classification_not_found(self):
-        """Test deletion when classification not found."""
         self.mock_client.deleteClassification.side_effect = Exception("404 not found")
-        
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_classification("NONEXISTENT")
-    
-    def test_get_classification_hierarchy_success(self):
-        """Test successful hierarchy retrieval."""
-        mock_response = {
-            "classification_id": "CLASS1",
-            "classification_name": "Organization",
-            "root_nodes": [],
-            "total_nodes": 0,
-            "max_depth": 0
-        }
-        self.mock_client.getClassificationHierarchy.return_value = mock_response
-        
+
+    def test_get_classification_hierarchy(self):
+        self.mock_client.getClassificationChildren.return_value = {
+            "classification_id": "CLASS1", "classification_name": "Root",
+            "root_nodes": [{"id": "CHILD1", "name": "Child 1"}]}
         result = self.operations.get_classification_hierarchy("CLASS1")
-        
-        self.assertEqual(result.classification_id, "CLASS1")
-        self.mock_client.getClassificationHierarchy.assert_called_once()
-    
-    def test_get_classification_hierarchy_with_root_id(self):
-        """Test hierarchy retrieval with specific root."""
-        mock_response = {
-            "classification_id": "CLASS1",
-            "classification_name": "Organization",
-            "root_nodes": [],
-            "total_nodes": 0,
-            "max_depth": 0
-        }
-        self.mock_client.getClassificationHierarchy.return_value = mock_response
-        
-        self.operations.get_classification_hierarchy("CLASS1", root_id="ROOT123")
-        
-        call_args = self.mock_client.getClassificationHierarchy.call_args
-        self.assertEqual(call_args[1]["classificationId"], "CLASS1")
-        self.assertEqual(call_args[1]["rootId"], "ROOT123")
-    
-    def test_get_classification_hierarchy_not_found(self):
-        """Test hierarchy when classification not found."""
-        self.mock_client.getClassificationHierarchy.side_effect = Exception("404 not found")
-        
-        with self.assertRaises(exc.NotFoundError):
-            self.operations.get_classification_hierarchy("NONEXISTENT")
-    
-    def test_get_classification_values_success(self):
-        """Test successful values retrieval."""
-        mock_response = {
-            "classification_id": "CLASS1",
-            "values": [
-                {"id": "VAL1", "name": "Red"},
-                {"id": "VAL2", "name": "Blue"},
-            ],
-            "total": 2
-        }
-        self.mock_client.getClassificationValues.return_value = mock_response
-        
-        result = self.operations.get_classification_values("CLASS1")
-        
-        self.assertEqual(result.classification_id, "CLASS1")
-        self.assertEqual(len(result.values), 2)
-    
-    def test_get_classification_values_not_found(self):
-        """Test values retrieval when classification not found."""
-        self.mock_client.getClassificationValues.side_effect = Exception("404 not found")
-        
-        with self.assertRaises(exc.NotFoundError):
-            self.operations.get_classification_values("NONEXISTENT")
-    
+        self.assertIsNotNone(result)
+        call_args = self.mock_client.getClassificationChildren.call_args
+        self.assertEqual(call_args[1]["id"], "CLASS1")
+
     def test_search_by_type(self):
-        """Test search_by_type convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        self.operations.search_by_type("Standard")
-        
-        call_args = self.mock_client.searchClassifications.call_args
-        self.assertEqual(call_args[1]["typeFilter"], "Standard")
-    
-    def test_search_modified_since(self):
-        """Test search_modified_since convenience method."""
-        mock_response = {"items": [], "total": 0}
-        self.mock_client.searchClassifications.return_value = mock_response
-        
-        self.operations.search_modified_since("2025-01-01T00:00:00Z")
-        
-        call_args = self.mock_client.searchClassifications.call_args
-        self.assertIn("modifiedAt", call_args[1]["q"])
-    
-    def test_get_classification_includes_params(self):
-        """Test that get_classification passes include parameters."""
-        mock_response = {"id": "CLASS123", "name": "Color"}
-        self.mock_client.getClassification.return_value = mock_response
-        
-        self.operations.get_classification(
-            "CLASS123",
-            include_values=True
-        )
-        
-        call_args = self.mock_client.getClassification.call_args
-        self.assertTrue(call_args[1]["includeValues"])
+        self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
+        self.operations.search_by_type("ClassType")
+        call_args = self.mock_client.postClassificationsSearch.call_args
+        body = call_args[1]["body"]
+        self.assertEqual(body["condition"]["conditionType"], "objecttype")
+        self.assertEqual(body["condition"]["objectTypeId"], "ClassType")
+
+    def test_list_classifications(self):
+        self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
+        self.operations.list_classifications()
+        self.mock_client.postClassificationsSearch.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

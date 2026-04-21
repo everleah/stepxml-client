@@ -46,15 +46,15 @@ class ProductOperations(BaseOperation):
                          context=context, workspace=workspace)
     
     @handle_rest_errors
-    def get_product(self, product_id: str, 
-                   include_attributes: bool = True,
-                   include_values: bool = True) -> ProductResponse:
+    def get_product(self, product_id: str,
+                   key_id: Optional[str] = None,
+                   include_inherited_data: bool = False) -> ProductResponse:
         """Retrieve a single product by ID.
         
         Args:
-            product_id: The product ID to retrieve
-            include_attributes: Whether to include product attributes
-            include_values: Whether to include product values
+            product_id: The product ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
+            include_inherited_data: Whether to include inherited attribute values (default: False)
             
         Returns:
             ProductResponse with product data
@@ -68,15 +68,16 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        params = {
-            "productId": product_id,
-            "includeAttributes": include_attributes,
-            "includeValues": include_values,
-        }
+        params: Dict[str, Any] = {"id": product_id}
+        if key_id:
+            params["keyId"] = key_id
+        if include_inherited_data:
+            params["includeInheritedData"] = include_inherited_data
+        params.update(self._build_context_params())
         self._log_operation("getProduct", params)
         
         try:
-            response = self.client.getProduct(**params, **self._build_context_params())
+            response = self.client.getProduct(**params)
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(product_id, "Product")
@@ -88,57 +89,29 @@ class ProductOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def search_products(self, query: str = "*",
-                       user_type_id: Optional[str] = None,
-                       modified_since: Optional[str] = None,
-                       limit: int = 20,
-                       offset: int = 0,
-                       include_attributes: bool = True,
-                       include_values: bool = True) -> ProductListResponse:
-        """Search for products with optional filters.
+    def search_products(self, condition: dict) -> ProductListResponse:
+        """Search for products using a STEP condition query.
         
         Args:
-            query: Free-text search query (default: "*" for all)
-            user_type_id: Filter by user type ID
-            modified_since: ISO 8601 timestamp - only products modified after this date
-            limit: Maximum results to return (1-1000, default: 20)
-            offset: Result offset for pagination (default: 0)
-            include_attributes: Whether to include attributes (default: True)
-            include_values: Whether to include values (default: True)
+            condition: A STEP condition object defining the search criteria.
+                       Supported conditionTypes: 'and', 'or', 'id', 'name',
+                       'textvalue', 'numericvalue', 'objecttype', 'simplebelow',
+                       'lovvalue', 'hasreferenceto', 'hasdatacontainerobject'.
+                       Example: {"conditionType": "objecttype", "objectTypeId": "MyType"}
             
         Returns:
-            ProductListResponse with paginated results
+            ProductListResponse with matching products
             
         Raises:
-            ValidationError: If parameters are invalid
+            ValidationError: If condition is invalid
             RestApiError: For API errors
         """
-        # Validate pagination parameters
-        pagination_params = self._build_pagination_params(limit, offset)
+        self._validate_required_params({"condition": condition}, ["condition"])
+        body = {"condition": condition}
+        self._log_operation("postProductsSearch", {"condition": condition})
         
-        params = {
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "includeAttributes": include_attributes,
-            "includeValues": include_values,
-        }
+        response = self.client.postProductsSearch(body=body, **self._build_context_params())
         
-        # Add optional filters
-        if user_type_id:
-            params["userTypeId"] = user_type_id
-        if modified_since:
-            params["modifiedSince"] = modified_since
-        
-        # Clean parameters
-        params = self._clean_params(params)
-        params.update(self._build_context_params())
-        self._log_operation("searchProducts", params)
-        
-        # Call API
-        response = self.client.searchProducts(**params)
-        
-        # Handle response and build list response
         if isinstance(response, dict):
             items = response.get("items", [])
             total = response.get("total")
@@ -146,24 +119,17 @@ class ProductOperations(BaseOperation):
             items = getattr(response, "items", [])
             total = getattr(response, "total", None)
         
-        # Convert items to ProductResponse objects
         product_items = [
             ProductResponse(**item) if isinstance(item, dict) else item
             for item in items
         ]
         
-        page_info = self._build_page_info(
-            limit=pagination_params["limit"],
-            offset=pagination_params["offset"],
-            total=total
-        )
-        
         return ProductListResponse(
             items=product_items,
             total=total,
-            limit=pagination_params["limit"],
-            offset=pagination_params["offset"],
-            has_more=page_info.has_more
+            limit=max(len(product_items), 1),
+            offset=0,
+            has_more=False
         )
     
     @handle_rest_errors
@@ -189,10 +155,10 @@ class ProductOperations(BaseOperation):
         
         # Convert request to dict for API call
         product_dict = product_data.model_dump(exclude_none=True)
-        self._log_operation("createProduct", {"productId": product_data.id})
+        self._log_operation("postProducts", {"productId": product_data.id})
         
         try:
-            response = self.client.createProduct(body=product_dict, **self._build_context_params())
+            response = self.client.postProducts(body=product_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, f"Product {product_data.id} already exists")
@@ -207,12 +173,14 @@ class ProductOperations(BaseOperation):
     
     @handle_rest_errors
     def update_product(self, product_id: str,
-                      updates: ProductUpdateRequest) -> ProductResponse:
-        """Update an existing product.
+                      updates: ProductUpdateRequest,
+                      key_id: Optional[str] = None) -> ProductResponse:
+        """Partially update an existing product (PATCH).
         
         Args:
-            product_id: The product ID to update
-            updates: ProductUpdateRequest with updates
+            product_id: The product ID (or alternate key value if key_id is set)
+            updates: ProductUpdateRequest with fields to update
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             ProductResponse with updated product data
@@ -222,21 +190,22 @@ class ProductOperations(BaseOperation):
             ValidationError: If updates are invalid
             RestApiError: For other API errors
         """
-        # Validate product ID
         self._validate_required_params(
             {"product_id": product_id},
             ["product_id"]
         )
         
-        # Convert updates to dict
         updates_dict = updates.model_dump(exclude_none=True)
-        self._log_operation("updateProduct", {"productId": product_id})
+        params = {"id": product_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("patchProduct", {"id": product_id})
         
         try:
-            response = self.client.updateProduct(
-                productId=product_id,
+            response = self.client.patchProduct(
                 body=updates_dict,
-                **self._build_context_params()
+                **params
             )
         except Exception as e:
             if "404" in str(e):
@@ -245,17 +214,69 @@ class ProductOperations(BaseOperation):
                 raise exc.ValidationError(str(e))
             raise
         
-        # Convert response to ProductResponse
+        if isinstance(response, dict):
+            return ProductResponse(**response)
+        return response
+
+    @handle_rest_errors
+    def replace_product(self, product_id: str,
+                        product_data: ProductCreateRequest,
+                        key_id: Optional[str] = None,
+                        allow_overwrite: bool = False) -> ProductResponse:
+        """Fully replace a product (PUT). Creates it if it does not exist.
+        
+        Args:
+            product_id: The product ID (or alternate key value if key_id is set)
+            product_data: Complete product data to replace with
+            key_id: Alternate key ID to use for lookup (optional)
+            allow_overwrite: Whether to allow overwriting an existing product
+            
+        Returns:
+            ProductResponse with replaced product data
+            
+        Raises:
+            NotFoundError: If product not found and allow_overwrite is False
+            ValidationError: If data is invalid
+            RestApiError: For other API errors
+        """
+        self._validate_required_params(
+            {"product_id": product_id},
+            ["product_id"]
+        )
+        
+        product_dict = product_data.model_dump(exclude_none=True)
+        params: Dict[str, Any] = {"id": product_id}
+        if key_id:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        params.update(self._build_context_params())
+        self._log_operation("putProduct", {"id": product_id})
+        
+        try:
+            response = self.client.putProduct(
+                body=product_dict,
+                **params
+            )
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            if "400" in str(e) or "409" in str(e):
+                raise exc.ValidationError(str(e))
+            raise
+        
         if isinstance(response, dict):
             return ProductResponse(**response)
         return response
     
     @handle_rest_errors
-    def delete_product(self, product_id: str) -> bool:
+    def delete_product(self, product_id: str,
+                       key_id: Optional[str] = None) -> bool:
         """Delete a product.
         
         Args:
-            product_id: The product ID to delete
+            product_id: The product ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             True if deletion was successful
@@ -269,10 +290,14 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        self._log_operation("deleteProduct", {"productId": product_id})
+        params = {"id": product_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("deleteProduct", {"id": product_id})
         
         try:
-            self.client.deleteProduct(productId=product_id, **self._build_context_params())
+            self.client.deleteProduct(**params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -298,10 +323,13 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        self._log_operation("getProductAttributes", {"productId": product_id})
+        # NOTE: There is no bulk 'get all attributes' operation in the STEP REST API spec.
+        # Use get_product() and inspect the returned values, or use get_product_value()
+        # for a specific attribute (getProductValue: GET /products/{id}/values/{attributeId}).
+        self._log_operation("getProductValue", {"id": product_id})
         
         try:
-            response = self.client.getProductAttributes(productId=product_id, **self._build_context_params())
+            response = self.client.getProductValue(id=product_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(product_id, "Product")
@@ -334,10 +362,12 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        self._log_operation("getProductValues", {"productId": product_id})
+        # NOTE: There is no bulk 'get all values' operation in the STEP REST API spec.
+        # Use get_product() for the full product object including values.
+        self._log_operation("getProductValue", {"id": product_id})
         
         try:
-            response = self.client.getProductValues(productId=product_id, **self._build_context_params())
+            response = self.client.getProductValue(id=product_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(product_id, "Product")
@@ -351,64 +381,28 @@ class ProductOperations(BaseOperation):
         else:
             return getattr(response, "items", [])
     
-    def list_products(self, limit: int = 20, offset: int = 0,
-                     include_attributes: bool = True,
-                     include_values: bool = True) -> ProductListResponse:
-        """List all products (convenience method).
+    def search_by_type(self, user_type_id: str) -> ProductListResponse:
+        """Search products by object type (convenience method).
         
         Args:
-            limit: Max results per page
-            offset: Result offset
-            include_attributes: Whether to include attributes
-            include_values: Whether to include values
+            user_type_id: Object type ID to filter by
             
         Returns:
-            ProductListResponse with paginated results
+            ProductListResponse with matching products
         """
         return self.search_products(
-            query="*",
-            limit=limit,
-            offset=offset,
-            include_attributes=include_attributes,
-            include_values=include_values
+            condition={"conditionType": "objecttype", "objectTypeId": user_type_id}
         )
     
-    def search_by_type(self, user_type_id: str,
-                      limit: int = 20,
-                      offset: int = 0) -> ProductListResponse:
-        """Search products by user type (convenience method).
+    def search_by_id(self, product_id: str) -> ProductListResponse:
+        """Search products by ID condition (convenience method).
         
         Args:
-            user_type_id: User type to filter by
-            limit: Max results per page
-            offset: Result offset
+            product_id: Product ID or pattern to search for
             
         Returns:
-            ProductListResponse with paginated results
+            ProductListResponse with matching products
         """
         return self.search_products(
-            query="*",
-            user_type_id=user_type_id,
-            limit=limit,
-            offset=offset
-        )
-    
-    def search_modified_since(self, modified_since: str,
-                             limit: int = 20,
-                             offset: int = 0) -> ProductListResponse:
-        """Search products modified after a specific timestamp (convenience method).
-        
-        Args:
-            modified_since: ISO 8601 timestamp
-            limit: Max results per page
-            offset: Result offset
-            
-        Returns:
-            ProductListResponse with paginated results
-        """
-        return self.search_products(
-            query="*",
-            modified_since=modified_since,
-            limit=limit,
-            offset=offset
+            condition={"conditionType": "id", "id": product_id}
         )

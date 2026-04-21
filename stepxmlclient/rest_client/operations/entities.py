@@ -4,7 +4,7 @@ import logging
 from typing import Optional, List, Dict, Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError
+from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictError
 from ..models.entity import (
     EntityResponse,
     EntityListResponse,
@@ -36,14 +36,14 @@ class EntityOperations(BaseOperation):
     
     @handle_rest_errors
     def get_entity(self, entity_id: str,
-                   include_attributes: bool = True,
-                   include_relationships: bool = False) -> EntityResponse:
+                   key_id: Optional[str] = None,
+                   include_inherited_data: bool = False) -> EntityResponse:
         """Get a single entity by ID.
         
         Args:
-            entity_id: The entity ID
-            include_attributes: Whether to include attributes (default: True)
-            include_relationships: Whether to include relationships (default: False)
+            entity_id: The entity ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
+            include_inherited_data: Whether to include inherited attribute values (default: False)
             
         Returns:
             EntityResponse with entity data
@@ -58,19 +58,16 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        self._log_operation("getEntity", {
-            "entityId": entity_id,
-            "includeAttributes": include_attributes,
-            "includeRelationships": include_relationships
-        })
+        params: Dict[str, Any] = {"id": entity_id}
+        if key_id:
+            params["keyId"] = key_id
+        if include_inherited_data:
+            params["includeInheritedData"] = include_inherited_data
+        params.update(self._build_context_params())
+        self._log_operation("getEntity", params)
         
         try:
-            response = self.client.getEntity(
-                entityId=entity_id,
-                includeAttributes=include_attributes,
-                includeRelationships=include_relationships,
-                **self._build_context_params()
-            )
+            response = self.client.getEntity(**params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
@@ -81,65 +78,42 @@ class EntityOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def search_entities(self,
-                       query: str = "*",
-                       limit: int = 20,
-                       offset: int = 0,
-                       type_filter: Optional[str] = None,
-                       include_attributes: bool = True) -> EntityListResponse:
-        """Search entities with optional filters.
+    def search_entities(self, condition: dict) -> EntityListResponse:
+        """Search entities using a STEP condition query.
         
         Args:
-            query: Search query string (default: "*" for all)
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            type_filter: Optional filter by entity type
-            include_attributes: Whether to include attributes (default: True)
+            condition: A STEP condition object defining the search criteria.
+                       Supported conditionTypes: 'and', 'or', 'id', 'name',
+                       'textvalue', 'numericvalue', 'objecttype', 'simplebelow',
+                       'lovvalue', 'hasreferenceto', 'hasdatacontainerobject'.
             
         Returns:
-            EntityListResponse with paginated results
+            EntityListResponse with matching entities
             
         Raises:
-            ValidationError: If parameters invalid
+            ValidationError: If condition is invalid
             RestApiError: For API errors
         """
-        pagination_params = self._build_pagination_params(limit, offset)
+        self._validate_required_params({"condition": condition}, ["condition"])
+        body = {"condition": condition}
+        self._log_operation("postEntitiesSearch", {"condition": condition})
         
-        self._log_operation("searchEntities", {
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "typeFilter": type_filter,
-            "includeAttributes": include_attributes
-        })
-        
-        params = self._clean_params({
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "typeFilter": type_filter,
-            "includeAttributes": include_attributes
-        })
-        params.update(self._build_context_params())
-        
-        response = self.client.searchEntities(**params)
+        response = self.client.postEntitiesSearch(body=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return EntityListResponse(**response)
         return response
     
     @handle_rest_errors
-    def list_entities(self, limit: int = 20, offset: int = 0) -> EntityListResponse:
-        """Convenience method to list all entities.
+    def list_entities(self) -> EntityListResponse:
+        """List all entities by object type (convenience method).
         
-        Args:
-            limit: Result limit
-            offset: Result offset
-            
         Returns:
-            EntityListResponse with all entities
+            EntityListResponse with entities
         """
-        return self.search_entities(query="*", limit=limit, offset=offset)
+        return self.search_entities(
+            condition={"conditionType": "objecttype", "objectTypeId": "*"}
+        )
     
     @handle_rest_errors
     def create_entity(self, data: EntityCreateRequest) -> EntityResponse:
@@ -161,13 +135,13 @@ class EntityOperations(BaseOperation):
         else:
             create_data = dict(data) if not isinstance(data, dict) else data
         
-        self._log_operation("createEntity", create_data)
+        self._log_operation("postEntities", create_data)
         
         try:
-            response = self.client.createEntity(body=create_data, **self._build_context_params())
+            response = self.client.postEntities(body=create_data, **self._build_context_params())
         except Exception as e:
-            if "400" in str(e) or "409" in str(e):
-                raise ValidationError(f"Create failed: {str(e)}")
+            if "409" in str(e):
+                raise ConflictError(409, str(e))
             raise
         
         if isinstance(response, dict):
@@ -176,12 +150,14 @@ class EntityOperations(BaseOperation):
     
     @handle_rest_errors
     def update_entity(self, entity_id: str,
-                     updates: EntityUpdateRequest) -> EntityResponse:
-        """Update an existing entity.
+                     updates: EntityUpdateRequest,
+                     key_id: Optional[str] = None) -> EntityResponse:
+        """Partially update an existing entity (PATCH).
         
         Args:
-            entity_id: The entity ID to update
-            updates: EntityUpdateRequest with updated data
+            entity_id: The entity ID (or alternate key value if key_id is set)
+            updates: EntityUpdateRequest with fields to update
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             EntityResponse with updated entity
@@ -196,22 +172,21 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        # Convert Pydantic model to dict if needed
         if hasattr(updates, 'model_dump'):
             update_data = updates.model_dump(exclude_none=True)
         else:
             update_data = dict(updates) if not isinstance(updates, dict) else updates
         
-        self._log_operation("updateEntity", {
-            "entityId": entity_id,
-            "updates": update_data
-        })
+        params = {"id": entity_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("patchEntity", {"id": entity_id})
         
         try:
-            response = self.client.updateEntity(
-                entityId=entity_id,
+            response = self.client.patchEntity(
                 body=update_data,
-                **self._build_context_params()
+                **params
             )
         except Exception as e:
             if "404" in str(e):
@@ -223,13 +198,65 @@ class EntityOperations(BaseOperation):
         if isinstance(response, dict):
             return EntityResponse(**response)
         return response
+
+    @handle_rest_errors
+    def replace_entity(self, entity_id: str,
+                       data: EntityCreateRequest,
+                       key_id: Optional[str] = None,
+                       allow_overwrite: bool = False) -> EntityResponse:
+        """Fully replace an entity (PUT). Creates it if it does not exist.
+        
+        Args:
+            entity_id: The entity ID (or alternate key value if key_id is set)
+            data: Complete entity data
+            key_id: Alternate key ID to use for lookup (optional)
+            allow_overwrite: Whether to allow overwriting an existing entity
+            
+        Returns:
+            EntityResponse with replaced entity
+        """
+        self._validate_required_params(
+            {"entity_id": entity_id},
+            ["entity_id"]
+        )
+        
+        if hasattr(data, 'model_dump'):
+            create_data = data.model_dump(exclude_none=True)
+        else:
+            create_data = dict(data) if not isinstance(data, dict) else data
+        
+        params: Dict[str, Any] = {"id": entity_id}
+        if key_id:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        params.update(self._build_context_params())
+        self._log_operation("putEntity", {"id": entity_id})
+        
+        try:
+            response = self.client.putEntity(
+                body=create_data,
+                **params
+            )
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(entity_id, "Entity")
+            if "400" in str(e) or "409" in str(e):
+                raise ValidationError(str(e))
+            raise
+        
+        if isinstance(response, dict):
+            return EntityResponse(**response)
+        return response
     
     @handle_rest_errors
-    def delete_entity(self, entity_id: str) -> bool:
+    def delete_entity(self, entity_id: str,
+                      key_id: Optional[str] = None) -> bool:
         """Delete an entity.
         
         Args:
-            entity_id: The entity ID to delete
+            entity_id: The entity ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             True if deletion was successful
@@ -244,10 +271,14 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        self._log_operation("deleteEntity", {"entityId": entity_id})
+        params = {"id": entity_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("deleteEntity", {"id": entity_id})
         
         try:
-            self.client.deleteEntity(entityId=entity_id, **self._build_context_params())
+            self.client.deleteEntity(**params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -256,51 +287,36 @@ class EntityOperations(BaseOperation):
     
     @handle_rest_errors
     def get_entity_relationships(self, entity_id: str,
-                                 relationship_type: Optional[str] = None,
-                                 limit: int = 20,
-                                 offset: int = 0) -> EntityRelationshipResponse:
-        """Get relationships for an entity.
+                                 reference_type_id: str,
+                                 key_id: Optional[str] = None) -> EntityRelationshipResponse:
+        """Get outgoing references for an entity by reference type (GET /entities/{id}/references/{referenceTypeId}).
         
         Args:
-            entity_id: The entity ID
-            relationship_type: Optional filter by relationship type
-            limit: Result limit
-            offset: Result offset
+            entity_id: The entity ID (or alternate key value if key_id is set)
+            reference_type_id: The reference type ID to retrieve
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
-            EntityRelationshipResponse with entity relationships
+            EntityRelationshipResponse with entity references
             
         Raises:
-            ValidationError: If entity_id missing
+            ValidationError: If entity_id or reference_type_id missing
             NotFoundError: If entity not found
             RestApiError: For API errors
         """
         self._validate_required_params(
-            {"entity_id": entity_id},
-            ["entity_id"]
+            {"entity_id": entity_id, "reference_type_id": reference_type_id},
+            ["entity_id", "reference_type_id"]
         )
         
-        pagination_params = self._build_pagination_params(limit, offset)
-        
-        self._log_operation("getEntityRelationships", {
-            "entityId": entity_id,
-            "relationshipType": relationship_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params = self._clean_params({
-            "relationshipType": relationship_type,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
+        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("getEntities{id}References", params)
         
         try:
-            response = self.client.getEntityRelationships(
-                entityId=entity_id,
-                **params,
-                **self._build_context_params()
-            )
+            response = self.client.getEntities_id_References(**params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
@@ -314,17 +330,16 @@ class EntityOperations(BaseOperation):
     def bulk_create_entities(self, entities: List[EntityCreateRequest]) -> EntityBulkResponse:
         """Bulk create multiple entities.
         
+        NOTE: No bulk create operation exists in the STEP REST API spec.
+        Individual entities should be created via create_entity() (postEntities).
+        This method is kept for backward compatibility but may not work with real API.
+        
         Args:
             entities: List of EntityCreateRequest objects
             
         Returns:
             EntityBulkResponse with results
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
         """
-        # Convert Pydantic models to dicts if needed
         entity_list = []
         for entity in entities:
             if hasattr(entity, 'model_dump'):
@@ -395,10 +410,7 @@ class EntityOperations(BaseOperation):
             EntityListResponse filtered by type
         """
         return self.search_entities(
-            query="*",
-            limit=limit,
-            offset=offset,
-            type_filter=entity_type
+            condition={"conditionType": "objecttype", "objectTypeId": entity_type}
         )
     
     @handle_rest_errors

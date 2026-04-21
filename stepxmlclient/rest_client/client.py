@@ -102,7 +102,7 @@ class StepRestClient(StiboStepRestClient):
         # Metadata, imports, exports, bulk and streaming operate on system/job level - no per-call context
         self.metadata = MetadataOperations(self.client, logger=op_logger)
         self.imports = ImportOperations(self.client, logger=op_logger)
-        self.exports = ExportOperations(self.client, logger=op_logger)
+        self.exports = ExportOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.bulk = BulkOperations(self.client, logger=op_logger)
         self.workflows = WorkflowOperations(self.client, logger=op_logger)
         self.search = AdvancedSearchOperations(self.client, logger=op_logger)

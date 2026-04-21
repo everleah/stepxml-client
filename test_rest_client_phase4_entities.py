@@ -18,6 +18,7 @@ from stepxmlclient.rest_client.models.entity import (
     EntityMetadata,
 )
 from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError
+from stepxmlclient.rest_client import exceptions as exc
 
 
 class TestEntityModels(unittest.TestCase):
@@ -166,354 +167,132 @@ class TestEntityModels(unittest.TestCase):
         self.assertEqual(response.failed, 2)
 
 
+
+
 class TestEntityOperations(unittest.TestCase):
-    """Test Entity operation methods."""
-    
     def setUp(self):
-        """Set up test fixtures."""
         self.mock_client = Mock()
-        self.logger = logging.getLogger("test")
+        self.logger = logging.getLogger(__name__)
         self.operations = EntityOperations(self.mock_client, logger=self.logger)
-    
+
+    def test_initialization(self):
+        self.assertEqual(self.operations.operation_name, "EntityOperations")
+
     def test_get_entity_success(self):
-        """Test successful get_entity operation."""
-        mock_response = {
-            "id": "ENT001",
-            "name": "Product A",
-            "type": "Product"
-        }
-        self.mock_client.getEntity.return_value = mock_response
-        
-        result = self.operations.get_entity("ENT001")
-        
-        self.assertIsInstance(result, EntityResponse)
-        self.assertEqual(result.id, "ENT001")
-        self.assertEqual(result.name, "Product A")
-        self.mock_client.getEntity.assert_called_once()
-    
-    def test_get_entity_with_includes(self):
-        """Test get_entity with include flags."""
-        mock_response = {
-            "id": "ENT001",
-            "name": "Product A",
-            "attributes": [{"name": "Color", "value": "Blue"}],
-            "relationships": {}
-        }
-        self.mock_client.getEntity.return_value = mock_response
-        
-        result = self.operations.get_entity(
-            "ENT001",
-            include_attributes=True,
-            include_relationships=True
-        )
-        
-        self.assertIsInstance(result, EntityResponse)
-        self.assertEqual(result.id, "ENT001")
-        call_kwargs = self.mock_client.getEntity.call_args[1]
-        self.assertTrue(call_kwargs.get("includeAttributes"))
-        self.assertTrue(call_kwargs.get("includeRelationships"))
-    
+        self.mock_client.getEntity.return_value = {"id": "ENT1", "user_type_id": "EntityType", "name": "Test Entity"}
+        result = self.operations.get_entity("ENT1")
+        self.assertEqual(result.id, "ENT1")
+        call_args = self.mock_client.getEntity.call_args
+        self.assertEqual(call_args[1]["id"], "ENT1")
+        self.assertNotIn("entityId", call_args[1])
+
     def test_get_entity_not_found(self):
-        """Test get_entity raises NotFoundError for missing entity."""
-        self.mock_client.getEntity.side_effect = Exception("404")
-        
-        with self.assertRaises(NotFoundError):
+        self.mock_client.getEntity.side_effect = Exception("404 not found")
+        with self.assertRaises(exc.NotFoundError):
             self.operations.get_entity("NONEXISTENT")
-    
-    def test_get_entity_missing_id(self):
-        """Test get_entity with missing ID."""
-        with self.assertRaises(ValidationError):
+
+    def test_get_entity_validation(self):
+        with self.assertRaises(exc.ValidationError):
             self.operations.get_entity(None)
-    
+
+    def test_get_entity_with_key_id(self):
+        self.mock_client.getEntity.return_value = {"id": "ENT1", "name": "Test"}
+        self.operations.get_entity("ENT1", key_id="MyKey")
+        call_args = self.mock_client.getEntity.call_args
+        self.assertEqual(call_args[1]["keyId"], "MyKey")
+
+    def test_get_entity_with_include_inherited(self):
+        self.mock_client.getEntity.return_value = {"id": "ENT1", "name": "Test"}
+        self.operations.get_entity("ENT1", include_inherited_data=True)
+        call_args = self.mock_client.getEntity.call_args
+        self.assertEqual(call_args[1]["includeInheritedData"], True)
+
     def test_search_entities_success(self):
-        """Test successful search_entities operation."""
-        mock_response = {
-            "items": [
-                {"id": "ENT001", "name": "Product A"},
-                {"id": "ENT002", "name": "Product B"}
-            ],
-            "total": 100,
-            "limit": 20,
-            "offset": 0,
-            "hasMore": True
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.search_entities()
-        
-        self.assertIsInstance(result, EntityListResponse)
+        self.mock_client.postEntitiesSearch.return_value = {
+            "items": [{"id": "ENT1", "name": "Entity 1"}, {"id": "ENT2", "name": "Entity 2"}], "total": 2}
+        condition = {"conditionType": "objecttype", "objectTypeId": "EntityType"}
+        result = self.operations.search_entities(condition=condition)
         self.assertEqual(len(result.items), 2)
-        self.assertEqual(result.total, 100)
-    
-    def test_search_entities_with_filters(self):
-        """Test search_entities with type filter."""
-        mock_response = {
-            "items": [{"id": "ENT001", "name": "Product A"}],
-            "total": 50,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.search_entities(
-            query="*",
-            type_filter="Product",
-            limit=50
-        )
-        
-        self.assertEqual(result.total, 50)
-        call_kwargs = self.mock_client.searchEntities.call_args[1]
-        self.assertEqual(call_kwargs.get("typeFilter"), "Product")
-        self.assertEqual(call_kwargs.get("limit"), 50)
-    
-    def test_search_entities_defaults(self):
-        """Test search_entities with default parameters."""
-        mock_response = {
-            "items": [],
-            "total": 0,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.search_entities()
-        
-        call_kwargs = self.mock_client.searchEntities.call_args[1]
-        self.assertEqual(call_kwargs.get("q"), "*")
-        self.assertEqual(call_kwargs.get("limit"), 20)
-        self.assertEqual(call_kwargs.get("offset"), 0)
-    
-    def test_list_entities(self):
-        """Test list_entities convenience method."""
-        mock_response = {
-            "items": [{"id": "ENT001", "name": "Product A"}],
-            "total": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.list_entities()
-        
-        self.assertIsInstance(result, EntityListResponse)
-        call_kwargs = self.mock_client.searchEntities.call_args[1]
-        self.assertEqual(call_kwargs.get("q"), "*")
-    
+        call_args = self.mock_client.postEntitiesSearch.call_args
+        self.assertEqual(call_args[1]["body"]["condition"], condition)
+
+    def test_search_entities_requires_condition(self):
+        with self.assertRaises(exc.ValidationError):
+            self.operations.search_entities(condition=None)
+
     def test_create_entity_success(self):
-        """Test successful create_entity operation."""
-        mock_response = {
-            "id": "ENT001",
-            "name": "New Product",
-            "type": "Product"
-        }
-        self.mock_client.createEntity.return_value = mock_response
-        
-        req = EntityCreateRequest(name="New Product", type="Product", description=None, attributes=None, relationships=None)
-        result = self.operations.create_entity(req)
-        
-        self.assertIsInstance(result, EntityResponse)
-        self.assertEqual(result.id, "ENT001")
-        self.assertEqual(result.name, "New Product")
-    
-    def test_create_entity_validation_error(self):
-        """Test create_entity with validation error."""
-        self.mock_client.createEntity.side_effect = Exception("400 Bad Request")
-        
-        req = EntityCreateRequest(name="Product", type=None, description=None, attributes=None, relationships=None)
-        with self.assertRaises(ValidationError):
-            self.operations.create_entity(req)
-    
+        self.mock_client.postEntities.return_value = {"id": "NEWENT", "name": "New Entity"}
+        from stepxmlclient.rest_client.models.entity import EntityCreateRequest
+        request = EntityCreateRequest(name="New Entity")
+        result = self.operations.create_entity(request)
+        self.assertEqual(result.id, "NEWENT")
+        self.mock_client.postEntities.assert_called_once()
+
+    def test_create_entity_conflict(self):
+        self.mock_client.postEntities.side_effect = Exception("409 conflict")
+        from stepxmlclient.rest_client.models.entity import EntityCreateRequest
+        request = EntityCreateRequest(name="Existing Entity")
+        with self.assertRaises(exc.ConflictError):
+            self.operations.create_entity(request)
+
     def test_update_entity_success(self):
-        """Test successful update_entity operation."""
-        mock_response = {
-            "id": "ENT001",
-            "name": "Updated Product",
-            "type": "Product"
-        }
-        self.mock_client.updateEntity.return_value = mock_response
-        
-        updates = EntityUpdateRequest(name="Updated Product", description=None, attributes=None, relationships=None)
-        result = self.operations.update_entity("ENT001", updates)
-        
-        self.assertIsInstance(result, EntityResponse)
-        self.assertEqual(result.name, "Updated Product")
-    
+        self.mock_client.patchEntity.return_value = {"id": "ENT1", "name": "Updated"}
+        from stepxmlclient.rest_client.models.entity import EntityUpdateRequest
+        updates = EntityUpdateRequest(name="Updated")
+        result = self.operations.update_entity("ENT1", updates)
+        self.assertEqual(result.name, "Updated")
+        call_args = self.mock_client.patchEntity.call_args
+        self.assertEqual(call_args[1]["id"], "ENT1")
+
     def test_update_entity_not_found(self):
-        """Test update_entity raises NotFoundError."""
-        self.mock_client.updateEntity.side_effect = Exception("404")
-        
-        updates = EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)
-        with self.assertRaises(NotFoundError):
+        self.mock_client.patchEntity.side_effect = Exception("404 not found")
+        from stepxmlclient.rest_client.models.entity import EntityUpdateRequest
+        updates = EntityUpdateRequest(name="Updated")
+        with self.assertRaises(exc.NotFoundError):
             self.operations.update_entity("NONEXISTENT", updates)
-    
-    def test_update_entity_missing_id(self):
-        """Test update_entity with missing ID."""
-        updates = EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)
-        with self.assertRaises(ValidationError):
-            self.operations.update_entity(None, updates)
-    
+
+    def test_replace_entity_success(self):
+        self.mock_client.putEntity.return_value = {"id": "ENT1", "name": "Test"}
+        from stepxmlclient.rest_client.models.entity import EntityCreateRequest
+        data = EntityCreateRequest(name="Test")
+        result = self.operations.replace_entity("ENT1", data)
+        self.assertEqual(result.id, "ENT1")
+        call_args = self.mock_client.putEntity.call_args
+        self.assertEqual(call_args[1]["id"], "ENT1")
+
+    def test_replace_entity_with_allow_overwrite(self):
+        self.mock_client.putEntity.return_value = {"id": "ENT1", "name": "Test"}
+        from stepxmlclient.rest_client.models.entity import EntityCreateRequest
+        data = EntityCreateRequest(name="Test")
+        self.operations.replace_entity("ENT1", data, allow_overwrite=True)
+        call_args = self.mock_client.putEntity.call_args
+        self.assertEqual(call_args[1]["allow-overwrite"], True)
+
     def test_delete_entity_success(self):
-        """Test successful delete_entity operation."""
-        self.mock_client.deleteEntity.return_value = True
-        
-        result = self.operations.delete_entity("ENT001")
-        
+        self.mock_client.deleteEntity.return_value = None
+        result = self.operations.delete_entity("ENT1")
         self.assertTrue(result)
-        self.mock_client.deleteEntity.assert_called_once()
-    
+        call_args = self.mock_client.deleteEntity.call_args
+        self.assertEqual(call_args[1]["id"], "ENT1")
+
     def test_delete_entity_not_found(self):
-        """Test delete_entity raises NotFoundError."""
-        self.mock_client.deleteEntity.side_effect = Exception("404")
-        
-        with self.assertRaises(NotFoundError):
+        self.mock_client.deleteEntity.side_effect = Exception("404 not found")
+        with self.assertRaises(exc.NotFoundError):
             self.operations.delete_entity("NONEXISTENT")
-    
-    def test_delete_entity_missing_id(self):
-        """Test delete_entity with missing ID."""
-        with self.assertRaises(ValidationError):
-            self.operations.delete_entity(None)
-    
-    def test_get_entity_relationships_success(self):
-        """Test successful get_entity_relationships operation."""
-        mock_response = {
-            "id": "ENT001",
-            "relationships": [
-                {"type": "Parent", "targetId": "ENT002"}
-            ],
-            "total": 1
-        }
-        self.mock_client.getEntityRelationships.return_value = mock_response
-        
-        result = self.operations.get_entity_relationships("ENT001")
-        
-        self.assertIsInstance(result, EntityRelationshipResponse)
-        self.assertEqual(result.id, "ENT001")
-        self.assertEqual(len(result.relationships), 1)
-    
-    def test_get_entity_relationships_with_filter(self):
-        """Test get_entity_relationships with type filter."""
-        mock_response = {
-            "id": "ENT001",
-            "relationships": [
-                {"type": "Parent", "targetId": "ENT002"}
-            ],
-            "total": 1
-        }
-        self.mock_client.getEntityRelationships.return_value = mock_response
-        
-        result = self.operations.get_entity_relationships(
-            "ENT001",
-            relationship_type="Parent"
-        )
-        
-        call_kwargs = self.mock_client.getEntityRelationships.call_args[1]
-        self.assertEqual(call_kwargs.get("relationshipType"), "Parent")
-    
-    def test_get_entity_relationships_not_found(self):
-        """Test get_entity_relationships raises NotFoundError."""
-        self.mock_client.getEntityRelationships.side_effect = Exception("404")
-        
-        with self.assertRaises(NotFoundError):
-            self.operations.get_entity_relationships("NONEXISTENT")
-    
-    def test_bulk_create_entities_success(self):
-        """Test successful bulk_create_entities operation."""
-        mock_response = {
-            "successful": 2,
-            "failed": 0,
-            "results": []
-        }
-        self.mock_client.bulkCreateEntities.return_value = mock_response
-        
-        entities = [
-            EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None),
-            EntityCreateRequest(name="Product 2", type=None, description=None, attributes=None, relationships=None)
-        ]
-        result = self.operations.bulk_create_entities(entities)
-        
-        self.assertIsInstance(result, EntityBulkResponse)
-        self.assertEqual(result.successful, 2)
-        self.assertEqual(result.failed, 0)
-    
-    def test_bulk_create_entities_with_dicts(self):
-        """Test bulk_create_entities with dict objects."""
-        mock_response = {
-            "successful": 1,
-            "failed": 0,
-            "results": []
-        }
-        self.mock_client.bulkCreateEntities.return_value = mock_response
-        
-        entities = [
-            EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None)
-        ]
-        result = self.operations.bulk_create_entities(entities)
-        
-        self.assertEqual(result.successful, 1)
-    
-    def test_bulk_create_entities_validation_error(self):
-        """Test bulk_create_entities with validation error."""
-        self.mock_client.bulkCreateEntities.side_effect = Exception("400")
-        
-        entities = [EntityCreateRequest(name="Product 1", type=None, description=None, attributes=None, relationships=None)]
-        with self.assertRaises(ValidationError):
-            self.operations.bulk_create_entities(entities)
-    
-    def test_bulk_update_entities_success(self):
-        """Test successful bulk_update_entities operation."""
-        mock_response = {
-            "successful": 2,
-            "failed": 0,
-            "results": []
-        }
-        self.mock_client.bulkUpdateEntities.return_value = mock_response
-        
-        updates = {
-            "ENT001": EntityUpdateRequest(name="Updated 1", description=None, attributes=None, relationships=None),
-            "ENT002": EntityUpdateRequest(name="Updated 2", description=None, attributes=None, relationships=None)
-        }
-        result = self.operations.bulk_update_entities(updates)
-        
-        self.assertEqual(result.successful, 2)
-    
-    def test_bulk_update_entities_validation_error(self):
-        """Test bulk_update_entities with validation error."""
-        self.mock_client.bulkUpdateEntities.side_effect = Exception("400")
-        
-        updates = {"ENT001": EntityUpdateRequest(name="Updated", description=None, attributes=None, relationships=None)}
-        with self.assertRaises(ValidationError):
-            self.operations.bulk_update_entities(updates)
-    
+
     def test_search_by_type(self):
-        """Test search_by_type convenience method."""
-        mock_response = {
-            "items": [{"id": "ENT001", "name": "Product"}],
-            "total": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.search_by_type("Product")
-        
-        call_kwargs = self.mock_client.searchEntities.call_args[1]
-        self.assertEqual(call_kwargs.get("typeFilter"), "Product")
-    
-    def test_search_modified_since(self):
-        """Test search_modified_since convenience method."""
-        mock_response = {
-            "items": [{"id": "ENT001", "name": "Product"}],
-            "total": 1,
-            "limit": 20,
-            "offset": 0
-        }
-        self.mock_client.searchEntities.return_value = mock_response
-        
-        result = self.operations.search_modified_since("2025-01-01T00:00:00Z")
-        
-        call_kwargs = self.mock_client.searchEntities.call_args[1]
-        self.assertIn("modifiedAt >=", call_kwargs.get("q"))
+        self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}
+        self.operations.search_by_type("EntityType")
+        call_args = self.mock_client.postEntitiesSearch.call_args
+        body = call_args[1]["body"]
+        self.assertEqual(body["condition"]["conditionType"], "objecttype")
+        self.assertEqual(body["condition"]["objectTypeId"], "EntityType")
+
+    def test_list_entities(self):
+        self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}
+        self.operations.list_entities()
+        self.mock_client.postEntitiesSearch.assert_called_once()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

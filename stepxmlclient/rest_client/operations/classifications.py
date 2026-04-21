@@ -4,7 +4,7 @@ import logging
 from typing import Optional, List, Dict, Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError
+from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictError
 from ..models.classification import (
     ClassificationResponse,
     ClassificationListResponse,
@@ -36,12 +36,14 @@ class ClassificationOperations(BaseOperation):
     
     @handle_rest_errors
     def get_classification(self, classification_id: str,
-                          include_values: bool = False) -> ClassificationResponse:
+                          key_id: Optional[str] = None,
+                          include_inherited_data: bool = False) -> ClassificationResponse:
         """Get a single classification by ID.
         
         Args:
-            classification_id: The classification ID
-            include_values: Whether to include classification values
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
+            include_inherited_data: Whether to include inherited attribute values (default: False)
             
         Returns:
             ClassificationResponse with classification data
@@ -56,17 +58,16 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        self._log_operation("getClassification", {
-            "classificationId": classification_id,
-            "includeValues": include_values
-        })
+        params: Dict[str, Any] = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        if include_inherited_data:
+            params["includeInheritedData"] = include_inherited_data
+        params.update(self._build_context_params())
+        self._log_operation("getClassification", params)
         
         try:
-            response = self.client.getClassification(
-                classificationId=classification_id,
-                includeValues=include_values,
-                **self._build_context_params()
-            )
+            response = self.client.getClassification(**params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")
@@ -77,65 +78,43 @@ class ClassificationOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def search_classifications(self,
-                              query: str = "*",
-                              limit: int = 20,
-                              offset: int = 0,
-                              type_filter: Optional[str] = None,
-                              include_values: bool = False) -> ClassificationListResponse:
-        """Search classifications with optional filters.
+    def search_classifications(self, condition: dict) -> ClassificationListResponse:
+        """Search classifications using a STEP condition query.
         
         Args:
-            query: Search query string (default: "*" for all)
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            type_filter: Optional filter by classification type
-            include_values: Whether to include values for each classification
+            condition: A STEP condition object defining the search criteria.
+                       Supported conditionTypes: 'and', 'or', 'id', 'name',
+                       'textvalue', 'numericvalue', 'objecttype', 'simplebelow',
+                       'lovvalue', 'hasreferenceto', 'hasdatacontainerobject'.
             
         Returns:
-            ClassificationListResponse with paginated results
+            ClassificationListResponse with matching classifications
             
         Raises:
-            ValidationError: If parameters invalid
+            ValidationError: If condition is invalid
             RestApiError: For API errors
         """
-        pagination_params = self._build_pagination_params(limit, offset)
+        self._validate_required_params({"condition": condition}, ["condition"])
+        body = {"condition": condition}
+        self._log_operation("postClassificationsSearch", {"condition": condition})
         
-        self._log_operation("searchClassifications", {
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "typeFilter": type_filter,
-            "includeValues": include_values
-        })
-        
-        params = self._clean_params({
-            "q": query,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"],
-            "typeFilter": type_filter,
-            "includeValues": include_values
-        })
-        params.update(self._build_context_params())
-        
-        response = self.client.searchClassifications(**params)
+        response = self.client.postClassificationsSearch(body=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return ClassificationListResponse(**response)
         return response
     
     @handle_rest_errors
-    def list_classifications(self, limit: int = 20, offset: int = 0) -> ClassificationListResponse:
-        """Convenience method to list all classifications.
+    def list_classifications(self) -> ClassificationListResponse:
+        """List all classifications by object type (convenience method).
         
-        Args:
-            limit: Result limit
-            offset: Result offset
-            
         Returns:
             ClassificationListResponse with all classifications
         """
-        return self.search_classifications(query="*", limit=limit, offset=offset)
+        # Use an objecttype condition without a specific type to list broadly
+        return self.search_classifications(
+            condition={"conditionType": "objecttype", "objectTypeId": "*"}
+        )
     
     @handle_rest_errors
     def create_classification(self, data: ClassificationCreateRequest) -> ClassificationResponse:
@@ -157,13 +136,13 @@ class ClassificationOperations(BaseOperation):
         else:
             create_data = dict(data) if not isinstance(data, dict) else data
         
-        self._log_operation("createClassification", create_data)
+        self._log_operation("postClassifications", create_data)
         
         try:
-            response = self.client.createClassification(body=create_data, **self._build_context_params())
+            response = self.client.postClassifications(body=create_data, **self._build_context_params())
         except Exception as e:
-            if "400" in str(e) or "409" in str(e):
-                raise ValidationError(f"Create failed: {str(e)}")
+            if "409" in str(e):
+                raise ConflictError(409, str(e))
             raise
         
         if isinstance(response, dict):
@@ -172,12 +151,14 @@ class ClassificationOperations(BaseOperation):
     
     @handle_rest_errors
     def update_classification(self, classification_id: str,
-                            updates: ClassificationUpdateRequest) -> ClassificationResponse:
-        """Update an existing classification.
+                            updates: ClassificationUpdateRequest,
+                            key_id: Optional[str] = None) -> ClassificationResponse:
+        """Partially update an existing classification (PATCH).
         
         Args:
-            classification_id: The classification ID to update
-            updates: ClassificationUpdateRequest with updated data
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            updates: ClassificationUpdateRequest with fields to update
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             ClassificationResponse with updated classification
@@ -192,22 +173,21 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        # Convert Pydantic model to dict if needed
         if hasattr(updates, 'model_dump'):
             update_data = updates.model_dump(exclude_none=True)
         else:
             update_data = dict(updates) if not isinstance(updates, dict) else updates
         
-        self._log_operation("updateClassification", {
-            "classificationId": classification_id,
-            "updates": update_data
-        })
+        params = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("patchClassification", {"id": classification_id})
         
         try:
-            response = self.client.updateClassification(
-                classificationId=classification_id,
+            response = self.client.patchClassification(
                 body=update_data,
-                **self._build_context_params()
+                **params
             )
         except Exception as e:
             if "404" in str(e):
@@ -219,13 +199,65 @@ class ClassificationOperations(BaseOperation):
         if isinstance(response, dict):
             return ClassificationResponse(**response)
         return response
+
+    @handle_rest_errors
+    def replace_classification(self, classification_id: str,
+                               data: ClassificationCreateRequest,
+                               key_id: Optional[str] = None,
+                               allow_overwrite: bool = False) -> ClassificationResponse:
+        """Fully replace a classification (PUT). Creates it if it does not exist.
+        
+        Args:
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            data: Complete classification data
+            key_id: Alternate key ID to use for lookup (optional)
+            allow_overwrite: Whether to allow overwriting an existing classification
+            
+        Returns:
+            ClassificationResponse with replaced classification
+        """
+        self._validate_required_params(
+            {"classification_id": classification_id},
+            ["classification_id"]
+        )
+        
+        if hasattr(data, 'model_dump'):
+            create_data = data.model_dump(exclude_none=True)
+        else:
+            create_data = dict(data) if not isinstance(data, dict) else data
+        
+        params: Dict[str, Any] = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        params.update(self._build_context_params())
+        self._log_operation("putClassification", {"id": classification_id})
+        
+        try:
+            response = self.client.putClassification(
+                body=create_data,
+                **params
+            )
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(classification_id, "Classification")
+            if "400" in str(e) or "409" in str(e):
+                raise ValidationError(str(e))
+            raise
+        
+        if isinstance(response, dict):
+            return ClassificationResponse(**response)
+        return response
     
     @handle_rest_errors
-    def delete_classification(self, classification_id: str) -> bool:
+    def delete_classification(self, classification_id: str,
+                              key_id: Optional[str] = None) -> bool:
         """Delete a classification.
         
         Args:
-            classification_id: The classification ID to delete
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
             True if deletion was successful
@@ -240,10 +272,14 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        self._log_operation("deleteClassification", {"classificationId": classification_id})
+        params = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("deleteClassification", {"id": classification_id})
         
         try:
-            self.client.deleteClassification(classificationId=classification_id, **self._build_context_params())
+            self.client.deleteClassification(**params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -252,59 +288,15 @@ class ClassificationOperations(BaseOperation):
     
     @handle_rest_errors
     def get_classification_hierarchy(self, classification_id: str,
-                                     root_id: Optional[str] = None) -> ClassificationHierarchyResponse:
-        """Get hierarchical view of a classification.
+                                     key_id: Optional[str] = None) -> ClassificationHierarchyResponse:
+        """Get direct children of a classification node (GET /classifications/{id}/children).
         
         Args:
-            classification_id: The classification ID
-            root_id: Optional root node ID for subtree (None for full hierarchy)
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
-            ClassificationHierarchyResponse with hierarchy structure
-            
-        Raises:
-            ValidationError: If classification_id missing
-            NotFoundError: If classification or root_id not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"classification_id": classification_id},
-            ["classification_id"]
-        )
-        
-        self._log_operation("getClassificationHierarchy", {
-            "classificationId": classification_id,
-            "rootId": root_id
-        })
-        
-        params = self._clean_params({
-            "rootId": root_id
-        })
-        
-        try:
-            response = self.client.getClassificationHierarchy(
-                classificationId=classification_id,
-                **params,
-                **self._build_context_params()
-            )
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(classification_id, "Classification")
-            raise
-        
-        if isinstance(response, dict):
-            return ClassificationHierarchyResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def get_classification_values(self, classification_id: str) -> ClassificationValueResponse:
-        """Get all values/items in a classification.
-        
-        Args:
-            classification_id: The classification ID
-            
-        Returns:
-            ClassificationValueResponse with classification values
+            ClassificationHierarchyResponse with child nodes
             
         Raises:
             ValidationError: If classification_id missing
@@ -316,10 +308,58 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        self._log_operation("getClassificationValues", {"classificationId": classification_id})
+        params = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("getClassificationChildren", params)
         
         try:
-            response = self.client.getClassificationValues(classificationId=classification_id, **self._build_context_params())
+            response = self.client.getClassificationChildren(**params)
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(classification_id, "Classification")
+            raise
+        
+        if isinstance(response, dict):
+            return ClassificationHierarchyResponse(**response)
+        return response
+    
+    @handle_rest_errors
+    def get_classification_values(self, classification_id: str,
+                                  key_id: Optional[str] = None) -> ClassificationValueResponse:
+        """Get all value entries in a classification (GET /classifications/{id}/assets).
+        
+        NOTE: The STEP REST API spec has no 'get all values' operation.
+        This calls getClassificationAssets which returns assets associated with the
+        classification. For attribute values on the classification itself, use
+        get_classification() with include_inherited_data=True.
+        
+        Args:
+            classification_id: The classification ID (or alternate key value if key_id is set)
+            key_id: Alternate key ID to use for lookup (optional)
+            
+        Returns:
+            ClassificationValueResponse with associated assets
+            
+        Raises:
+            ValidationError: If classification_id missing
+            NotFoundError: If classification not found
+            RestApiError: For API errors
+        """
+        self._validate_required_params(
+            {"classification_id": classification_id},
+            ["classification_id"]
+        )
+        
+        params = {"id": classification_id}
+        if key_id:
+            params["keyId"] = key_id
+        params.update(self._build_context_params())
+        self._log_operation("getClassificationAssets", params)
+        
+        try:
+            response = self.client.getClassificationAssets(**params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")
@@ -329,24 +369,17 @@ class ClassificationOperations(BaseOperation):
             return ClassificationValueResponse(**response)
         return response
     
-    @handle_rest_errors
-    def search_by_type(self, classification_type: str,
-                       limit: int = 20, offset: int = 0) -> ClassificationListResponse:
-        """Convenience method to search classifications by type.
+    def search_by_type(self, classification_type: str) -> ClassificationListResponse:
+        """Search classifications by object type (convenience method).
         
         Args:
-            classification_type: The classification type to filter by
-            limit: Result limit
-            offset: Result offset
+            classification_type: The object type ID to filter by
             
         Returns:
             ClassificationListResponse filtered by type
         """
         return self.search_classifications(
-            query="*",
-            limit=limit,
-            offset=offset,
-            type_filter=classification_type
+            condition={"conditionType": "objecttype", "objectTypeId": classification_type}
         )
     
     @handle_rest_errors

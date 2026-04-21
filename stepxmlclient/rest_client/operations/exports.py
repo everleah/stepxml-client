@@ -1,4 +1,4 @@
-"""Export operations for STEP REST API v2."""
+"""Export and Import operations for STEP REST API v2."""
 
 import logging
 from typing import Optional
@@ -13,217 +13,119 @@ from ..models.import_export import (
 
 
 class ExportOperations(BaseOperation):
-    """Operations for STEP data exports and data retrieval."""
-    
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    """Operations for STEP data exports and imports."""
+
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize export operations.
-        
+
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="ExportOperations", logger=logger)
-    
+        super().__init__(client, operation_name="ExportOperations", logger=logger,
+                         context=context, workspace=workspace)
+
     @handle_rest_errors
-    def create_export_job(self, data: ExportJobCreateRequest) -> ExportJobResponse:
-        """Create a new export job.
-        
+    def create_export_job(self, export_configuration_id: str,
+                          data: Optional[ExportJobCreateRequest] = None,
+                          use_request_context_workspace: Optional[bool] = None) -> ExportJobResponse:
+        """Trigger an export using a pre-configured export configuration (POST /export/{exportConfigurationId}).
+
         Args:
-            data: ExportJobCreateRequest with export configuration
-            
+            export_configuration_id: The ID of the export configuration to use (required)
+            data: Optional request body with additional export parameters
+            use_request_context_workspace: If True, use the workspace from the request context
+
         Returns:
             ExportJobResponse with job details
-            
+
         Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
-        """
-        # Convert Pydantic model to dict if needed
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("createExportJob", {
-            "entityType": create_data.get("entityType"),
-            "format": create_data.get("format")
-        })
-        
-        try:
-            response = self.client.createExportJob(body=create_data)
-        except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Create export job failed: {str(e)}")
-            raise
-        
-        if isinstance(response, dict):
-            return ExportJobResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def get_export_job(self, job_id: str) -> ExportJobResponse:
-        """Get status of an export job.
-        
-        Args:
-            job_id: The export job ID
-            
-        Returns:
-            ExportJobResponse with current job status
-            
-        Raises:
-            ValidationError: If job_id is missing
-            NotFoundError: If job not found
+            ValidationError: If export_configuration_id is missing or data is invalid
             RestApiError: For API errors
         """
         self._validate_required_params(
-            {"job_id": job_id},
-            ["job_id"]
+            {"export_configuration_id": export_configuration_id},
+            ["export_configuration_id"]
         )
-        
-        self._log_operation("getExportJob", {"jobId": job_id})
-        
-        try:
-            response = self.client.getExportJob(jobId=job_id)
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(job_id, "ExportJob")
-            raise
-        
-        if isinstance(response, dict):
-            return ExportJobResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def list_export_jobs(self,
-                        status_filter: Optional[str] = None,
-                        entity_type_filter: Optional[str] = None,
-                        limit: int = 20,
-                        offset: int = 0) -> ExportJobListResponse:
-        """List export jobs with optional filters.
-        
-        Args:
-            status_filter: Optional filter by job status (PENDING, PROCESSING, COMPLETED, FAILED)
-            entity_type_filter: Optional filter by entity type
-            limit: Result limit (1-500, default: 20)
-            offset: Result offset (default: 0)
-            
-        Returns:
-            ExportJobListResponse with list of jobs
-            
-        Raises:
-            RestApiError: For API errors
-        """
-        pagination_params = self._build_pagination_params(limit, offset)
-        
-        self._log_operation("listExportJobs", {
-            "statusFilter": status_filter,
-            "entityTypeFilter": entity_type_filter,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        params = self._clean_params({
-            "statusFilter": status_filter,
-            "entityTypeFilter": entity_type_filter,
-            "limit": pagination_params["limit"],
-            "offset": pagination_params["offset"]
-        })
-        
-        response = self.client.listExportJobs(**params)
-        
-        if isinstance(response, dict):
-            return ExportJobListResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def download_export_data(self, job_id: str, save_to_file: Optional[str] = None) -> bytes:
-        """Download exported data from a completed export job.
-        
-        Args:
-            job_id: The export job ID
-            save_to_file: Optional file path to save data to
-            
-        Returns:
-            Exported data as bytes
-            
-        Raises:
-            ValidationError: If job_id missing
-            NotFoundError: If job not found or data not available
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"job_id": job_id},
-            ["job_id"]
-        )
-        
-        self._log_operation("downloadExportData", {"jobId": job_id})
-        
-        try:
-            # Get the export job first to verify it exists and is completed
-            job = self.get_export_job(job_id)
-            
-            if job.status != "COMPLETED":
-                raise ValidationError(f"Export job {job_id} is not completed (status: {job.status})")
-            
-            # Download the data
-            response = self.client.downloadExportData(jobId=job_id)
-            self._check_response_status(response, job_id, "ExportJob")
-            
-            # Handle the response - could be bytes or content
-            if isinstance(response, bytes):
-                data = response
-            elif hasattr(response, 'content'):
-                data = response.content
+
+        if data is not None:
+            if hasattr(data, 'model_dump'):
+                create_data = data.model_dump(exclude_none=True)
             else:
-                data = bytes(response)
-            
-            # Optionally save to file
-            if save_to_file:
-                with open(save_to_file, 'wb') as f:
-                    f.write(data)
-                self._log_operation("exportDataSaved", {"file": save_to_file, "size": len(data)})
-            
-            return data
-            
-        except (FileNotFoundError, OSError, IOError) as e:
-            # Let file system errors pass through
-            raise
+                create_data = dict(data) if not isinstance(data, dict) else data
+        else:
+            create_data = None
+
+        params: dict = {"exportConfigurationId": export_configuration_id}
+        if use_request_context_workspace is not None:
+            params["useRequestContextWorkspace"] = use_request_context_workspace
+        params.update(self._build_context_params())
+
+        self._log_operation("postExport", {"exportConfigurationId": export_configuration_id})
+
+        try:
+            if create_data:
+                response = self.client.postExport(body=create_data, **params)
+            else:
+                response = self.client.postExport(**params)
         except Exception as e:
             if "404" in str(e):
-                raise NotFoundError(job_id, "ExportJob")
+                raise NotFoundError(export_configuration_id, "ExportConfiguration")
+            if "400" in str(e):
+                raise ValidationError(f"Export failed: {str(e)}")
             raise
-    
+
+        if isinstance(response, dict):
+            return ExportJobResponse(**response)
+        return response
+
     @handle_rest_errors
-    def get_completed_exports(self, limit: int = 20, offset: int = 0) -> ExportJobListResponse:
-        """Convenience method to list completed export jobs.
-        
+    def create_import_job(self, import_configuration_id: str,
+                          data: Optional[object] = None,
+                          process_description: Optional[str] = None) -> ExportJobResponse:
+        """Trigger an import using a pre-configured import configuration (POST /import/{importConfigurationId}).
+
         Args:
-            limit: Result limit
-            offset: Result offset
-            
+            import_configuration_id: The ID of the import configuration to use (required)
+            data: Optional request body with import payload
+            process_description: Optional human-readable description for the import process
+
         Returns:
-            ExportJobListResponse with completed jobs
+            ExportJobResponse with job/process details
+
+        Raises:
+            ValidationError: If import_configuration_id is missing or data is invalid
+            RestApiError: For API errors
         """
-        return self.list_export_jobs(status_filter="COMPLETED", limit=limit, offset=offset)
-    
-    @handle_rest_errors
-    def export_by_entity_type(self, entity_type: str,
-                             export_format: str = "XML",
-                             limit: int = 20,
-                             offset: int = 0) -> ExportJobListResponse:
-        """Convenience method to list export jobs for a specific entity type.
-        
-        Args:
-            entity_type: The entity type to filter by (Product, Asset, Classification, Entity)
-            export_format: Export format to filter by (optional)
-            limit: Result limit
-            offset: Result offset
-            
-        Returns:
-            ExportJobListResponse filtered by entity type
-        """
-        return self.list_export_jobs(
-            entity_type_filter=entity_type,
-            limit=limit,
-            offset=offset
+        self._validate_required_params(
+            {"import_configuration_id": import_configuration_id},
+            ["import_configuration_id"]
         )
+
+        params = {"importConfigurationId": import_configuration_id}
+        if process_description:
+            params["processDescription"] = process_description
+        params.update(self._build_context_params())
+
+        self._log_operation("postImport", {"importConfigurationId": import_configuration_id})
+
+        try:
+            if data is not None:
+                body = data.model_dump(exclude_none=True) if hasattr(data, 'model_dump') else data
+                response = self.client.postImport(body=body, **params)
+            else:
+                response = self.client.postImport(**params)
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(import_configuration_id, "ImportConfiguration")
+            if "400" in str(e):
+                raise ValidationError(f"Import failed: {str(e)}")
+            raise
+
+        if isinstance(response, dict):
+            return ExportJobResponse(**response)
+        return response
+    
