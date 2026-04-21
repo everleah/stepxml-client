@@ -167,6 +167,7 @@ class ExportOperations(BaseOperation):
             
             # Download the data
             response = self.client.downloadExportData(jobId=job_id)
+            self._check_response_status(response, job_id, "ExportJob")
             
             # Handle the response - could be bytes or content
             if isinstance(response, bytes):

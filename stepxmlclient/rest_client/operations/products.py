@@ -32,14 +32,18 @@ class ProductOperations(BaseOperation):
     - Accessing product attributes and values
     """
     
-    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize ProductOperations.
         
         Args:
             client: The requests-openapi Client instance
             logger: Logger instance (optional)
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="ProductOperations", logger=logger)
+        super().__init__(client, operation_name="ProductOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_product(self, product_id: str, 
@@ -72,7 +76,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("getProduct", params)
         
         try:
-            response = self.client.getProduct(**params)
+            response = self.client.getProduct(**params, **self._build_context_params())
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(product_id, "Product")
@@ -128,6 +132,7 @@ class ProductOperations(BaseOperation):
         
         # Clean parameters
         params = self._clean_params(params)
+        params.update(self._build_context_params())
         self._log_operation("searchProducts", params)
         
         # Call API
@@ -187,7 +192,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("createProduct", {"productId": product_data.id})
         
         try:
-            response = self.client.createProduct(body=product_dict)
+            response = self.client.createProduct(body=product_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, f"Product {product_data.id} already exists")
@@ -230,7 +235,8 @@ class ProductOperations(BaseOperation):
         try:
             response = self.client.updateProduct(
                 productId=product_id,
-                body=updates_dict
+                body=updates_dict,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -266,7 +272,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("deleteProduct", {"productId": product_id})
         
         try:
-            self.client.deleteProduct(productId=product_id)
+            self.client.deleteProduct(productId=product_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -295,7 +301,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("getProductAttributes", {"productId": product_id})
         
         try:
-            response = self.client.getProductAttributes(productId=product_id)
+            response = self.client.getProductAttributes(productId=product_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(product_id, "Product")
@@ -331,7 +337,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("getProductValues", {"productId": product_id})
         
         try:
-            response = self.client.getProductValues(productId=product_id)
+            response = self.client.getProductValues(productId=product_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(product_id, "Product")

@@ -37,14 +37,18 @@ class AssetOperations(BaseOperation):
     - Downloading binary content
     """
     
-    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize AssetOperations.
         
         Args:
             client: The requests-openapi Client instance
             logger: Logger instance (optional)
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="AssetOperations", logger=logger)
+        super().__init__(client, operation_name="AssetOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_asset(self, asset_id: str,
@@ -77,7 +81,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("getAsset", params)
         
         try:
-            response = self.client.getAsset(**params)
+            response = self.client.getAsset(**params, **self._build_context_params())
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -130,6 +134,7 @@ class AssetOperations(BaseOperation):
         
         # Clean parameters
         params = self._clean_params(params)
+        params.update(self._build_context_params())
         self._log_operation("searchAssets", params)
         
         # Call API
@@ -189,7 +194,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("createAsset", {"assetId": asset_data.id})
         
         try:
-            response = self.client.createAsset(body=asset_dict)
+            response = self.client.createAsset(body=asset_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, f"Asset {asset_data.id} already exists")
@@ -232,7 +237,8 @@ class AssetOperations(BaseOperation):
         try:
             response = self.client.updateAsset(
                 assetId=asset_id,
-                body=updates_dict
+                body=updates_dict,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -268,7 +274,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("deleteAsset", {"assetId": asset_id})
         
         try:
-            self.client.deleteAsset(assetId=asset_id)
+            self.client.deleteAsset(assetId=asset_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -331,8 +337,10 @@ class AssetOperations(BaseOperation):
                 response = self.client.putAssetContent(
                     id=asset_id,
                     fileName=file_name,
-                    body=f
+                    body=f,
+                    **self._build_context_params()
                 )
+            self._check_response_status(response, asset_id, "Asset")
         except FileNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e
         except Exception as e:
@@ -376,7 +384,8 @@ class AssetOperations(BaseOperation):
         try:
             # Use getAssetContent (GET /assets/{id}/content)
             # Path parameter is 'id', not 'assetId'
-            response = self.client.getAssetContent(id=asset_id)
+            response = self.client.getAssetContent(id=asset_id, **self._build_context_params())
+            self._check_response_status(response, asset_id, "Asset")
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")

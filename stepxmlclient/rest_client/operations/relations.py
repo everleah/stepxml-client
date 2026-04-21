@@ -24,14 +24,18 @@ from ..models.relations import (
 class RelationOperations(BaseOperation):
     """Operations for managing relationships, cross-references, and links between entities."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize relation operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="RelationOperations", logger=logger)
+        super().__init__(client, operation_name="RelationOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     # ============================================================================
     # Relationship Operations
@@ -60,7 +64,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("getRelationship", {"relationshipId": relationship_id})
         
         try:
-            response = self.client.getRelationship(relationshipId=relationship_id)
+            response = self.client.getRelationship(relationshipId=relationship_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(relationship_id, "Relationship")
@@ -110,6 +114,7 @@ class RelationOperations(BaseOperation):
             "offset": pagination_params["offset"]
         })
         
+        params.update(self._build_context_params())
         response = self.client.listRelationships(**params)
         
         if isinstance(response, dict):
@@ -142,7 +147,7 @@ class RelationOperations(BaseOperation):
         })
         
         try:
-            response = self.client.createRelationship(body=create_data)
+            response = self.client.createRelationship(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Create relationship failed: {str(e)}")
@@ -184,7 +189,7 @@ class RelationOperations(BaseOperation):
         })
         
         try:
-            response = self.client.updateRelationship(relationshipId=relationship_id, body=update_data)
+            response = self.client.updateRelationship(relationshipId=relationship_id, body=update_data, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(relationship_id, "Relationship")
@@ -217,7 +222,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("deleteRelationship", {"relationshipId": relationship_id})
         
         try:
-            self.client.deleteRelationship(relationshipId=relationship_id)
+            self.client.deleteRelationship(relationshipId=relationship_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -236,7 +241,7 @@ class RelationOperations(BaseOperation):
         """
         self._log_operation("getRelationshipTypes", {})
         
-        response = self.client.getRelationshipTypes()
+        response = self.client.getRelationshipTypes(**self._build_context_params())
         
         if isinstance(response, dict):
             return {k: RelationshipTypeResponse(**v) if isinstance(v, dict) else v 
@@ -270,7 +275,7 @@ class RelationOperations(BaseOperation):
         })
         
         try:
-            response = self.client.getRelationshipGraph(entityId=entity_id, depth=depth)
+            response = self.client.getRelationshipGraph(entityId=entity_id, depth=depth, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
@@ -307,7 +312,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("getCrossReference", {"crossReferenceId": cross_reference_id})
         
         try:
-            response = self.client.getCrossReference(crossReferenceId=cross_reference_id)
+            response = self.client.getCrossReference(crossReferenceId=cross_reference_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(cross_reference_id, "CrossReference")
@@ -353,6 +358,7 @@ class RelationOperations(BaseOperation):
             "offset": pagination_params["offset"]
         })
         
+        params.update(self._build_context_params())
         response = self.client.listCrossReferences(**params)
         
         if isinstance(response, dict):
@@ -384,7 +390,7 @@ class RelationOperations(BaseOperation):
         })
         
         try:
-            response = self.client.createCrossReference(body=create_data)
+            response = self.client.createCrossReference(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Create cross-reference failed: {str(e)}")
@@ -417,7 +423,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("deleteCrossReference", {"crossReferenceId": cross_reference_id})
         
         try:
-            self.client.deleteCrossReference(crossReferenceId=cross_reference_id)
+            self.client.deleteCrossReference(crossReferenceId=cross_reference_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -451,7 +457,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("getLink", {"linkId": link_id})
         
         try:
-            response = self.client.getLink(linkId=link_id)
+            response = self.client.getLink(linkId=link_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(link_id, "Link")
@@ -497,6 +503,7 @@ class RelationOperations(BaseOperation):
             "offset": pagination_params["offset"]
         })
         
+        params.update(self._build_context_params())
         response = self.client.listLinks(**params)
         
         if isinstance(response, dict):
@@ -528,7 +535,7 @@ class RelationOperations(BaseOperation):
         })
         
         try:
-            response = self.client.createLink(body=create_data)
+            response = self.client.createLink(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Create link failed: {str(e)}")
@@ -561,7 +568,7 @@ class RelationOperations(BaseOperation):
         self._log_operation("deleteLink", {"linkId": link_id})
         
         try:
-            self.client.deleteLink(linkId=link_id)
+            self.client.deleteLink(linkId=link_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):

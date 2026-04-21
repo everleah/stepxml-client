@@ -58,7 +58,8 @@ class StepRestClient(StiboStepRestClient):
     def __init__(self, location_base, authorisation,
                  openapi_file=None, logger=None,
                  proxies=None, ssl_version=None,
-                 cache_openapi=False, nocert=False):
+                 cache_openapi=False, nocert=False,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize StepRestClient with operation groups.
         
         Args:
@@ -70,6 +71,8 @@ class StepRestClient(StiboStepRestClient):
             ssl_version: SSL version configuration
             cache_openapi: Whether to cache OpenAPI spec
             nocert: Whether to skip SSL certificate verification
+            context: STEP context ID passed to all context-aware API calls
+            workspace: STEP workspace ID (server defaults to "Main" if not supplied)
         """
         # Initialize parent class
         super().__init__(
@@ -89,16 +92,17 @@ class StepRestClient(StiboStepRestClient):
         else:
             op_logger = logger
         
-        # Initialize operation groups
-        self.products = ProductOperations(self.client, logger=op_logger)
-        self.assets = AssetOperations(self.client, logger=op_logger)
-        self.classifications = ClassificationOperations(self.client, logger=op_logger)
-        self.entities = EntityOperations(self.client, logger=op_logger)
-        self.attributes = AttributeOperations(self.client, logger=op_logger)
+        # Initialize operation groups (context/workspace passed to entity-level operations)
+        self.products = ProductOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.assets = AssetOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.classifications = ClassificationOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.entities = EntityOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.attributes = AttributeOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.relations = RelationOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        # Metadata, imports, exports, bulk and streaming operate on system/job level - no per-call context
         self.metadata = MetadataOperations(self.client, logger=op_logger)
         self.imports = ImportOperations(self.client, logger=op_logger)
         self.exports = ExportOperations(self.client, logger=op_logger)
-        self.relations = RelationOperations(self.client, logger=op_logger)
         self.bulk = BulkOperations(self.client, logger=op_logger)
         self.workflows = WorkflowOperations(self.client, logger=op_logger)
         self.search = AdvancedSearchOperations(self.client, logger=op_logger)

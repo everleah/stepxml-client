@@ -80,25 +80,73 @@ class BaseOperation:
         client: The requests_openapi.Client instance
         logger: Logger instance for this operation group
         operation_name: Name of this operation group (for logging)
+        context: STEP context ID passed to every API call
+        workspace: STEP workspace ID passed to every API call (defaults to "Main" server-side)
     """
     
     def __init__(self, client: roa.Client, operation_name: Optional[str] = None, 
-                 logger: Optional[logging.Logger] = None):
+                 logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize base operation.
         
         Args:
             client: The requests-openapi Client instance
             operation_name: Name of this operation group (defaults to class name)
             logger: Logger instance (defaults to class logger)
+            context: STEP context ID to use for all API calls (required by STEP REST API)
+            workspace: STEP workspace ID (server defaults to "Main" if not supplied)
         """
         self.client = client
         self.operation_name = operation_name or self.__class__.__name__
+        self.context = context
+        self.workspace = workspace
         
         if logger is None:
             self.logger = logging.getLogger(f"{self.__class__.__module__}.{self.operation_name}")
         else:
             self.logger = logger
     
+    def _build_context_params(self) -> Dict[str, Any]:
+        """Build context and workspace parameters for API calls.
+        
+        Returns:
+            Dictionary containing context and/or workspace keys if set.
+        """
+        params: Dict[str, Any] = {}
+        if self.context is not None:
+            params['context'] = self.context
+        if self.workspace is not None:
+            params['workspace'] = self.workspace
+        return params
+
+    def _check_response_status(self, response: Any, resource_id: Optional[str] = None,
+                                resource_type: Optional[str] = None) -> None:
+        """Check response for HTTP error status codes returned without raising an exception.
+        
+        Some STEP endpoints (e.g. binary content) return an HTTP error response body
+        (e.g. an HTML 404 page) with a non-error HTTP status from the transport layer.
+        This method inspects the underlying response object and raises the appropriate
+        exception when an error status is detected.
+        
+        Args:
+            response: The API response object
+            resource_id: Resource ID for error messages
+            resource_type: Resource type name for error messages
+            
+        Raises:
+            NotFoundError: If status is 404
+            RestApiError: For other 4xx/5xx status codes
+        """
+        raw_response = getattr(response, '_response', None) or getattr(response, 'response', None)
+        status_code = (
+            getattr(raw_response, 'status_code', None)
+            or getattr(response, 'status_code', None)
+        )
+        if status_code is not None and isinstance(status_code, int) and status_code >= 400:
+            if status_code == 404:
+                raise exc.NotFoundError(resource_id, resource_type)
+            raise exc.RestApiError(status_code, f"HTTP {status_code} for {resource_type} {resource_id}")
+
     def _log_operation(self, operation_id: str, params: Optional[Dict[str, Any]] = None) -> None:
         """Log an API operation.
         

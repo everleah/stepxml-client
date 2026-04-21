@@ -19,14 +19,18 @@ from ..models.attribute import (
 class AttributeOperations(BaseOperation):
     """Operations for STEP Attributes and List of Values."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize attribute operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="AttributeOperations", logger=logger)
+        super().__init__(client, operation_name="AttributeOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_attribute(self, attribute_id: str) -> AttributeResponse:
@@ -51,7 +55,7 @@ class AttributeOperations(BaseOperation):
         self._log_operation("getAttribute", {"attributeId": attribute_id})
         
         try:
-            response = self.client.getAttribute(attributeId=attribute_id)
+            response = self.client.getAttribute(attributeId=attribute_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(attribute_id, "Attribute")
@@ -97,6 +101,7 @@ class AttributeOperations(BaseOperation):
             "offset": pagination_params["offset"],
             "typeFilter": type_filter
         })
+        params.update(self._build_context_params())
         
         response = self.client.searchAttributes(**params)
         
@@ -140,7 +145,7 @@ class AttributeOperations(BaseOperation):
         self._log_operation("createAttribute", create_data)
         
         try:
-            response = self.client.createAttribute(body=create_data)
+            response = self.client.createAttribute(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e) or "409" in str(e):
                 raise ValidationError(f"Create failed: {str(e)}")
@@ -186,7 +191,8 @@ class AttributeOperations(BaseOperation):
         try:
             response = self.client.updateAttribute(
                 attributeId=attribute_id,
-                body=update_data
+                body=update_data,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -222,7 +228,7 @@ class AttributeOperations(BaseOperation):
         self._log_operation("deleteAttribute", {"attributeId": attribute_id})
         
         try:
-            self.client.deleteAttribute(attributeId=attribute_id)
+            self.client.deleteAttribute(attributeId=attribute_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -252,7 +258,7 @@ class AttributeOperations(BaseOperation):
         self._log_operation("getListOfValues", {"lovId": lov_id})
         
         try:
-            response = self.client.getListOfValues(lovId=lov_id)
+            response = self.client.getListOfValues(lovId=lov_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(lov_id, "ListOfValues")
@@ -293,6 +299,7 @@ class AttributeOperations(BaseOperation):
             "limit": pagination_params["limit"],
             "offset": pagination_params["offset"]
         })
+        params.update(self._build_context_params())
         
         response = self.client.searchListOfValues(**params)
         return response if isinstance(response, dict) else response

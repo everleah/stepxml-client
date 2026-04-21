@@ -21,14 +21,18 @@ from ..models.common import PagedResponse
 class ClassificationOperations(BaseOperation):
     """Operations for STEP Classifications."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize classification operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="ClassificationOperations", logger=logger)
+        super().__init__(client, operation_name="ClassificationOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_classification(self, classification_id: str,
@@ -60,7 +64,8 @@ class ClassificationOperations(BaseOperation):
         try:
             response = self.client.getClassification(
                 classificationId=classification_id,
-                includeValues=include_values
+                includeValues=include_values,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -111,6 +116,7 @@ class ClassificationOperations(BaseOperation):
             "typeFilter": type_filter,
             "includeValues": include_values
         })
+        params.update(self._build_context_params())
         
         response = self.client.searchClassifications(**params)
         
@@ -154,7 +160,7 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("createClassification", create_data)
         
         try:
-            response = self.client.createClassification(body=create_data)
+            response = self.client.createClassification(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e) or "409" in str(e):
                 raise ValidationError(f"Create failed: {str(e)}")
@@ -200,7 +206,8 @@ class ClassificationOperations(BaseOperation):
         try:
             response = self.client.updateClassification(
                 classificationId=classification_id,
-                body=update_data
+                body=update_data,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -236,7 +243,7 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("deleteClassification", {"classificationId": classification_id})
         
         try:
-            self.client.deleteClassification(classificationId=classification_id)
+            self.client.deleteClassification(classificationId=classification_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -277,7 +284,8 @@ class ClassificationOperations(BaseOperation):
         try:
             response = self.client.getClassificationHierarchy(
                 classificationId=classification_id,
-                **params
+                **params,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -311,7 +319,7 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("getClassificationValues", {"classificationId": classification_id})
         
         try:
-            response = self.client.getClassificationValues(classificationId=classification_id)
+            response = self.client.getClassificationValues(classificationId=classification_id, **self._build_context_params())
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")

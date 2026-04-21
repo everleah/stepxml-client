@@ -21,14 +21,18 @@ from ..models.common import PagedResponse
 class EntityOperations(BaseOperation):
     """Operations for STEP Entities."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize entity operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="EntityOperations", logger=logger)
+        super().__init__(client, operation_name="EntityOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_entity(self, entity_id: str,
@@ -64,7 +68,8 @@ class EntityOperations(BaseOperation):
             response = self.client.getEntity(
                 entityId=entity_id,
                 includeAttributes=include_attributes,
-                includeRelationships=include_relationships
+                includeRelationships=include_relationships,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -115,6 +120,7 @@ class EntityOperations(BaseOperation):
             "typeFilter": type_filter,
             "includeAttributes": include_attributes
         })
+        params.update(self._build_context_params())
         
         response = self.client.searchEntities(**params)
         
@@ -158,7 +164,7 @@ class EntityOperations(BaseOperation):
         self._log_operation("createEntity", create_data)
         
         try:
-            response = self.client.createEntity(body=create_data)
+            response = self.client.createEntity(body=create_data, **self._build_context_params())
         except Exception as e:
             if "400" in str(e) or "409" in str(e):
                 raise ValidationError(f"Create failed: {str(e)}")
@@ -204,7 +210,8 @@ class EntityOperations(BaseOperation):
         try:
             response = self.client.updateEntity(
                 entityId=entity_id,
-                body=update_data
+                body=update_data,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
@@ -240,7 +247,7 @@ class EntityOperations(BaseOperation):
         self._log_operation("deleteEntity", {"entityId": entity_id})
         
         try:
-            self.client.deleteEntity(entityId=entity_id)
+            self.client.deleteEntity(entityId=entity_id, **self._build_context_params())
             return True
         except Exception as e:
             if "404" in str(e):
@@ -291,7 +298,8 @@ class EntityOperations(BaseOperation):
         try:
             response = self.client.getEntityRelationships(
                 entityId=entity_id,
-                **params
+                **params,
+                **self._build_context_params()
             )
         except Exception as e:
             if "404" in str(e):
