@@ -5,71 +5,94 @@ from pydantic import BaseModel, Field, ConfigDict
 
 
 class RelationshipTypeResponse(BaseModel):
-    """Relationship type definition."""
-    
-    model_config = ConfigDict(json_schema_extra={
+    """Reference type definition (maps to STEP ``ReferenceType`` schema).
+
+    All fields are optional because the STEP REST API spec declares
+    ``required: []`` on this schema.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra={
         "example": {
-            "relationshipTypeId": "IS_PART_OF",
+            "id": "IS_PART_OF",
             "name": "Is Part Of",
-            "description": "Component relationship",
-            "isDirectional": True,
-            "bidirectionalName": "HAS_PART"
+            "productClassificationLinkType": False,
+            "multivalued": True
         }
     })
-    
-    relationshipTypeId: str = Field(..., description="Unique relationship type ID")
-    name: str = Field(..., description="Display name")
+
+    # Primary spec field — the STEP API returns 'id', not 'relationshipTypeId'.
+    id: Optional[str] = Field(None, description="Reference type ID (spec field)")
+    # Backward-compatible alias so callers that used the old field name still work.
+    relationshipTypeId: Optional[str] = Field(None, description="Alias for id (legacy field name)")
+    name: Optional[str] = Field(None, description="Display name")
+    productClassificationLinkType: Optional[bool] = Field(None, description="Whether this is a classification link type")
+    multivalued: Optional[bool] = Field(None, description="Whether multiple targets are allowed")
+    validSourceObjectTypes: Optional[List[str]] = Field(None, description="Valid source object types")
+    validTargetObjectTypes: Optional[List[str]] = Field(None, description="Valid target object types")
+    # Legacy optional fields kept for backward compatibility
     description: Optional[str] = Field(None, description="Type description")
-    isDirectional: Optional[bool] = Field(False, description="Whether relationship is directional")
+    isDirectional: Optional[bool] = Field(None, description="Whether relationship is directional")
     bidirectionalName: Optional[str] = Field(None, description="Reverse relationship name")
 
 
 class RelationshipResponse(BaseModel):
-    """Single relationship/link between entities."""
-    
-    model_config = ConfigDict(json_schema_extra={
+    """Single reference/link between entities (maps to STEP ``ReferenceEntry`` schema).
+
+    All fields are optional because the STEP REST API spec declares
+    ``required: []`` on ``ReferenceEntry``.  The spec fields are
+    ``contextLocal``, ``inherited``, ``target``, ``targetType``, ``values``,
+    and ``entity``.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra={
         "example": {
-            "relationshipId": "REL_001",
-            "relationshipType": "IS_PART_OF",
-            "sourceId": "PROD_001",
-            "targetId": "PROD_002",
-            "sourceType": "Product",
+            "target": "PROD_002",
             "targetType": "Product",
-            "createdAt": "2025-01-01T00:00:00Z",
-            "metadata": {"quantity": 5, "unit": "pieces"}
+            "contextLocal": True,
+            "inherited": False
         }
     })
-    
-    relationshipId: str = Field(..., description="Unique relationship ID")
-    relationshipType: str = Field(..., description="Type of relationship")
-    sourceId: str = Field(..., description="Source entity ID")
-    targetId: str = Field(..., description="Target entity ID")
-    sourceType: str = Field(..., description="Source entity type (Product, Asset, etc.)")
-    targetType: str = Field(..., description="Target entity type")
+
+    # Spec-defined fields (ReferenceEntry)
+    contextLocal: Optional[bool] = Field(None, description="Whether the reference is context-local")
+    inherited: Optional[bool] = Field(None, description="Whether the reference is inherited")
+    target: Optional[str] = Field(None, description="Target entity ID")
+    targetType: Optional[str] = Field(None, description="Target entity type")
+    values: Optional[Dict[str, Any]] = Field(None, description="Reference attribute values")
+    entity: Optional[Dict[str, Any]] = Field(None, description="Embedded target entity")
+    # Legacy fields kept for backward compatibility
+    relationshipId: Optional[str] = Field(None, description="Relationship ID (legacy)")
+    relationshipType: Optional[str] = Field(None, description="Relationship type (legacy)")
+    sourceId: Optional[str] = Field(None, description="Source entity ID (legacy)")
+    targetId: Optional[str] = Field(None, description="Target entity ID (legacy alias for target)")
+    sourceType: Optional[str] = Field(None, description="Source entity type (legacy)")
     createdAt: Optional[str] = Field(None, description="Creation timestamp")
     modifiedAt: Optional[str] = Field(None, description="Last modification timestamp")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Relationship metadata")
-    status: Optional[str] = Field(None, description="Relationship status (ACTIVE, INACTIVE)")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Reference metadata")
+    status: Optional[str] = Field(None, description="Reference status")
 
 
 class RelationshipListResponse(BaseModel):
-    """Response containing list of relationships."""
-    
-    model_config = ConfigDict(json_schema_extra={
+    """Response containing list of references.
+
+    The STEP REST API spec returns a ``Reference`` schema for list-reference
+    endpoints, which has an empty properties definition (``required: []``).
+    All fields here are therefore optional.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra={
         "example": {
-            "relationships": [
-                {"relationshipId": "REL_001", "relationshipType": "IS_PART_OF", "sourceId": "PROD_001", "targetId": "PROD_002", "sourceType": "Product", "targetType": "Product"}
-            ],
-            "totalCount": 150,
+            "relationships": [],
+            "totalCount": 0,
             "limit": 20,
             "offset": 0
         }
     })
-    
-    relationships: List[RelationshipResponse] = Field(..., description="List of relationships")
-    totalCount: int = Field(..., description="Total number of relationships")
-    limit: int = Field(..., description="Result limit")
-    offset: int = Field(..., description="Result offset")
+
+    relationships: Optional[List[RelationshipResponse]] = Field(None, description="List of references")
+    totalCount: Optional[int] = Field(None, description="Total number of references")
+    limit: Optional[int] = Field(None, description="Result limit")
+    offset: Optional[int] = Field(None, description="Result offset")
 
 
 class CrossReferenceResponse(BaseModel):

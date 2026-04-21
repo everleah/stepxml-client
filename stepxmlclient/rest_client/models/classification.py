@@ -92,52 +92,44 @@ class ClassificationListResponse(BaseModel):
 
 class ClassificationHierarchyNode(BaseModel):
     """Single node in a classification hierarchy."""
-    
-    id: str = Field(..., description="Node ID")
-    name: str = Field(..., description="Node name")
+
+    id: Optional[str] = Field(None, description="Node ID")
+    name: Optional[str] = Field(None, description="Node name")
     parent_id: Optional[str] = Field(None, description="Parent node ID")
-    level: int = Field(0, description="Depth level in hierarchy")
-    children: List['ClassificationHierarchyNode'] = Field(
-        default_factory=list,
+    level: Optional[int] = Field(None, description="Depth level in hierarchy")
+    children: Optional[List['ClassificationHierarchyNode']] = Field(
+        None,
         description="Child nodes"
     )
     metadata: Optional[ClassificationMetadata] = Field(None, description="Node metadata")
 
 
 class ClassificationHierarchyResponse(BaseModel):
-    """Response model for classification hierarchy view."""
-    
-    classification_id: str = Field(..., description="Classification ID")
-    classification_name: str = Field(..., description="Classification name")
-    root_nodes: List[ClassificationHierarchyNode] = Field(
-        default_factory=list,
+    """Response model for classification hierarchy / children list.
+
+    The STEP REST API spec defines ``getClassificationChildren`` as returning an
+    ``array``.  This model is a convenience wrapper used when the raw list is
+    wrapped in a dict, or when the caller wants a typed container.
+    All fields are optional to match the spec's ``required: []`` philosophy.
+    """
+
+    classification_id: Optional[str] = Field(None, description="Classification ID")
+    classification_name: Optional[str] = Field(None, description="Classification name")
+    root_nodes: Optional[List[ClassificationHierarchyNode]] = Field(
+        None,
         description="Root nodes of hierarchy"
     )
-    total_nodes: int = Field(0, description="Total nodes in hierarchy")
-    max_depth: int = Field(0, description="Maximum depth of hierarchy")
-    
+    total_nodes: Optional[int] = Field(None, description="Total nodes in hierarchy")
+    max_depth: Optional[int] = Field(None, description="Maximum depth of hierarchy")
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "classification_id": "CLASS123",
                 "classification_name": "Organization",
-                "root_nodes": [
-                    {
-                        "id": "ORG_ROOT",
-                        "name": "Root Organization",
-                        "level": 0,
-                        "children": [
-                            {
-                                "id": "ORG_DIV",
-                                "name": "Division",
-                                "parent_id": "ORG_ROOT",
-                                "level": 1
-                            }
-                        ]
-                    }
-                ],
-                "total_nodes": 45,
-                "max_depth": 4
+                "root_nodes": [],
+                "total_nodes": 0,
+                "max_depth": 0
             }
         }
     )

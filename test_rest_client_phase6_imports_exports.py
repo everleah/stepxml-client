@@ -140,22 +140,20 @@ class TestImportExportModels(unittest.TestCase):
         assert request.format == "XML"
     
     def test_export_job_response(self):
-        """Test ExportJobResponse model creation."""
-        job = ExportJobResponse(
-            jobId="EXP123456",
-            status="COMPLETED",
-            entityType="Product",
-            format="XML",
-            createdAt=datetime.now().isoformat(),
-            startedAt=None,
-            completedAt=datetime.now().isoformat(),
-            progress=None,
-            downloadUrl=None,
-            fileSize=None,
-            errorMessage=None
-        )
-        assert job.jobId == "EXP123456"
-        assert job.status == "COMPLETED"
+        """Test BackgroundProcessResponse (ExportJobResponse alias) model creation.
+
+        The STEP REST API spec defines ``BackgroundProcessIdentification`` for
+        POST /export/{id} and POST /import/{id} responses.  It has only an
+        optional ``id`` field matching the background-process identifier.
+        """
+        # Test with the spec-correct field (id)
+        job = ExportJobResponse(id="bg-process-0042")
+        assert job.id == "bg-process-0042"
+
+        # Pydantic ignores unknown extra fields (populate_by_name=True) – this
+        # should NOT raise even though the old required fields are gone.
+        job2 = ExportJobResponse()
+        assert job2.id is None
     
     def test_job_error_list_response(self):
         """Test JobErrorListResponse with pagination."""

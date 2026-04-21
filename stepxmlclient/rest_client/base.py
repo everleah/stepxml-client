@@ -22,11 +22,36 @@ def handle_rest_errors(func: Callable) -> Callable:
     
     Converts HTTP errors to appropriate exception types.
     Allows FileNotFoundError and other file system exceptions to pass through.
+
+    Also detects STEP API error responses returned as dicts when
+    requests_openapi does not raise an exception for non-2xx HTTP responses.
+    The STEP REST API returns error payloads with the form
+    ``{"httpStatus": <int>, "message": "...", "httpReason": "..."}``.
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            result = func(*args, **kwargs)
+            # Detect STEP error responses returned as plain dicts instead of
+            # raised exceptions (requests_openapi may not call raise_for_status).
+            if isinstance(result, dict) and 'httpStatus' in result:
+                status = result.get('httpStatus', 0)
+                message = result.get('message') or result.get('httpReason', 'API error')
+                if status == 401:
+                    raise exc.AuthenticationError(f"Authentication failed: {message}")
+                elif status == 403:
+                    raise exc.AuthorizationError(f"Access denied: {message}")
+                elif status == 404:
+                    raise exc.NotFoundError(None, details=result)
+                elif status == 409:
+                    raise exc.ConflictError(status, message)
+                elif status == 429:
+                    raise exc.RateLimitError(details=result)
+                elif 500 <= status < 600:
+                    raise exc.ServerError(status, message)
+                elif 400 <= status < 500:
+                    raise exc.RestApiError(status, message)
+            return result
         except requests.exceptions.RequestException as e:
             # Handle requests library exceptions
             if hasattr(e, 'response') and e.response is not None:
@@ -119,6 +144,42 @@ class BaseOperation:
             params['workspace'] = self.workspace
         return params
 
+    def _check_for_api_error(self, response: Any, resource_id: Optional[str] = None,
+                              resource_type: Optional[str] = None) -> None:
+        """Detect STEP error responses returned as dicts instead of raised exceptions.
+
+        The STEP REST API may return an error body like
+        ``{"httpStatus": 404, "message": "...", "httpReason": "..."}`` on a
+        transport-level 200 when using requests_openapi without raise_for_status.
+        This method raises the appropriate library exception in those cases.
+
+        Args:
+            response: The API response (dict, list, or object)
+            resource_id: Resource ID for error messages
+            resource_type: Resource type name for error messages
+
+        Raises:
+            AuthenticationError: If httpStatus is 401
+            AuthorizationError: If httpStatus is 403
+            NotFoundError: If httpStatus is 404
+            ConflictError: If httpStatus is 409
+            RestApiError: For other 4xx/5xx status codes
+        """
+        if not isinstance(response, dict) or 'httpStatus' not in response:
+            return
+        status = response.get('httpStatus', 0)
+        message = response.get('message') or response.get('httpReason', 'API error')
+        if status == 401:
+            raise exc.AuthenticationError(f"Authentication failed: {message}")
+        elif status == 403:
+            raise exc.AuthorizationError(f"Access denied: {message}")
+        elif status == 404:
+            raise exc.NotFoundError(resource_id, resource_type)
+        elif status == 409:
+            raise exc.ConflictError(status, message)
+        elif 400 <= status < 600:
+            raise exc.RestApiError(status, message)
+
     def _check_response_status(self, response: Any, resource_id: Optional[str] = None,
                                 resource_type: Optional[str] = None) -> None:
         """Check response for HTTP error status codes returned without raising an exception.
@@ -137,6 +198,9 @@ class BaseOperation:
             NotFoundError: If status is 404
             RestApiError: For other 4xx/5xx status codes
         """
+        # First check for STEP error dicts (JSON body with httpStatus field)
+        self._check_for_api_error(response, resource_id, resource_type)
+
         raw_response = getattr(response, '_response', None) or getattr(response, 'response', None)
         status_code = (
             getattr(raw_response, 'status_code', None)

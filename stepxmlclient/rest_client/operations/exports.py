@@ -6,7 +6,8 @@ from typing import Optional
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError, RestApiError
 from ..models.import_export import (
-    ExportJobResponse,
+    BackgroundProcessResponse,
+    ExportJobResponse,  # backward-compat alias
     ExportJobListResponse,
     ExportJobCreateRequest,
 )
@@ -31,7 +32,7 @@ class ExportOperations(BaseOperation):
     @handle_rest_errors
     def create_export_job(self, export_configuration_id: str,
                           data: Optional[ExportJobCreateRequest] = None,
-                          use_request_context_workspace: Optional[bool] = None) -> ExportJobResponse:
+                          use_request_context_workspace: Optional[bool] = None) -> BackgroundProcessResponse:
         """Trigger an export using a pre-configured export configuration (POST /export/{exportConfigurationId}).
 
         Args:
@@ -78,14 +79,15 @@ class ExportOperations(BaseOperation):
                 raise ValidationError(f"Export failed: {str(e)}")
             raise
 
+        self._check_for_api_error(response, export_configuration_id, "ExportConfiguration")
         if isinstance(response, dict):
-            return ExportJobResponse(**response)
+            return BackgroundProcessResponse(**response)
         return response
 
     @handle_rest_errors
     def create_import_job(self, import_configuration_id: str,
                           data: Optional[object] = None,
-                          process_description: Optional[str] = None) -> ExportJobResponse:
+                          process_description: Optional[str] = None) -> BackgroundProcessResponse:
         """Trigger an import using a pre-configured import configuration (POST /import/{importConfigurationId}).
 
         Args:
@@ -125,7 +127,8 @@ class ExportOperations(BaseOperation):
                 raise ValidationError(f"Import failed: {str(e)}")
             raise
 
+        self._check_for_api_error(response, import_configuration_id, "ImportConfiguration")
         if isinstance(response, dict):
-            return ExportJobResponse(**response)
+            return BackgroundProcessResponse(**response)
         return response
     

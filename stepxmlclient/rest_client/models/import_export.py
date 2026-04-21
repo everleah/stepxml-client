@@ -144,32 +144,23 @@ class ExportJobCreateRequest(BaseModel):
     config: Optional[Dict[str, Any]] = Field(None, description="Export configuration")
 
 
-class ExportJobResponse(BaseModel):
-    """Response from export job operations."""
-    
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "jobId": "EXPORT_001",
-            "status": "COMPLETED",
-            "entityType": "Product",
-            "format": "XML",
-            "createdAt": "2025-01-01T00:00:00Z",
-            "completedAt": "2025-01-01T00:10:00Z",
-            "downloadUrl": "https://api.example.com/exports/EXPORT_001/download"
-        }
+class BackgroundProcessResponse(BaseModel):
+    """Response from export/import trigger operations.
+
+    Matches the STEP REST API v2 ``BackgroundProcessIdentification`` schema:
+    ``POST /export/{id}`` and ``POST /import/{id}`` both return only the
+    background-process ``id`` so the caller can poll for status.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra={
+        "example": {"id": "bg-process-0042"}
     })
-    
-    jobId: str = Field(..., description="Export job ID")
-    status: str = Field(..., description="Job status (PENDING, PROCESSING, COMPLETED, FAILED)")
-    entityType: str = Field(..., description="Entity type being exported")
-    format: Optional[str] = Field(None, description="Export format")
-    createdAt: str = Field(..., description="Job creation timestamp")
-    startedAt: Optional[str] = Field(None, description="Job start timestamp")
-    completedAt: Optional[str] = Field(None, description="Job completion timestamp")
-    progress: Optional[JobProgressResponse] = Field(None, description="Job progress")
-    downloadUrl: Optional[str] = Field(None, description="URL to download exported data")
-    fileSize: Optional[int] = Field(None, description="Size of exported file in bytes")
-    errorMessage: Optional[str] = Field(None, description="Error message if failed")
+
+    id: Optional[str] = Field(None, description="Background process ID")
+
+
+# Backward-compatible alias so existing imports don't break immediately.
+ExportJobResponse = BackgroundProcessResponse
 
 
 class ExportJobListResponse(BaseModel):

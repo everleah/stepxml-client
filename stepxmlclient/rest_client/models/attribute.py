@@ -39,20 +39,31 @@ class ListOfValueItem(BaseModel):
 
 
 class ListOfValueResponse(BaseModel):
-    """Response containing List of Values items."""
-    
-    model_config = ConfigDict(json_schema_extra={
+    """Response containing List of Values (maps to STEP ``ListOfValues`` schema).
+
+    The STEP REST API spec defines ``ListOfValues`` with properties:
+    ``id``, ``name``, ``extendable``, ``usesValueIds``, ``values``.
+    All fields are optional (``required: []`` in spec).
+    The collection field in the spec is ``values``, not ``items``.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, json_schema_extra={
         "example": {
             "id": "LOV_001",
             "name": "Color LOV",
-            "items": [{"id": "LOV_ITEM_001", "name": "Red"}],
-            "total": 5
+            "extendable": False,
+            "usesValueIds": True,
+            "values": [{"id": "LOV_ITEM_001", "name": "Red"}]
         }
     })
-    
-    id: str = Field(..., description="LOV ID")
-    name: str = Field(..., description="LOV name")
-    items: List[ListOfValueItem] = Field(..., description="List of items")
+
+    id: Optional[str] = Field(None, description="LOV ID")
+    name: Optional[str] = Field(None, description="LOV name")
+    extendable: Optional[bool] = Field(None, description="Whether users can extend the LOV")
+    usesValueIds: Optional[bool] = Field(None, description="Whether values have explicit IDs")
+    values: Optional[List[ListOfValueItem]] = Field(None, description="List of values (spec field name)")
+    # Backward-compatible alias — some callers may have used 'items'
+    items: Optional[List[ListOfValueItem]] = Field(None, description="Alias for values (legacy field name)")
     total: Optional[int] = Field(None, description="Total number of items")
 
 
