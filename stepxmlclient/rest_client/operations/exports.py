@@ -116,7 +116,8 @@ class ExportOperations(BaseOperation):
 
         try:
             if data is not None:
-                body = data.model_dump(exclude_none=True) if hasattr(data, 'model_dump') else data
+                from pydantic import BaseModel
+                body = data.model_dump(exclude_none=True) if isinstance(data, BaseModel) else data
                 response = self.client.postImport(body=body, **params)
             else:
                 response = self.client.postImport(**params)
