@@ -262,7 +262,7 @@ from stepxmlclient.creator import Creator
 # Initialize client with context
 auth = BasicAuthorisation(user="username", pwd="password")
 client = StiboStepRestClient(
-    location_base="https://your-step.com/rest/v2",
+    location_base="https://your-step.com/restapiv2",
     authorisation=auth,
     context="Context1"
 )

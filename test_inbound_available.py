@@ -7,7 +7,7 @@ print('Creating mock client...')
 auth = BasicAuthorisation(user='test', pwd='test')
 try:
     client = StiboStepRestClient(
-        location_base='https://fake-step.com/rest/v2',
+        location_base='https://fake-step.com/restapiv2',
         authorisation=auth,
         context='TestContext',
         nocert=True

@@ -806,7 +806,7 @@ xml_bytes = creator.to_bytes()
 # 2. Setup Authentication
 auth = BasicAuthorisation(user="username", pwd="password")
 client = StiboStepRestClient(
-    location_base="https://your-step-system.com/rest/v2",
+    location_base="https://your-step-system.com",
     authorisation=auth,
     context="Context1",      # Set default context
     workspace="Main"         # Set default workspace (optional)
@@ -875,7 +875,7 @@ xml_bytes = creator.to_bytes()
 # 2. Setup Authentication
 auth = BasicAuthorisation(user="username", pwd="password")
 client = StiboStepRestClient(
-    location_base="https://your-step-system.com/rest/v2",
+    location_base="https://your-step-system.com/restapiv2",
     authorisation=auth
 )
 

@@ -50,7 +50,7 @@ def example_send_to_inbound_endpoint():
     
     # NOTE: The key fix - now context and workspace are supported!
     client = StiboStepRestClient(
-        location_base="https://your-step-system.com/rest/v2",
+        location_base="https://your-step-system.com/restapiv2",
         authorisation=auth,
         context="MyContext",        # ← New! Set default context
         workspace="Main",           # ← New! Set default workspace
@@ -113,7 +113,7 @@ def example_with_steprestclient():
     
     # StepRestClient also has inbound operations (plus many other operation groups)
     client = StepRestClient(
-        location_base="https://your-step-system.com/rest/v2",
+        location_base="https://your-step-system.com/restapiv2",
         authorisation=auth,
         context="MyContext"
     )

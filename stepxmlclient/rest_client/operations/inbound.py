@@ -24,7 +24,7 @@ class InboundOperations(BaseOperation):
         
         # Create and setup client
         client = StepRestClient(
-            location_base="https://your-step.com/rest/v2",
+            location_base="https://your-step.com/restapiv2",
             authorisation=auth,
             context="Context1"
         )
