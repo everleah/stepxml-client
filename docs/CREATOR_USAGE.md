@@ -782,7 +782,7 @@ print(pretty_xml)
 
 The library provides two ways to send generated XML directly to a STEP Inbound Integration Endpoint (IIEP):
 
-1. **Recommended**: Use the `StepRestClient` with the high-level `inbound` operations wrapper
+1. **Recommended**: Use the `inbound` operations wrapper (available on both `StiboStepRestClient` and `StepRestClient`)
 2. **Raw Access**: Use the underlying OpenAPI client directly
 
 ### Prerequisites
@@ -791,12 +791,11 @@ You need a configured **Inbound Integration Endpoint** in your STEP system (unde
 
 ### Method 1: Using Inbound Operations (Recommended)
 
-The `StepRestClient` includes an `inbound` operation group for convenient Inbound Integration Endpoint management.
+Both `StiboStepRestClient` and `StepRestClient` include an `inbound` operation group for convenient Inbound Integration Endpoint management.
 
 ```python
 from stepxmlclient.creator import Creator
-from stepxmlclient.rest_client.client import StepRestClient
-from stepxmlclient.client import BasicAuthorisation
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
 
 # 1. Generate your STEP-XML
 creator = Creator(context_id="Context1", workspace_id="Main")
@@ -806,7 +805,7 @@ xml_bytes = creator.to_bytes()
 
 # 2. Setup Authentication
 auth = BasicAuthorisation(user="username", pwd="password")
-client = StepRestClient(
+client = StiboStepRestClient(
     location_base="https://your-step-system.com/rest/v2",
     authorisation=auth,
     context="Context1",      # Set default context

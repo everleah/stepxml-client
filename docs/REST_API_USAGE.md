@@ -236,7 +236,7 @@ relation = client.client.get_relation_by_id(relation_id="REL001")
 
 ### Inbound Integration Endpoints
 
-**Operations Group:** `InboundOperations` (accessed via `client.inbound`)
+**Operations Group:** `inbound` (available on `StiboStepRestClient` and `StepRestClient`)
 
 Inbound Integration Endpoints (IIEP) allow you to upload STEP-XML documents directly to a configured endpoint for processing. This is the primary method for batch imports of STEP data.
 
@@ -256,13 +256,12 @@ Inbound Integration Endpoints (IIEP) allow you to upload STEP-XML documents dire
 
 **Basic Example:**
 ```python
-from stepxmlclient.rest_client.client import StepRestClient
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
 from stepxmlclient.creator import Creator
-from stepxmlclient.client import BasicAuthorisation
 
 # Initialize client with context
 auth = BasicAuthorisation(user="username", pwd="password")
-client = StepRestClient(
+client = StiboStepRestClient(
     location_base="https://your-step.com/rest/v2",
     authorisation=auth,
     context="Context1"
@@ -325,6 +324,7 @@ except ValidationError as e:
 - The `context` parameter is required for all IIEP operations
 - The `workspace` parameter is optional and defaults to "Main" on the server
 - Both can be set during client initialization or as operation parameters
+- Works with both `StiboStepRestClient` and `StepRestClient`
 
 ---
 

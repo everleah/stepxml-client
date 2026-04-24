@@ -5,6 +5,19 @@ import os
 import json
 from pathlib import Path
 
+
+def _lazy_import_inbound_operations():
+    """Lazy import InboundOperations to avoid circular imports.
+    
+    Returns:
+        InboundOperations class or None if import fails
+    """
+    try:
+        from stepxmlclient.rest_client.operations.inbound import InboundOperations
+        return InboundOperations
+    except ImportError:
+        return None
+
 class StiboStepRestClient:
 
     _OPENAPI_CACHE_FILE = "openapi.json"
@@ -13,8 +26,12 @@ class StiboStepRestClient:
             self, location_base, authorisation,
             openapi_file=None, logger=None,
             proxies = None, ssl_version = None, 
-            cache_openapi = False, nocert=False):
+            cache_openapi = False, nocert=False,
+            context=None, workspace=None):
         self.ssl_version = ssl_version
+        self.context = context
+        self.workspace = workspace
+        
         if logger is None:
             self.logger = logging.getLogger(self.__class__.__name__)
         else:
@@ -40,6 +57,19 @@ class StiboStepRestClient:
         # authorisation (Always after creating client!)
         authorisation.adapt_client(self.client)
         authorisation.do_authorisation(self.client)
+        
+        # Initialize inbound operations (lazy import to avoid circular dependencies)
+        InboundOperations = _lazy_import_inbound_operations()
+        if InboundOperations:
+            self.inbound = InboundOperations(
+                self.client,
+                logger=self.logger,
+                context=context,
+                workspace=workspace
+            )
+        else:
+            self.inbound = None
+        
         return
 
     @staticmethod
