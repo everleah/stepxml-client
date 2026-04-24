@@ -12,6 +12,7 @@ from .metadata import MetadataOperations
 from .imports import ImportOperations
 from .exports import ExportOperations
 from .relations import RelationOperations
+from .inbound import InboundOperations
 from .bulk import (
     BulkOperations,
     WorkflowOperations,
@@ -30,6 +31,7 @@ __all__ = [
     'ImportOperations',
     'ExportOperations',
     'RelationOperations',
+    'InboundOperations',
     'BulkOperations',
     'WorkflowOperations',
     'AdvancedSearchOperations',

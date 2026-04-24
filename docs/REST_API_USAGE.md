@@ -18,6 +18,7 @@ This document provides comprehensive usage instructions for the REST API client 
   - [Entity](#entity)
   - [Replacement](#replacement)
   - [Relations](#relations)
+  - [Inbound Integration Endpoints](#inbound-integration-endpoints)
 - [Asset Uploads](#asset-uploads)
 - [Error Handling](#error-handling)
 - [Advanced: Custom Operations](#advanced-custom-operations)
@@ -230,6 +231,100 @@ replacement = client.client.get_replacement_by_id(replacement_id="R001")
 from stepxmlclient.model.relations import Relation
 relation = client.client.get_relation_by_id(relation_id="REL001")
 ```
+
+---
+
+### Inbound Integration Endpoints
+
+**Operations Group:** `InboundOperations` (accessed via `client.inbound`)
+
+Inbound Integration Endpoints (IIEP) allow you to upload STEP-XML documents directly to a configured endpoint for processing. This is the primary method for batch imports of STEP data.
+
+**Common Operations:**
+- `upload_and_invoke(endpoint_id, xml_data, file_name=None)` - Upload STEP-XML and trigger processing
+- `list_endpoints()` - List all accessible inbound endpoints
+- `get_status(endpoint_id)` - Get current status of an endpoint
+- `enable_endpoint(endpoint_id)` - Enable an endpoint
+- `disable_endpoint(endpoint_id)` - Disable an endpoint
+- `get_execution_report(endpoint_id)` - Get execution details of last operations
+- `get_statistics(endpoint_id)` - Get operational statistics
+- `get_worker_processes(endpoint_id, status_filter=None)` - Get background processes
+
+**Prerequisites:**
+- A configured Inbound Integration Endpoint in STEP (System Setup)
+- Endpoint must have a REST-enabled receiver plugin
+
+**Basic Example:**
+```python
+from stepxmlclient.rest_client.client import StepRestClient
+from stepxmlclient.creator import Creator
+from stepxmlclient.client import BasicAuthorisation
+
+# Initialize client with context
+auth = BasicAuthorisation(user="username", pwd="password")
+client = StepRestClient(
+    location_base="https://your-step.com/rest/v2",
+    authorisation=auth,
+    context="Context1"
+)
+
+# Generate STEP-XML using Creator
+creator = Creator(context_id="Context1")
+# ... add products, assets, etc ...
+creator.build()
+xml_bytes = creator.to_bytes()
+
+# Upload to inbound endpoint
+result = client.inbound.upload_and_invoke(
+    endpoint_id="my_inbound_endpoint",
+    xml_data=xml_bytes,
+    file_name="import.xml"
+)
+
+print(f"Upload successful: {result}")
+```
+
+**Check Endpoint Status:**
+```python
+# List available endpoints
+endpoints = client.inbound.list_endpoints()
+for ep in endpoints:
+    print(f"Endpoint: {ep['ID']}")
+
+# Get current status
+status = client.inbound.get_status("my_inbound_endpoint")
+print(f"Status: {status}")
+
+# Get execution report (shows what was processed)
+report = client.inbound.get_execution_report("my_inbound_endpoint")
+for entry in report:
+    print(f"Action: {entry.get('action')}, Status: {entry.get('status')}")
+
+# Get statistics
+stats = client.inbound.get_statistics("my_inbound_endpoint")
+print(f"Messages: {stats.get('messageCount')}")
+```
+
+**Error Handling:**
+```python
+from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError
+
+try:
+    result = client.inbound.upload_and_invoke(endpoint_id, xml_data)
+except NotFoundError:
+    print("Endpoint not found")
+except ValidationError as e:
+    if "not enabled" in str(e):
+        print("Endpoint is disabled, enabling it...")
+        client.inbound.enable_endpoint(endpoint_id)
+    else:
+        print(f"Validation error: {e}")
+```
+
+**Note on Context and Workspace:**
+- The `context` parameter is required for all IIEP operations
+- The `workspace` parameter is optional and defaults to "Main" on the server
+- Both can be set during client initialization or as operation parameters
 
 ---
 

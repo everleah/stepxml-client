@@ -18,6 +18,7 @@ from .operations.metadata import MetadataOperations
 from .operations.imports import ImportOperations
 from .operations.exports import ExportOperations
 from .operations.relations import RelationOperations
+from .operations.inbound import InboundOperations
 from .operations.bulk import (
     BulkOperations,
     WorkflowOperations,
@@ -43,16 +44,12 @@ class StepRestClient(StiboStepRestClient):
         imports: ImportOperations instance
         exports: ExportOperations instance
         relations: RelationOperations instance
+        inbound: InboundOperations instance (for IIEP uploads)
         bulk: BulkOperations instance
         workflows: WorkflowOperations instance
         search: AdvancedSearchOperations instance
         cache: CacheOperations instance
         streaming: StreamingOperations instance
-        attributes: AttributeOperations instance
-        metadata: MetadataOperations instance
-        imports: ImportOperations instance
-        exports: ExportOperations instance
-        relations: RelationOperations instance
     """
     
     def __init__(self, location_base, authorisation,
@@ -99,6 +96,8 @@ class StepRestClient(StiboStepRestClient):
         self.entities = EntityOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.attributes = AttributeOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.relations = RelationOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        # Inbound operations for uploading STEP-XML to IIEP
+        self.inbound = InboundOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         # Metadata, imports, exports, bulk and streaming operate on system/job level - no per-call context
         self.metadata = MetadataOperations(self.client, logger=op_logger)
         self.imports = ImportOperations(self.client, logger=op_logger)

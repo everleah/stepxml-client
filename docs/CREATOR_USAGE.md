@@ -780,13 +780,88 @@ print(pretty_xml)
 
 ## Sending to STEP API
 
-The library includes a REST client wrapper that can be used to send your generated XML directly to a STEP Inbound Integration Endpoint.
+The library provides two ways to send generated XML directly to a STEP Inbound Integration Endpoint (IIEP):
+
+1. **Recommended**: Use the `StepRestClient` with the high-level `inbound` operations wrapper
+2. **Raw Access**: Use the underlying OpenAPI client directly
 
 ### Prerequisites
 
 You need a configured **Inbound Integration Endpoint** in your STEP system (under System Setup).
 
-### Basic Implementation
+### Method 1: Using Inbound Operations (Recommended)
+
+The `StepRestClient` includes an `inbound` operation group for convenient Inbound Integration Endpoint management.
+
+```python
+from stepxmlclient.creator import Creator
+from stepxmlclient.rest_client.client import StepRestClient
+from stepxmlclient.client import BasicAuthorisation
+
+# 1. Generate your STEP-XML
+creator = Creator(context_id="Context1", workspace_id="Main")
+# ... add products, assets, attributes ...
+creator.build()
+xml_bytes = creator.to_bytes()
+
+# 2. Setup Authentication
+auth = BasicAuthorisation(user="username", pwd="password")
+client = StepRestClient(
+    location_base="https://your-step-system.com/rest/v2",
+    authorisation=auth,
+    context="Context1",      # Set default context
+    workspace="Main"         # Set default workspace (optional)
+)
+
+# 3. Send to Inbound Endpoint
+try:
+    result = client.inbound.upload_and_invoke(
+        endpoint_id="my_inbound_endpoint_id",
+        xml_data=xml_bytes,
+        file_name="import_data.xml"  # Optional
+    )
+    print(f"Upload successful: {result}")
+    
+except Exception as e:
+    print(f"Error: {e}")
+```
+
+### Additional Inbound Operations
+
+The `inbound` operations group provides multiple methods:
+
+```python
+# List all accessible inbound endpoints
+endpoints = client.inbound.list_endpoints()
+for ep in endpoints:
+    print(f"Endpoint: {ep['ID']}")
+
+# Check endpoint status
+status = client.inbound.get_status("my_inbound_endpoint_id")
+print(f"Status: {status}")
+
+# Enable an endpoint
+client.inbound.enable_endpoint("my_inbound_endpoint_id")
+
+# Disable an endpoint
+client.inbound.disable_endpoint("my_inbound_endpoint_id")
+
+# Get execution report (details of last operations)
+report = client.inbound.get_execution_report("my_inbound_endpoint_id")
+for entry in report:
+    print(entry)
+
+# Get endpoint statistics
+stats = client.inbound.get_statistics("my_inbound_endpoint_id")
+print(f"Message count: {stats.get('messageCount')}")
+
+# Get background processes started by the endpoint
+processes = client.inbound.get_worker_processes("my_inbound_endpoint_id")
+```
+
+### Method 2: Using Raw OpenAPI Client
+
+For lower-level access or if you prefer to use the raw OpenAPI client:
 
 ```python
 from stepxmlclient.creator import Creator
@@ -806,7 +881,6 @@ client = StiboStepRestClient(
 )
 
 # 3. Send to Inbound Endpoint
-# Note: Use postInboundIntegrationEndpointUploadAndInvoke to upload AND trigger processing
 try:
     response = client.client.postInboundIntegrationEndpointUploadAndInvoke(
         id="my_inbound_endpoint_id",  # ID from STEP System Setup
@@ -828,29 +902,32 @@ except Exception as e:
 ### Complete Example Function
 
 ```python
-def send_xml_to_step(creator: Creator, endpoint_id: str, config: dict):
+def send_xml_to_step_via_wrapper(creator: Creator, endpoint_id: str, config: dict):
     """
-    Send creator content to STEP.
-    config should contain: host, user, password
+    Send creator content to STEP using the high-level inbound wrapper.
+    config should contain: host, user, password, context
     """
-    # ensure XML is built
+    from stepxmlclient.rest_client.client import StepRestClient
+    from stepxmlclient.client import BasicAuthorisation
+    
+    # Ensure XML is built
     if not creator.root:
         creator.build()
         
     xml_bytes = creator.to_bytes()
     
     auth = BasicAuthorisation(user=config['user'], pwd=config['password'])
-    client = StiboStepRestClient(
+    client = StepRestClient(
         location_base=config['host'],
-        authorisation=auth
+        authorisation=auth,
+        context=config.get('context', 'Context1')
     )
     
-    return client.client.postInboundIntegrationEndpointUploadAndInvoke(
-        id=endpoint_id,
-        context=creator.context_id,
-        workspace=creator.workspace_id,
-        fileName="data.xml",
-        body=xml_bytes                # The XML data
+    # Simple, clean API
+    return client.inbound.upload_and_invoke(
+        endpoint_id=endpoint_id,
+        xml_data=xml_bytes,
+        file_name="data.xml"
     )
 ```
 
