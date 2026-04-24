@@ -22,6 +22,15 @@ class TestInboundOperations(unittest.TestCase):
         self.context = "TestContext"
         self.workspace = "TestWorkspace"
         
+        # Setup server mock
+        self.mock_server = Mock()
+        self.mock_server.url = "https://test-server/restapiv2"
+        self.mock_client.server = self.mock_server
+        
+        # Setup requestor mock
+        self.mock_requestor = Mock()
+        self.mock_client.requestor = self.mock_requestor
+        
         self.inbound = InboundOperations(
             self.mock_client,
             logger=self.logger,
@@ -34,36 +43,47 @@ class TestInboundOperations(unittest.TestCase):
         xml_data = b"<StepXML>test</StepXML>"
         endpoint_id = "test_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.return_value = {
-            "processId": "12345"
-        }
+        # Mock the POST response
+        mock_response = Mock()
+        mock_response.text = '{"processId": "12345"}'
+        mock_response.json.return_value = {"processId": "12345"}
+        self.mock_requestor.post.return_value = mock_response
         
         result = self.inbound.upload_and_invoke(endpoint_id, xml_data)
         
         self.assertEqual(result["processId"], "12345")
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.assert_called_once()
+        self.mock_requestor.post.assert_called_once()
         
-        # Check that context and workspace were passed
-        call_kwargs = self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.call_args[1]
-        self.assertEqual(call_kwargs["context"], self.context)
-        self.assertEqual(call_kwargs["workspace"], self.workspace)
+        # Check the POST call parameters
+        call_args = self.mock_requestor.post.call_args
+        # First positional argument is the URL
+        self.assertIn("inbound-integration-endpoints/test_endpoint/upload-and-invoke", call_args[0][0])
+        
+        # Check that data was passed (binary XML)
+        self.assertEqual(call_args[1]["data"], xml_data)
+        
+        # Check context and workspace in params
+        self.assertEqual(call_args[1]["params"]["context"], self.context)
+        self.assertEqual(call_args[1]["params"]["workspace"], self.workspace)
 
     def test_upload_and_invoke_with_string(self):
         """Test upload_and_invoke with string data."""
         xml_data = "<StepXML>test</StepXML>"
         endpoint_id = "test_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.return_value = {
-            "success": True
-        }
+        # Mock the POST response
+        mock_response = Mock()
+        mock_response.text = '{"success": true}'
+        mock_response.json.return_value = {"success": True}
+        self.mock_requestor.post.return_value = mock_response
         
         result = self.inbound.upload_and_invoke(endpoint_id, xml_data)
         
         self.assertTrue(result["success"])
         
         # Verify string was converted to bytes
-        call_kwargs = self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.call_args[1]
-        self.assertEqual(call_kwargs["body"], b"<StepXML>test</StepXML>")
+        call_args = self.mock_requestor.post.call_args
+        self.assertEqual(call_args[1]["data"], b"<StepXML>test</StepXML>")
 
     def test_upload_and_invoke_missing_endpoint_id(self):
         """Test upload_and_invoke raises error for missing endpoint_id."""
@@ -85,20 +105,26 @@ class TestInboundOperations(unittest.TestCase):
         endpoint_id = "test_endpoint"
         file_name = "data.xml"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.return_value = {}
+        # Mock the POST response
+        mock_response = Mock()
+        mock_response.text = '{}'
+        mock_response.json.return_value = {}
+        self.mock_requestor.post.return_value = mock_response
         
         self.inbound.upload_and_invoke(endpoint_id, xml_data, file_name=file_name)
         
-        call_kwargs = self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.call_args[1]
-        self.assertEqual(call_kwargs["fileName"], file_name)
+        call_args = self.mock_requestor.post.call_args
+        self.assertEqual(call_args[1]["params"]["fileName"], file_name)
 
     def test_upload_and_invoke_endpoint_not_found(self):
         """Test upload_and_invoke raises NotFoundError for missing endpoint."""
         xml_data = b"<StepXML>test</StepXML>"
         endpoint_id = "missing_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.side_effect = \
-            Exception("404 Not Found")
+        # Mock 404 response
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = Exception("404 Not Found")
+        self.mock_requestor.post.return_value = mock_response
         
         with self.assertRaises(NotFoundError):
             self.inbound.upload_and_invoke(endpoint_id, xml_data)
@@ -108,8 +134,10 @@ class TestInboundOperations(unittest.TestCase):
         xml_data = b"<StepXML>test</StepXML>"
         endpoint_id = "disabled_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.side_effect = \
-            Exception("400 Bad Request: endpoint not enabled")
+        # Mock 400 response with 'not enabled' message
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = Exception("400 Bad Request: endpoint not enabled")
+        self.mock_requestor.post.return_value = mock_response
         
         with self.assertRaises(ValidationError) as ctx:
             self.inbound.upload_and_invoke(endpoint_id, xml_data)
@@ -121,8 +149,10 @@ class TestInboundOperations(unittest.TestCase):
         xml_data = b"<StepXML>test</StepXML>"
         endpoint_id = "no_rest_receiver"
         
-        self.mock_client.postInboundIntegrationEndpointUploadAndInvoke.side_effect = \
-            Exception("400 Bad Request: REST receiver not configured")
+        # Mock 400 response with 'REST receiver' message
+        mock_response = Mock()
+        mock_response.raise_for_status.side_effect = Exception("400 Bad Request: REST receiver not configured")
+        self.mock_requestor.post.return_value = mock_response
         
         with self.assertRaises(ValidationError) as ctx:
             self.inbound.upload_and_invoke(endpoint_id, xml_data)

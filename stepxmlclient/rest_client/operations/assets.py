@@ -363,13 +363,23 @@ class AssetOperations(BaseOperation):
         
         try:
             # Open file in binary mode and upload
-            # Use putAssetContent (PUT /assets/{id}/content)
+            # Use direct PUT request with data= parameter instead of body= (which fails with requests.Session)
             # Path parameter is 'id', not 'assetId'
             with open(file_path, 'rb') as f:
-                response = self.client.putAssetContent(
-                    body=f,
-                    **call_params
+                # Build URL for direct PUT request
+                server_url = self.client.server.url if self.client.server else ""
+                endpoint_path = f"/assets/{asset_id}/content"
+                url = f"{server_url}{endpoint_path}"
+                
+                # Upload using direct PUT with data= parameter
+                response = self.client.requestor.put(
+                    url,
+                    params=call_params,
+                    data=f.read(),
+                    headers={'Content-Type': mime_type}
                 )
+                response.raise_for_status()
+                
             self._check_response_status(response, asset_id, "Asset")
         except FileNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e

@@ -109,10 +109,32 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.postInboundIntegrationEndpointUploadAndInvoke(
-                body=xml_data,
-                **params
+            # Build URL manually for binary upload
+            # Use direct POST with data= parameter instead of body= (which fails with requests.Session)
+            server_url = self.client.server.url if self.client.server else ""
+            endpoint_path = f"/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
+            url = f"{server_url}{endpoint_path}"
+            
+            # Post with binary data as 'data' parameter (not 'body')
+            response = self.client.requestor.post(
+                url,
+                params=params,
+                data=xml_data,
+                headers={"Content-Type": "application/octet-stream"}
             )
+            
+            # Handle the response
+            response.raise_for_status()  # Raise exception for non-2xx status codes
+            
+            # Parse JSON response if available
+            if response.text:
+                try:
+                    return response.json()
+                except Exception:
+                    return {"success": True, "endpoint": endpoint_id}
+            else:
+                return {"success": True, "endpoint": endpoint_id}
+                
         except Exception as e:
             error_str = str(e)
             if "404" in error_str:
@@ -132,8 +154,6 @@ class InboundOperations(BaseOperation):
             elif "503" in error_str:
                 raise RestApiError(503, "Endpoint temporarily unavailable", error=error_str)
             raise
-
-        self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
         
         # Normalize response (requests_openapi might return dict or Response object)
         if isinstance(response, dict):

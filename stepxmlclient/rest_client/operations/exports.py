@@ -116,11 +116,46 @@ class ExportOperations(BaseOperation):
 
         try:
             if data is not None:
-                from pydantic import BaseModel
-                body = data.model_dump(exclude_none=True) if isinstance(data, BaseModel) else data
-                response = self.client.postImport(body=body, **params)
+                # Binary data: need to use direct POST with data= parameter instead of body=
+                # (which fails with requests.Session)
+                server_url = self.client.server.url if self.client.server else ""
+                endpoint_path = f"/import/{import_configuration_id}"
+                url = f"{server_url}{endpoint_path}"
+                
+                # Convert data to bytes if needed
+                if isinstance(data, str):
+                    binary_data = data.encode('utf-8')
+                elif isinstance(data, bytes):
+                    binary_data = data
+                else:
+                    # For Pydantic models or dicts, convert to JSON bytes
+                    import json
+                    from pydantic import BaseModel
+                    if isinstance(data, BaseModel):
+                        binary_data = json.dumps(data.model_dump(exclude_none=True)).encode('utf-8')
+                    else:
+                        binary_data = json.dumps(data).encode('utf-8')
+                
+                # POST with binary data as 'data' parameter
+                response = self.client.requestor.post(
+                    url,
+                    params=params,
+                    data=binary_data,
+                    headers={"Content-Type": "application/octet-stream"}
+                )
+                response.raise_for_status()
+                
+                # Parse response
+                if response.text:
+                    try:
+                        response_dict = response.json()
+                    except Exception:
+                        response_dict = {"success": True}
+                else:
+                    response_dict = {"success": True}
             else:
                 response = self.client.postImport(**params)
+                response_dict = response if isinstance(response, dict) else {"success": True}
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(import_configuration_id, "ImportConfiguration")
@@ -128,8 +163,8 @@ class ExportOperations(BaseOperation):
                 raise ValidationError(f"Import failed: {str(e)}")
             raise
 
-        self._check_for_api_error(response, import_configuration_id, "ImportConfiguration")
-        if isinstance(response, dict):
-            return BackgroundProcessResponse(**response)
-        return response
+        self._check_for_api_error(response_dict, import_configuration_id, "ImportConfiguration")
+        if isinstance(response_dict, dict):
+            return BackgroundProcessResponse(**response_dict)
+        return response_dict
     
