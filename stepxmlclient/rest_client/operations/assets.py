@@ -71,14 +71,13 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        params = {"id": asset_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("getAsset", params)
+            query_params["keyId"] = key_id
+        self._log_operation("getAsset", {"asset_id": asset_id, "keyId": key_id})
         
         try:
-            response = self.client.getAsset(**params)
+            response = self.client.getAsset(id=asset_id, **query_params)
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -197,16 +196,16 @@ class AssetOperations(BaseOperation):
         )
         
         updates_dict = updates.model_dump(exclude_none=True)
-        params = {"id": asset_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("patchAsset", {"id": asset_id})
+            query_params["keyId"] = key_id
+        self._log_operation("patchAsset", {"asset_id": asset_id})
         
         try:
             response = self.client.patchAsset(
+                id=asset_id,
                 body=updates_dict,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -246,18 +245,18 @@ class AssetOperations(BaseOperation):
         )
         
         asset_dict = asset_data.model_dump(exclude_none=True)
-        params: Dict[str, Any] = {"id": asset_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if allow_overwrite:
-            params["allow-overwrite"] = allow_overwrite
-        params.update(self._build_context_params())
-        self._log_operation("putAsset", {"id": asset_id})
+            query_params["allow-overwrite"] = allow_overwrite
+        self._log_operation("putAsset", {"asset_id": asset_id})
         
         try:
             response = self.client.putAsset(
+                id=asset_id,
                 body=asset_dict,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -291,14 +290,13 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        params = {"id": asset_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("deleteAsset", {"id": asset_id})
+            query_params["keyId"] = key_id
+        self._log_operation("deleteAsset", {"asset_id": asset_id})
         
         try:
-            self.client.deleteAsset(**params)
+            self.client.deleteAsset(id=asset_id, **query_params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -348,14 +346,14 @@ class AssetOperations(BaseOperation):
         # Extract filename for fileName query parameter
         file_name = os.path.basename(file_path)
         
-        # Build extra call params
-        call_params = {"id": asset_id, "fileName": file_name}
+        # Build query params (not path params)
+        query_params = self._build_context_params()
+        query_params["fileName"] = file_name
         if key_id:
-            call_params["keyId"] = key_id
-        call_params.update(self._build_context_params())
+            query_params["keyId"] = key_id
         
         self._log_operation("putAssetContent", {
-            "id": asset_id,
+            "asset_id": asset_id,
             "file_path": file_path,
             "size": file_size,
             "mime_type": mime_type
@@ -363,22 +361,12 @@ class AssetOperations(BaseOperation):
         
         try:
             # Open file in binary mode and upload
-            # Use direct PUT request with data= parameter instead of body= (which fails with requests.Session)
-            # Path parameter is 'id', not 'assetId'
             with open(file_path, 'rb') as f:
-                # Build URL for direct PUT request
-                server_url = self.client.server.url if self.client.server else ""
-                endpoint_path = f"/assets/{asset_id}/content"
-                url = f"{server_url}{endpoint_path}"
-                
-                # Upload using direct PUT with data= parameter
-                response = self.client.requestor.put(
-                    url,
-                    params=call_params,
-                    data=f.read(),
-                    headers={'Content-Type': mime_type}
+                response = self.client.putAssetContent(
+                    id=asset_id,
+                    body=f.read(),
+                    **query_params
                 )
-                response.raise_for_status()
                 
             self._check_response_status(response, asset_id, "Asset")
         except FileNotFoundError as e:
@@ -420,20 +408,19 @@ class AssetOperations(BaseOperation):
             ["asset_id"]
         )
         
-        call_params = {"id": asset_id}
+        query_params = self._build_context_params()
         if key_id:
-            call_params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if conversion_configuration_id:
-            call_params["conversion-configuration-id"] = conversion_configuration_id
-        call_params.update(self._build_context_params())
+            query_params["conversion-configuration-id"] = conversion_configuration_id
         self._log_operation("getAssetContent", {
-            "id": asset_id,
-            "save_to": output_path
+            "asset_id": asset_id,
+            "output_path": output_path
         })
         
         try:
             # Use getAssetContent (GET /assets/{id}/content)
-            response = self.client.getAssetContent(**call_params)
+            response = self.client.getAssetContent(id=asset_id, **query_params)
             self._check_response_status(response, asset_id, "Asset")
         except Exception as e:
             if "404" in str(e):

@@ -60,18 +60,17 @@ class ExportOperations(BaseOperation):
         else:
             create_data = None
 
-        params: dict = {"exportConfigurationId": export_configuration_id}
+        query_params: dict = self._build_context_params()
         if use_request_context_workspace is not None:
-            params["useRequestContextWorkspace"] = use_request_context_workspace
-        params.update(self._build_context_params())
+            query_params["useRequestContextWorkspace"] = use_request_context_workspace
 
         self._log_operation("postExport", {"exportConfigurationId": export_configuration_id})
 
         try:
             if create_data:
-                response = self.client.postExport(body=create_data, **params)
+                response = self.client.postExport(exportConfigurationId=export_configuration_id, body=create_data, **query_params)
             else:
-                response = self.client.postExport(**params)
+                response = self.client.postExport(exportConfigurationId=export_configuration_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(export_configuration_id, "ExportConfiguration")
@@ -107,22 +106,15 @@ class ExportOperations(BaseOperation):
             ["import_configuration_id"]
         )
 
-        params = {"importConfigurationId": import_configuration_id}
+        query_params = self._build_context_params()
         if process_description:
-            params["processDescription"] = process_description
-        params.update(self._build_context_params())
+            query_params["processDescription"] = process_description
 
         self._log_operation("postImport", {"importConfigurationId": import_configuration_id})
 
         try:
             if data is not None:
-                # Binary data: need to use direct POST with data= parameter instead of body=
-                # (which fails with requests.Session)
-                server_url = self.client.server.url if self.client.server else ""
-                endpoint_path = f"/import/{import_configuration_id}"
-                url = f"{server_url}{endpoint_path}"
-                
-                # Convert data to bytes if needed
+                # Binary data: convert to bytes if needed
                 if isinstance(data, str):
                     binary_data = data.encode('utf-8')
                 elif isinstance(data, bytes):
@@ -136,25 +128,17 @@ class ExportOperations(BaseOperation):
                     else:
                         binary_data = json.dumps(data).encode('utf-8')
                 
-                # POST with binary data as 'data' parameter
-                response = self.client.requestor.post(
-                    url,
-                    params=params,
-                    data=binary_data,
-                    headers={"Content-Type": "application/octet-stream"}
+                response = self.client.postImport(
+                    importConfigurationId=import_configuration_id,
+                    body=binary_data,
+                    **query_params
                 )
-                response.raise_for_status()
-                
-                # Parse response
-                if response.text:
-                    try:
-                        response_dict = response.json()
-                    except Exception:
-                        response_dict = {"success": True}
-                else:
-                    response_dict = {"success": True}
+                response_dict = response if isinstance(response, dict) else {"success": True}
             else:
-                response = self.client.postImport(**params)
+                response = self.client.postImport(
+                    importConfigurationId=import_configuration_id,
+                    **query_params
+                )
                 response_dict = response if isinstance(response, dict) else {"success": True}
         except Exception as e:
             if "404" in str(e):

@@ -68,16 +68,15 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        params: Dict[str, Any] = {"id": product_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if include_inherited_data:
-            params["includeInheritedData"] = include_inherited_data
-        params.update(self._build_context_params())
-        self._log_operation("getProduct", params)
+            query_params["includeInheritedData"] = include_inherited_data
+        self._log_operation("getProduct", {"product_id": product_id})
         
         try:
-            response = self.client.getProduct(**params)
+            response = self.client.getProduct(id=product_id, **query_params)
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(product_id, "Product")
@@ -196,16 +195,16 @@ class ProductOperations(BaseOperation):
         )
         
         updates_dict = updates.model_dump(exclude_none=True)
-        params = {"id": product_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("patchProduct", {"id": product_id})
+            query_params["keyId"] = key_id
+        self._log_operation("patchProduct", {"product_id": product_id})
         
         try:
             response = self.client.patchProduct(
+                id=product_id,
                 body=updates_dict,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -245,18 +244,18 @@ class ProductOperations(BaseOperation):
         )
         
         product_dict = product_data.model_dump(exclude_none=True)
-        params: Dict[str, Any] = {"id": product_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if allow_overwrite:
-            params["allow-overwrite"] = allow_overwrite
-        params.update(self._build_context_params())
-        self._log_operation("putProduct", {"id": product_id})
+            query_params["allow-overwrite"] = allow_overwrite
+        self._log_operation("putProduct", {"product_id": product_id})
         
         try:
             response = self.client.putProduct(
+                id=product_id,
                 body=product_dict,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -290,14 +289,13 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        params = {"id": product_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("deleteProduct", {"id": product_id})
+            query_params["keyId"] = key_id
+        self._log_operation("deleteProduct", {"product_id": product_id})
         
         try:
-            self.client.deleteProduct(**params)
+            self.client.deleteProduct(id=product_id, **query_params)
             return True
         except Exception as e:
             if "404" in str(e):

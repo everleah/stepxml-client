@@ -95,11 +95,10 @@ class InboundOperations(BaseOperation):
         if isinstance(xml_data, str):
             xml_data = xml_data.encode('utf-8')
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        
+        # Prepare query parameters (context and workspace, plus optional fileName)
+        params: Dict[str, Any] = {}
         if file_name:
             params["fileName"] = file_name
-
         params.update(self._build_context_params())
 
         self._log_operation("postInboundIntegrationEndpointUploadAndInvoke", {
@@ -109,31 +108,19 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            # Build URL manually for binary upload
-            # Use direct POST with data= parameter instead of body= (which fails with requests.Session)
-            server_url = self.client.server.url if self.client.server else ""
-            endpoint_path = f"/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
-            url = f"{server_url}{endpoint_path}"
-            
-            # Post with binary data as 'data' parameter (not 'body')
-            response = self.client.requestor.post(
-                url,
-                params=params,
+            # Use requests_openapi client method which handles path parameter substitution
+            # The 'id' parameter is a path parameter and is passed separately from query params
+            response = self.client.postInboundIntegrationEndpointUploadAndInvoke(
+                id=endpoint_id,
                 data=xml_data,
-                headers={"Content-Type": "application/octet-stream"}
+                **params
             )
             
             # Handle the response
-            response.raise_for_status()  # Raise exception for non-2xx status codes
-            
-            # Parse JSON response if available
-            if response.text:
-                try:
-                    return response.json()
-                except Exception:
-                    return {"success": True, "endpoint": endpoint_id}
-            else:
-                return {"success": True, "endpoint": endpoint_id}
+            # Return response (requests_openapi handles JSON parsing automatically)
+            if isinstance(response, dict):
+                return response
+            return {"success": True, "endpoint": endpoint_id}
                 
         except Exception as e:
             error_str = str(e)
@@ -154,14 +141,7 @@ class InboundOperations(BaseOperation):
             elif "503" in error_str:
                 raise RestApiError(503, "Endpoint temporarily unavailable", error=error_str)
             raise
-        
-        # Normalize response (requests_openapi might return dict or Response object)
-        if isinstance(response, dict):
-            return response
-        elif hasattr(response, 'json'):
-            return response.json() if response.text else {}
-        else:
-            return {"success": True, "endpoint": endpoint_id}
+
 
     @handle_rest_errors
     def list_endpoints(self) -> List[Dict[str, Any]]:
@@ -211,15 +191,15 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        params.update(self._build_context_params())
-
         self._log_operation("getInboundIntegrationEndpointStatus", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointStatus(**params)
+            response = self.client.getInboundIntegrationEndpointStatus(
+                id=endpoint_id,
+                **self._build_context_params()
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -254,15 +234,15 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        params.update(self._build_context_params())
-
         self._log_operation("postInboundIntegrationEndpointEnable", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.postInboundIntegrationEndpointEnable(**params)
+            response = self.client.postInboundIntegrationEndpointEnable(
+                id=endpoint_id,
+                **self._build_context_params()
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -297,15 +277,15 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        params.update(self._build_context_params())
-
         self._log_operation("postInboundIntegrationEndpointDisable", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.postInboundIntegrationEndpointDisable(**params)
+            response = self.client.postInboundIntegrationEndpointDisable(
+                id=endpoint_id,
+                **self._build_context_params()
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -339,15 +319,15 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        params.update(self._build_context_params())
-
         self._log_operation("getInboundIntegrationEndpointExecutionReport", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointExecutionReport(**params)
+            response = self.client.getInboundIntegrationEndpointExecutionReport(
+                id=endpoint_id,
+                **self._build_context_params()
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -383,15 +363,15 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
-        params.update(self._build_context_params())
-
         self._log_operation("getInboundIntegrationEndpointStatistics", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointStatistics(**params)
+            response = self.client.getInboundIntegrationEndpointStatistics(
+                id=endpoint_id,
+                **self._build_context_params()
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -425,10 +405,9 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = {"id": endpoint_id}
+        params: Dict[str, Any] = self._build_context_params()
         if status_filter:
-            params["statusFilter"] = status_filter
-        params.update(self._build_context_params())
+            params["status"] = status_filter
 
         self._log_operation("getInboundIntegrationEndpointWorkerProcesses", {
             "endpointId": endpoint_id,
@@ -436,7 +415,10 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointWorkerProcesses(**params)
+            response = self.client.getInboundIntegrationEndpointWorkerProcesses(
+                id=endpoint_id,
+                **params
+            )
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")

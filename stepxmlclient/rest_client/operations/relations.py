@@ -105,15 +105,14 @@ class RelationOperations(BaseOperation):
         # Spec operationId uses literal braces: e.g. getProducts{id}References
         op_id = "get" + plural + "{id}References"
 
-        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation(op_id, params)
+            query_params["keyId"] = key_id
+        self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
         try:
             op_func = getattr(self.client, op_id)
-            response = op_func(**params)
+            response = op_func(id=entity_id, referenceTypeId=reference_type_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -155,19 +154,18 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"get{prefix}Reference"
 
-        params: Dict[str, Any] = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if target_key_id:
-            params["targetKeyId"] = target_key_id
+            query_params["targetKeyId"] = target_key_id
         if include_inherited_data:
-            params["includeInheritedData"] = include_inherited_data
-        params.update(self._build_context_params())
-        self._log_operation(op_id, {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id})
+            query_params["includeInheritedData"] = include_inherited_data
+        self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
             op_func = getattr(self.client, op_id)
-            response = op_func(**params)
+            response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -211,21 +209,21 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"put{prefix}Reference"
 
-        params: Dict[str, Any] = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if target_key_id:
-            params["targetKeyId"] = target_key_id
+            query_params["targetKeyId"] = target_key_id
         if allow_overwrite:
-            params["allow-overwrite"] = allow_overwrite
-        params.update(self._build_context_params())
-        if data:
-            params["body"] = data
-        self._log_operation(op_id, {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id})
+            query_params["allow-overwrite"] = allow_overwrite
+        self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
             op_func = getattr(self.client, op_id)
-            response = op_func(**params)
+            if data:
+                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, body=data, **query_params)
+            else:
+                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -267,17 +265,16 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"delete{prefix}Reference"
 
-        params = {"id": entity_id, "referenceTypeId": reference_type_id, "targetId": target_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if target_key_id:
-            params["targetKeyId"] = target_key_id
-        params.update(self._build_context_params())
-        self._log_operation(op_id, params)
+            query_params["targetKeyId"] = target_key_id
+        self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
             op_func = getattr(self.client, op_id)
-            op_func(**params)
+            op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -310,15 +307,14 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"get{prefix}IncomingReference"
 
-        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation(op_id, params)
+            query_params["keyId"] = key_id
+        self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
         try:
             op_func = getattr(self.client, op_id)
-            response = op_func(**params)
+            response = op_func(id=entity_id, referenceTypeId=reference_type_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -347,12 +343,11 @@ class RelationOperations(BaseOperation):
             ["reference_type_id"]
         )
 
-        params = {"id": reference_type_id}
-        params.update(self._build_context_params())
-        self._log_operation("getReferenceType", params)
+        query_params = self._build_context_params()
+        self._log_operation("getReferenceType", {"reference_type_id": reference_type_id})
 
         try:
-            response = self.client.getReferenceType(**params)
+            response = self.client.getReferenceType(id=reference_type_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(reference_type_id, "ReferenceType")

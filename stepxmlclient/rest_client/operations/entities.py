@@ -58,16 +58,15 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        params: Dict[str, Any] = {"id": entity_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if include_inherited_data:
-            params["includeInheritedData"] = include_inherited_data
-        params.update(self._build_context_params())
-        self._log_operation("getEntity", params)
+            query_params["includeInheritedData"] = include_inherited_data
+        self._log_operation("getEntity", {"entity_id": entity_id})
         
         try:
-            response = self.client.getEntity(**params)
+            response = self.client.getEntity(id=entity_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
@@ -177,16 +176,16 @@ class EntityOperations(BaseOperation):
         else:
             update_data = dict(updates) if not isinstance(updates, dict) else updates
         
-        params = {"id": entity_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("patchEntity", {"id": entity_id})
+            query_params["keyId"] = key_id
+        self._log_operation("patchEntity", {"entity_id": entity_id})
         
         try:
             response = self.client.patchEntity(
+                id=entity_id,
                 body=update_data,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -225,18 +224,18 @@ class EntityOperations(BaseOperation):
         else:
             create_data = dict(data) if not isinstance(data, dict) else data
         
-        params: Dict[str, Any] = {"id": entity_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if allow_overwrite:
-            params["allow-overwrite"] = allow_overwrite
-        params.update(self._build_context_params())
-        self._log_operation("putEntity", {"id": entity_id})
+            query_params["allow-overwrite"] = allow_overwrite
+        self._log_operation("putEntity", {"entity_id": entity_id})
         
         try:
             response = self.client.putEntity(
+                id=entity_id,
                 body=create_data,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -271,14 +270,13 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        params = {"id": entity_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("deleteEntity", {"id": entity_id})
+            query_params["keyId"] = key_id
+        self._log_operation("deleteEntity", {"entity_id": entity_id})
         
         try:
-            self.client.deleteEntity(**params)
+            self.client.deleteEntity(id=entity_id, **query_params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -309,14 +307,13 @@ class EntityOperations(BaseOperation):
             ["entity_id", "reference_type_id"]
         )
         
-        params = {"id": entity_id, "referenceTypeId": reference_type_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("getEntities{id}References", params)
+            query_params["keyId"] = key_id
+        self._log_operation("getEntities{id}References", {"entity_id": entity_id, "reference_type_id": reference_type_id})
         
         try:
-            response = self.client.getEntities_id_References(**params)
+            response = self.client.getEntities_id_References(id=entity_id, referenceTypeId=reference_type_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")

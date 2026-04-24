@@ -58,16 +58,15 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        params: Dict[str, Any] = {"id": classification_id}
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if include_inherited_data:
-            params["includeInheritedData"] = include_inherited_data
-        params.update(self._build_context_params())
-        self._log_operation("getClassification", params)
+            query_params["includeInheritedData"] = include_inherited_data
+        self._log_operation("getClassification", {"classification_id": classification_id})
         
         try:
-            response = self.client.getClassification(**params)
+            response = self.client.getClassification(id=classification_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")
@@ -178,16 +177,16 @@ class ClassificationOperations(BaseOperation):
         else:
             update_data = dict(updates) if not isinstance(updates, dict) else updates
         
-        params = {"id": classification_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("patchClassification", {"id": classification_id})
+            query_params["keyId"] = key_id
+        self._log_operation("patchClassification", {"classification_id": classification_id})
         
         try:
             response = self.client.patchClassification(
+                id=classification_id,
                 body=update_data,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -228,16 +227,16 @@ class ClassificationOperations(BaseOperation):
         
         params: Dict[str, Any] = {"id": classification_id}
         if key_id:
-            params["keyId"] = key_id
+            query_params["keyId"] = key_id
         if allow_overwrite:
-            params["allow-overwrite"] = allow_overwrite
-        params.update(self._build_context_params())
-        self._log_operation("putClassification", {"id": classification_id})
+            query_params["allow-overwrite"] = allow_overwrite
+        self._log_operation("putClassification", {"classification_id": classification_id})
         
         try:
             response = self.client.putClassification(
+                id=classification_id,
                 body=create_data,
-                **params
+                **query_params
             )
         except Exception as e:
             if "404" in str(e):
@@ -272,14 +271,13 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        params = {"id": classification_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("deleteClassification", {"id": classification_id})
+            query_params["keyId"] = key_id
+        self._log_operation("deleteClassification", {"classification_id": classification_id})
         
         try:
-            self.client.deleteClassification(**params)
+            self.client.deleteClassification(id=classification_id, **query_params)
             return True
         except Exception as e:
             if "404" in str(e):
@@ -308,14 +306,13 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        params = {"id": classification_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("getClassificationChildren", params)
+            query_params["keyId"] = key_id
+        self._log_operation("getClassificationChildren", {"classification_id": classification_id})
         
         try:
-            response = self.client.getClassificationChildren(**params)
+            response = self.client.getClassificationChildren(id=classification_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")
@@ -352,14 +349,13 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        params = {"id": classification_id}
+        query_params = self._build_context_params()
         if key_id:
-            params["keyId"] = key_id
-        params.update(self._build_context_params())
-        self._log_operation("getClassificationAssets", params)
+            query_params["keyId"] = key_id
+        self._log_operation("getClassificationAssets", {"classification_id": classification_id})
         
         try:
-            response = self.client.getClassificationAssets(**params)
+            response = self.client.getClassificationAssets(id=classification_id, **query_params)
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")

@@ -220,13 +220,19 @@ class BulkOperations(BaseOperation):
             "offset": pagination_params["offset"]
         })
         
-        params = self._clean_params({
+        self._log_operation("getBulkOperationResults", {
             "operationId": operation_id,
             "limit": pagination_params["limit"],
             "offset": pagination_params["offset"]
         })
         
-        response = self.client.getBulkOperationResults(**params)
+        response = self.client.getBulkOperationResults(
+            operationId=operation_id,
+            **self._clean_params({
+                "limit": pagination_params["limit"],
+                "offset": pagination_params["offset"]
+            })
+        )
         
         if isinstance(response, dict):
             return BulkOperationResultResponse(**response)
