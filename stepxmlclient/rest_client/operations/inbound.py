@@ -139,7 +139,7 @@ class InboundOperations(BaseOperation):
                     )
                 raise ValidationError(f"Upload failed: {error_str}")
             elif "503" in error_str:
-                raise RestApiError(503, "Endpoint temporarily unavailable", error=error_str)
+                raise RestApiError(503, "Endpoint temporarily unavailable", details=error_str)
             raise
 
 
@@ -160,7 +160,7 @@ class InboundOperations(BaseOperation):
         try:
             response = self.client.getInboundIntegrationEndpoints(**params)
         except Exception as e:
-            raise RestApiError(0, f"Failed to list inbound endpoints: {str(e)}", error=str(e))
+            raise RestApiError(0, f"Failed to list inbound endpoints: {str(e)}", details=str(e))
 
         # Convert response to list
         if isinstance(response, list):
