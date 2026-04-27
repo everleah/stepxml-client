@@ -4,8 +4,8 @@ from stepxmlclient.model.product import Product
 
 # Minimal test data
 assets = [
-    Asset({"ID": "A1", "Name": "Asset One", "KeyValue": "K1", "Values": {"AttrA": {"ID": "V1", "value": "Val1"}}}),
-    Asset({"ID": "A2", "Name": "Asset Two", "KeyValue": "K2", "Values": {"AttrA": {"ID": "V2", "value": "Val2"}}})
+    Asset({"ID": "A1", "Name": "Asset One", "KeyValue": {"KeyID": "ExternalKey", "value": "K1"}, "Values": {"AttrA": {"ID": "V1", "value": "Val1"}}}),
+    Asset({"ID": "A2", "Name": "Asset Two", "KeyValue": {"KeyID": "ExternalKey", "value": "K2"}, "Values": {"AttrA": {"ID": "V2", "value": "Val2"}}})
 ]
 products = [
     Product({"ID": "P1", "ParentId": "", "UserTypeID": "TypeA", "Name": "Product One", "Values": {"Attr1": {"ID": "PV1", "value": "PVal1"}}}),

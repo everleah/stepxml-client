@@ -24,3 +24,49 @@ def test_product_add_classification_cross_reference_serializes_cross_reference_t
 
     xml = creator.to_string()
     assert "<ClassificationCrossReference ClassificationID=\"CAT101\"" in xml
+
+
+def test_product_serializes_suppressed_and_delete_suppressed_classification_tags():
+    creator = Creator("Context2", "Main")
+    product = Product({"ID": "P102", "UserTypeID": "UT_PRODUCT"})
+    product._data["SuppressedClassificationReference"] = [
+        {"ClassificationID": "CAT_SUPP", "Type": "category"}
+    ]
+    product._data["DeleteSuppressedClassificationReference"] = [
+        {"ClassificationID": "CAT_DEL_SUPP", "Type": "category"}
+    ]
+    product._data["SuppressedClassificationCrossReference"] = [
+        {"ClassificationID": "CAT_X_SUPP", "Type": "mapped"}
+    ]
+    product._data["DeleteSuppressedClassificationCrossReference"] = [
+        {"ClassificationID": "CAT_X_DEL_SUPP", "Type": "mapped"}
+    ]
+
+    creator.add(product)
+    creator.build()
+
+    xml = creator.to_string()
+    assert "<SuppressedClassificationReference ClassificationID=\"CAT_SUPP\"" in xml
+    assert "<DeleteSuppressedClassificationReference ClassificationID=\"CAT_DEL_SUPP\"" in xml
+    assert "<SuppressedClassificationCrossReference ClassificationID=\"CAT_X_SUPP\"" in xml
+    assert "<DeleteSuppressedClassificationCrossReference ClassificationID=\"CAT_X_DEL_SUPP\"" in xml
+
+
+def test_product_serializes_workflow_attribute_and_data_container_links():
+    creator = Creator("Context2", "Main")
+    product = Product({"ID": "P103", "UserTypeID": "UT_PRODUCT"})
+    product._data["STEPWorkflowStateBind"] = {"ID": "WF_APPROVAL", "CurrentStateID": "STATE_DRAFT"}
+    product._data["AttributeLink"] = [{"AttributeID": "ATTR_COLOR"}]
+    product._data["DeleteAttributeLink"] = [{"AttributeID": "ATTR_OLD"}]
+    product._data["DataContainerTypeLink"] = [{"DataContainerTypeID": "DCT_MARKETING"}]
+    product._data["DeleteDataContainerTypeLink"] = [{"DataContainerTypeID": "DCT_OLD"}]
+
+    creator.add(product)
+    creator.build()
+
+    xml = creator.to_string()
+    assert "<STEPWorkflowStateBind ID=\"WF_APPROVAL\" CurrentStateID=\"STATE_DRAFT\"" in xml
+    assert "<AttributeLink AttributeID=\"ATTR_COLOR\"" in xml
+    assert "<DeleteAttributeLink AttributeID=\"ATTR_OLD\"" in xml
+    assert "<DataContainerTypeLink DataContainerTypeID=\"DCT_MARKETING\"" in xml
+    assert "<DeleteDataContainerTypeLink DataContainerTypeID=\"DCT_OLD\"" in xml

@@ -197,6 +197,14 @@ class BaseObject:
                                 item.to_element(element)
                             elif isinstance(item, dict):
                                 self._add_dict_child(element, name, item)
+                            elif item is not None:
+                                # Primitive list item -> simple text child element
+                                item_element = ET.SubElement(element, name)
+                                item_element.text = str(item)
+                    else:
+                        # Primitive child value -> simple text child element
+                        child_element = ET.SubElement(element, name)
+                        child_element.text = str(child)
         return
     
     def _add_dict_child(self, parent: ET.Element, tag_name: str, data: Dict[str, Any]) -> ET.Element:
@@ -224,6 +232,16 @@ class BaseObject:
                 else:
                     # Single Value
                     self._add_value_element(child_element, value_data, attribute_id)
+        elif tag_name in ("KeyValue", "ParentKeyValue"):
+            # KeyValueType is mixed content with required attributes like KeyID.
+            text_value = data.get("value", data.get("text"))
+            for key, value in data.items():
+                if key in ("value", "text"):
+                    continue
+                if value is not None:
+                    child_element.set(key, str(value))
+            if text_value is not None:
+                child_element.text = str(text_value)
         else:
             # Simple dictionary - add all as attributes
             for key, value in data.items():

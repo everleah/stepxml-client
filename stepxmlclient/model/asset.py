@@ -27,8 +27,10 @@ class Asset(BaseObject):
     _GROUP_NAME: str = 'assets'
     _TAG_NAME: str = 'Asset'
     _ATTRIBUTE_NAMES: List[str] = ["ID", "UserTypeID", "Changed", "Republished", "Selected", "Referenced"]
-    _TEXT_NAMES: List[str] = ["Name", "KeyValue"]
+    _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = [
+        "KeyValue",
+        "Name",
         "AssetPushLocation",
         "DeleteSuppressedClassificationReference",
         "DeleteClassificationReference",

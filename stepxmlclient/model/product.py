@@ -32,22 +32,53 @@ class Product(BaseObject):
     _CHILDREN_NAMES: List[str] = [
         "KeyValue",
         "ParentKeyValue",
+        "STEPWorkflowStateBind",
         "Values",
+        "DeleteSuppressedAssetCrossReference",
+        "SuppressedAssetCrossReference",
         "AssetCrossReference",
+        "DeleteSuppressedProductCrossReference",
+        "SuppressedProductCrossReference",
         "ProductCrossReference",
+        "DeleteSuppressedClassificationReference",
+        "DeleteClassificationReference",
+        "SuppressedClassificationReference",
         "ClassificationReference",
+        "DeleteSuppressedClassificationCrossReference",
+        "DeleteClassificationCrossReference",
+        "SuppressedClassificationCrossReference",
         "ClassificationCrossReference",
+        "DeleteSuppressedEntityCrossReference",
+        "DeleteEntityCrossReference",
+        "SuppressedEntityCrossReference",
         "EntityCrossReference",
+        "DeleteAttributeLink",
+        "AttributeLink",
+        "DataContainerTypeLink",
+        "DeleteDataContainerTypeLink",
+        "DataContainers",
         "DeleteAssetCrossReference",
-        "DeleteProductCrossReference"
+        "DeleteProductCrossReference",
+        "SequenceProduct",
+        "CurrentTasks",
+        "Terms",
+        "Tables",
+        "OverrideSubProduct",
+        "PackagingReference"
     ]
     
     def __init__(self, data: Dict[str, Any]) -> None:
         super().__init__(data)
         # Initialize relation lists if not provided
-        for rel_name in ["AssetCrossReference", "ProductCrossReference", 
-                        "ClassificationReference", "ClassificationCrossReference", "EntityCrossReference",
-                        "DeleteAssetCrossReference", "DeleteProductCrossReference"]:
+        for rel_name in [
+                        "DeleteSuppressedAssetCrossReference", "SuppressedAssetCrossReference", "AssetCrossReference",
+                        "DeleteSuppressedProductCrossReference", "SuppressedProductCrossReference", "ProductCrossReference",
+                        "DeleteSuppressedClassificationReference", "DeleteClassificationReference", "SuppressedClassificationReference", "ClassificationReference",
+                        "DeleteSuppressedClassificationCrossReference", "DeleteClassificationCrossReference", "SuppressedClassificationCrossReference", "ClassificationCrossReference",
+                        "DeleteSuppressedEntityCrossReference", "DeleteEntityCrossReference", "SuppressedEntityCrossReference", "EntityCrossReference",
+                        "DeleteAttributeLink", "AttributeLink", "DataContainerTypeLink", "DeleteDataContainerTypeLink",
+                        "DeleteAssetCrossReference", "DeleteProductCrossReference",
+                        "SequenceProduct", "CurrentTasks", "Terms", "Tables", "OverrideSubProduct", "PackagingReference"]:
             if rel_name not in self._data:
                 self._data[rel_name] = []
     

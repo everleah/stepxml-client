@@ -35,3 +35,18 @@ def test_asset_does_not_serialize_asset_or_product_cross_references():
     assert "<AssetCrossReference" not in xml
     assert "<ProductCrossReference" not in xml
     assert "<EntityCrossReference EntityID=\"E100\"" in xml
+
+
+def test_asset_keyvalue_serializes_as_child_with_keyid_and_text():
+    creator = Creator("Context2", "Main")
+    asset = Asset({
+        "ID": "A300",
+        "UserTypeID": "PIXXIO_ASSET",
+        "KeyValue": {"KeyID": "ExternalKey", "value": "A300-EXT"},
+    })
+
+    creator.add(asset)
+    creator.build()
+
+    xml = creator.to_string()
+    assert "<KeyValue KeyID=\"ExternalKey\">A300-EXT</KeyValue>" in xml
