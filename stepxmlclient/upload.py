@@ -159,7 +159,7 @@ class AssetUploader:
             file_stream: Binary file stream to upload
             asset_id: ID of the asset in STEP
             filename: Filename for the uploaded binary
-            mime_type: MIME type of the file
+            mime_type: MIME type of the source file (returned in metadata)
             context_id: STEP context ID (default: "Context1")
             workspace_id: Optional workspace ID
             
@@ -180,6 +180,9 @@ class AssetUploader:
         
         # Read binary data from stream
         binary_data = file_stream.read()
+
+        # STEP OpenAPI defines request body media type as application/octet-stream
+        request_content_type = 'application/octet-stream'
         
         # Use the correct REST API v2 endpoint: PUT /assets/{id}/content
         # Binary content is sent as application/octet-stream in request body
@@ -190,7 +193,7 @@ class AssetUploader:
                 f'{self.client.client.server.url}{endpoint}',
                 params=params,
                 data=binary_data,
-                headers={'Content-Type': mime_type}
+                headers={'Content-Type': request_content_type}
             )
             response.raise_for_status()
             return {
@@ -198,6 +201,7 @@ class AssetUploader:
                 'asset_id': asset_id,
                 'filename': filename,
                 'mime_type': mime_type,
+                'content_type': request_content_type,
                 'status_code': response.status_code
             }
         except Exception as e:
