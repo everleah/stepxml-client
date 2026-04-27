@@ -70,6 +70,20 @@ class ClassificationCrossReference(BaseObject):
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
 
 
+class ClassificationReference(BaseObject):
+    """Reference from an asset/product to a classification.
+
+    This relation uses the ``ClassificationReference`` tag (not
+    ``ClassificationCrossReference``) and is required for asset-to-classification
+    links according to STEP.xsd ``AssetType``.
+    """
+    _GROUP_NAME: Optional[str] = None  # Used as child element only
+    _TAG_NAME: str = 'ClassificationReference'
+    _ATTRIBUTE_NAMES: List[str] = ["ClassificationID", "Type", "QualifierID", "Changed"]
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
+
+
 class EntityCrossReference(BaseObject):
     """Link between a product/entity and another entity.
     

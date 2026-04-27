@@ -9,7 +9,7 @@ from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
 if TYPE_CHECKING:
-    from .relations import ProductCrossReference, ClassificationCrossReference, EntityCrossReference
+    from .relations import ProductCrossReference, ClassificationReference, EntityCrossReference
     from .deletion import DeleteProductCrossReference
 
 class Asset(BaseObject):
@@ -23,7 +23,7 @@ class Asset(BaseObject):
         KeyValue: Optional key value for asset lookup
         Values: Dictionary of attribute ID to attribute values
         ProductCrossReference: List of linked products
-        ClassificationCrossReference: List of classifications
+        ClassificationReference: List of classifications
         EntityCrossReference: List of linked business entities
         DeleteProductCrossReference: Products to unlink
     """
@@ -35,7 +35,7 @@ class Asset(BaseObject):
         "Values",
         "AssetCrossReference",
         "ProductCrossReference",
-        "ClassificationCrossReference",
+        "ClassificationReference",
         "EntityCrossReference",
         "DeleteAssetCrossReference",
         "DeleteProductCrossReference"
@@ -45,10 +45,15 @@ class Asset(BaseObject):
         super().__init__(data)
         # Initialize relation lists if not provided
         for rel_name in ["AssetCrossReference", "ProductCrossReference",
-                        "ClassificationCrossReference", "EntityCrossReference",
+                        "ClassificationReference", "EntityCrossReference",
                         "DeleteAssetCrossReference", "DeleteProductCrossReference"]:
             if rel_name not in self._data:
                 self._data[rel_name] = []
+
+        # Backward compatibility: older code may still pass this legacy key.
+        legacy_class_refs = self._data.get("ClassificationCrossReference")
+        if legacy_class_refs and not self._data.get("ClassificationReference"):
+            self._data["ClassificationReference"] = legacy_class_refs
     
     # ===== Product Reference Methods =====
     
@@ -116,30 +121,33 @@ class Asset(BaseObject):
                                    type_: Optional[str] = None,
                                    qualifier_id: Optional[str] = None,
                                    mount_location: Optional[str] = None,
-                                   ref_object: Optional['ClassificationCrossReference'] = None) -> None:
-        """Add classification cross-reference to this asset.
+                                   ref_object: Optional['ClassificationReference'] = None) -> None:
+        """Add classification reference to this asset.
         
         Can be called two ways:
         1. With parameters: add_classification_reference(classification_id="C001")
         2. With object: add_classification_reference(ref_object=class_ref_obj)
         """
-        from .relations import ClassificationCrossReference
+        from .relations import ClassificationReference, ClassificationCrossReference
         
         if ref_object is not None:
             # Use provided object
             ref = ref_object
+            if isinstance(ref, ClassificationCrossReference):
+                # Gracefully normalize legacy object type to the XSD-compliant tag.
+                ref = ClassificationReference(dict(ref._data))
         else:
             # Create from parameters
-            ref = ClassificationCrossReference({
+            ref = ClassificationReference({
                 "ClassificationID": classification_id,
                 "Type": type_,
                 "QualifierID": qualifier_id,
                 "MountLocation": mount_location
             })
         
-        if not isinstance(self._data["ClassificationCrossReference"], list):
-            self._data["ClassificationCrossReference"] = []
-        self._data["ClassificationCrossReference"].append(ref)
+        if not isinstance(self._data["ClassificationReference"], list):
+            self._data["ClassificationReference"] = []
+        self._data["ClassificationReference"].append(ref)
     
     # ===== Entity Reference Methods =====
     

@@ -258,7 +258,7 @@ from .metadata import UserType, LinkType, Tag, TagGroup, Unit
 from .business import BusinessRule, Workflow, Collection, CollectionGroup
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .replacement import ReplaceValues, ReplaceCrossReferences, ReplaceAttributeLinks, ReplaceClassificationReferences, ReplaceProducts, ReplaceClassifications, ReplaceEntities, ReplaceAssets, ReplaceAttributes
-from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
+from .relations import AssetCrossReference, ProductCrossReference, ClassificationReference, ClassificationCrossReference, EntityCrossReference
 
 def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
@@ -308,6 +308,7 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'deleteentitycrossreference': DeleteEntityCrossReference,
         'assetcrossreference': AssetCrossReference,
         'productcrossreference': ProductCrossReference,
+        'classificationreference': ClassificationReference,
         'classificationcrossreference': ClassificationCrossReference,
         'entitycrossreference': EntityCrossReference,
         'replacevalues': ReplaceValues,
