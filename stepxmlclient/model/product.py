@@ -2,7 +2,7 @@ from typing import List, Optional, Any, Dict, TYPE_CHECKING
 from . import BaseObject
 
 if TYPE_CHECKING:
-    from .relations import AssetCrossReference, ProductCrossReference, ClassificationCrossReference, EntityCrossReference
+    from .relations import AssetCrossReference, ProductCrossReference, ClassificationReference, ClassificationCrossReference, EntityCrossReference
     from .deletion import DeleteAssetCrossReference, DeleteProductCrossReference
 
 class Product(BaseObject):
@@ -19,7 +19,8 @@ class Product(BaseObject):
         Values: Dictionary of attribute ID to attribute values
         AssetCrossReference: List of linked assets
         ProductCrossReference: List of linked products
-        ClassificationCrossReference: List of classifications
+        ClassificationReference: List of linked classifications
+        ClassificationCrossReference: List of cross-referenced classifications
         EntityCrossReference: List of linked business entities
         DeleteAssetCrossReference: Assets to unlink
         DeleteProductCrossReference: Products to unlink
@@ -34,6 +35,7 @@ class Product(BaseObject):
         "Values",
         "AssetCrossReference",
         "ProductCrossReference",
+        "ClassificationReference",
         "ClassificationCrossReference",
         "EntityCrossReference",
         "DeleteAssetCrossReference",
@@ -44,7 +46,7 @@ class Product(BaseObject):
         super().__init__(data)
         # Initialize relation lists if not provided
         for rel_name in ["AssetCrossReference", "ProductCrossReference", 
-                        "ClassificationCrossReference", "EntityCrossReference",
+                        "ClassificationReference", "ClassificationCrossReference", "EntityCrossReference",
                         "DeleteAssetCrossReference", "DeleteProductCrossReference"]:
             if rel_name not in self._data:
                 self._data[rel_name] = []
@@ -171,27 +173,56 @@ class Product(BaseObject):
                                    type_: Optional[str] = None,
                                    qualifier_id: Optional[str] = None,
                                    mount_location: Optional[str] = None,
-                                   ref_object: Optional['ClassificationCrossReference'] = None) -> None:
-        """Add classification cross-reference to this product.
+                                   ref_object: Optional['ClassificationReference'] = None) -> None:
+        """Add classification reference to this product.
         
         Can be called two ways:
         1. With parameters: add_classification_reference(classification_id="C001")
         2. With object: add_classification_reference(ref_object=class_ref_obj)
         """
-        from .relations import ClassificationCrossReference
+        from .relations import ClassificationReference, ClassificationCrossReference
         
         if ref_object is not None:
             # Use provided object
             ref = ref_object
+            if isinstance(ref, ClassificationCrossReference):
+                # Normalize legacy cross-reference object to the reference tag.
+                ref = ClassificationReference(dict(ref._data))
         else:
             # Create from parameters
-            ref = ClassificationCrossReference({
+            ref = ClassificationReference({
                 "ClassificationID": classification_id,
                 "Type": type_,
                 "QualifierID": qualifier_id,
                 "MountLocation": mount_location
             })
         
+        if not isinstance(self._data["ClassificationReference"], list):
+            self._data["ClassificationReference"] = []
+        self._data["ClassificationReference"].append(ref)
+
+    def add_classification_cross_reference(self, classification_id: Optional[str] = None,
+                                         type_: Optional[str] = None,
+                                         qualifier_id: Optional[str] = None,
+                                         mount_location: Optional[str] = None,
+                                         ref_object: Optional['ClassificationCrossReference'] = None) -> None:
+        """Add classification cross-reference to this product.
+
+        Use this helper when you explicitly need the
+        ``ClassificationCrossReference`` tag.
+        """
+        from .relations import ClassificationCrossReference
+
+        if ref_object is not None:
+            ref = ref_object
+        else:
+            ref = ClassificationCrossReference({
+                "ClassificationID": classification_id,
+                "Type": type_,
+                "QualifierID": qualifier_id,
+                "MountLocation": mount_location
+            })
+
         if not isinstance(self._data["ClassificationCrossReference"], list):
             self._data["ClassificationCrossReference"] = []
         self._data["ClassificationCrossReference"].append(ref)
