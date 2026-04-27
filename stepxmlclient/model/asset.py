@@ -29,9 +29,17 @@ class Asset(BaseObject):
     """
     _GROUP_NAME: str = 'assets'
     _TAG_NAME: str = 'Asset'
-    _ATTRIBUTE_NAMES: List[str] = ["ID"]
+    _ATTRIBUTE_NAMES: List[str] = ["ID", "UserTypeID", "Changed", "Republished", "Selected", "Referenced"]
     _TEXT_NAMES: List[str] = ["Name", "KeyValue"]
-    _CHILDREN_NAMES: List[str] = ["Values"]
+    _CHILDREN_NAMES: List[str] = [
+        "Values",
+        "AssetCrossReference",
+        "ProductCrossReference",
+        "ClassificationCrossReference",
+        "EntityCrossReference",
+        "DeleteAssetCrossReference",
+        "DeleteProductCrossReference"
+    ]
     
     def __init__(self, data: Dict[str, Any]) -> None:
         super().__init__(data)

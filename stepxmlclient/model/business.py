@@ -41,7 +41,7 @@ class BusinessRule(BaseObject):
     """
     _GROUP_NAME: str = 'businessrules'
     _TAG_NAME: str = 'BusinessRule'
-    _ATTRIBUTE_NAMES: List[str] = ["ID", "Type", "Scope", "RunPrivileged"]
+    _ATTRIBUTE_NAMES: List[str] = ["ID", "Type", "Scope", "RunPrivileged", "Selected", "Referenced", "Changed"]
     _TEXT_NAMES: List[str] = ["Name", "Description"]
     _CHILDREN_NAMES: List[str] = [
         "Dependency",

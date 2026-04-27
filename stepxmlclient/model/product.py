@@ -26,9 +26,11 @@ class Product(BaseObject):
     """
     _GROUP_NAME: str = 'products'
     _TAG_NAME: str = 'Product'
-    _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentId", "UserTypeID"]
+    _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentId", "UserTypeID", "QualifierID", "Changed", "Republished", "Selected", "Referenced"]
     _TEXT_NAMES: List[str] = ["Name"]
     _CHILDREN_NAMES: List[str] = [
+        "KeyValue",
+        "ParentKeyValue",
         "Values",
         "AssetCrossReference",
         "ProductCrossReference",
@@ -228,6 +230,6 @@ class Product(BaseObject):
 class ProductReplacementRule(BaseObject):
     _GROUP_NAME: str = 'product_replacement_rules'
     _TAG_NAME: str = 'Product'
-    _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentId", "UserTypeID"]
+    _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentId", "UserTypeID", "QualifierID", "Changed", "Republished", "Selected", "Referenced"]
     _TEXT_NAMES: List[str] = ["Name"]
-    _CHILDREN_NAMES: List[str] = ["Values"]
+    _CHILDREN_NAMES: List[str] = ["KeyValue", "ParentKeyValue", "Values"]

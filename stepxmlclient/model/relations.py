@@ -23,7 +23,7 @@ class AssetCrossReference(BaseObject):
     """
     _GROUP_NAME: Optional[str] = None  # Used as child element only
     _TAG_NAME: str = 'AssetCrossReference'
-    _ATTRIBUTE_NAMES: List[str] = ["AssetID", "Type", "QualifierID"]
+    _ATTRIBUTE_NAMES: List[str] = ["AssetID", "Type", "QualifierID", "Changed"]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
 
@@ -44,7 +44,7 @@ class ProductCrossReference(BaseObject):
     """
     _GROUP_NAME: Optional[str] = None  # Used as child element only
     _TAG_NAME: str = 'ProductCrossReference'
-    _ATTRIBUTE_NAMES: List[str] = ["ProductID", "Type", "QualifierID", "MountLocation"]
+    _ATTRIBUTE_NAMES: List[str] = ["ProductID", "Type", "QualifierID", "MountLocation", "Changed"]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
 
@@ -65,7 +65,7 @@ class ClassificationCrossReference(BaseObject):
     """
     _GROUP_NAME: Optional[str] = None  # Used as child element only
     _TAG_NAME: str = 'ClassificationCrossReference'
-    _ATTRIBUTE_NAMES: List[str] = ["ClassificationID", "Type", "QualifierID", "MountLocation"]
+    _ATTRIBUTE_NAMES: List[str] = ["ClassificationID", "Type", "QualifierID", "Changed"]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
 
@@ -86,6 +86,6 @@ class EntityCrossReference(BaseObject):
     """
     _GROUP_NAME: Optional[str] = None  # Used as child element only
     _TAG_NAME: str = 'EntityCrossReference'
-    _ATTRIBUTE_NAMES: List[str] = ["EntityID", "Type", "QualifierID", "MountLocation"]
+    _ATTRIBUTE_NAMES: List[str] = ["EntityID", "Type", "QualifierID", "Changed"]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["KeyValue", "MetaData"]
