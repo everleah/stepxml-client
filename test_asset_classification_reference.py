@@ -18,3 +18,20 @@ def test_asset_uses_classification_reference_tag():
     xml = creator.to_string()
     assert "<ClassificationReference ClassificationID=\"PIXXIO_ASSETS\"" in xml
     assert "<ClassificationCrossReference" not in xml
+
+
+def test_asset_does_not_serialize_asset_or_product_cross_references():
+    """AssetType in STEP.xsd does not allow AssetCrossReference/ProductCrossReference children."""
+    creator = Creator("Context2", "Main")
+    asset = Asset({"ID": "A100", "UserTypeID": "PIXXIO_ASSET"})
+    asset._data["AssetCrossReference"] = [{"AssetID": "A200", "Type": "Alt"}]
+    asset._data["ProductCrossReference"] = [{"ProductID": "P200", "Type": "Linked"}]
+    asset.add_entity_reference(entity_id="E100", type_="Owner")
+
+    creator.add(asset)
+    creator.build()
+
+    xml = creator.to_string()
+    assert "<AssetCrossReference" not in xml
+    assert "<ProductCrossReference" not in xml
+    assert "<EntityCrossReference EntityID=\"E100\"" in xml
