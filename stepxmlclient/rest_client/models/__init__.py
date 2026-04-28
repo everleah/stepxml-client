@@ -34,27 +34,15 @@ from .asset import (
 from .classification import (
     ClassificationResponse,
     ClassificationListResponse,
-    ClassificationHierarchyResponse,
-    ClassificationSearchRequest,
     ClassificationCreateRequest,
     ClassificationUpdateRequest,
-    ClassificationValueResponse,
-    ClassificationValue,
-    ClassificationMetadata,
-    ClassificationHierarchyNode,
 )
 from .entity import (
     EntityResponse,
     EntityListResponse,
-    EntitySearchRequest,
     EntityCreateRequest,
     EntityUpdateRequest,
-    EntityRelationship,
     EntityRelationshipResponse,
-    EntityBulkRequest,
-    EntityBulkResponse,
-    EntityAttribute,
-    EntityMetadata,
 )
 from .attribute import (
     AttributeResponse,

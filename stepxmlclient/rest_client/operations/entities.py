@@ -8,14 +8,10 @@ from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictE
 from ..models.entity import (
     EntityResponse,
     EntityListResponse,
-    EntitySearchRequest,
     EntityCreateRequest,
     EntityUpdateRequest,
     EntityRelationshipResponse,
-    EntityBulkRequest,
-    EntityBulkResponse,
 )
-from ..models.common import PagedResponse
 
 
 class EntityOperations(BaseOperation):
@@ -103,15 +99,14 @@ class EntityOperations(BaseOperation):
             return EntityListResponse(**response)
         return response
     
-    @handle_rest_errors
     def list_entities(self) -> EntityListResponse:
-        """List all entities by object type (convenience method).
+        """List all entities (convenience method).
         
         Returns:
             EntityListResponse with entities
         """
         return self.search_entities(
-            condition={"conditionType": "objecttype", "objectTypeId": "*"}
+            condition={"conditionType": "name", "value": "*"}
         )
     
     @handle_rest_errors
@@ -128,13 +123,12 @@ class EntityOperations(BaseOperation):
             ValidationError: If data invalid
             RestApiError: For API errors
         """
-        # Convert Pydantic model to dict if needed
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("postEntities", create_data)
+        self._validate_required_params(
+            {"objectType": data.objectType, "parent": data.parent},
+            ["objectType", "parent"]
+        )
+        create_data = data.model_dump(exclude_none=True)
+        self._log_operation("postEntities", {"objectType": data.objectType})
         
         try:
             response = self.client.postEntities(body=create_data, **self._build_context_params())
@@ -171,11 +165,7 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        if hasattr(updates, 'model_dump'):
-            update_data = updates.model_dump(exclude_none=True)
-        else:
-            update_data = dict(updates) if not isinstance(updates, dict) else updates
-        
+        update_data = updates.model_dump(exclude_none=True)
         query_params = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
@@ -219,11 +209,7 @@ class EntityOperations(BaseOperation):
             ["entity_id"]
         )
         
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
+        create_data = data.model_dump(exclude_none=True)
         query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
@@ -324,76 +310,6 @@ class EntityOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def bulk_create_entities(self, entities: List[EntityCreateRequest]) -> EntityBulkResponse:
-        """Bulk create multiple entities.
-        
-        NOTE: No bulk create operation exists in the STEP REST API spec.
-        Individual entities should be created via create_entity() (postEntities).
-        This method is kept for backward compatibility but may not work with real API.
-        
-        Args:
-            entities: List of EntityCreateRequest objects
-            
-        Returns:
-            EntityBulkResponse with results
-        """
-        entity_list = []
-        for entity in entities:
-            if hasattr(entity, 'model_dump'):
-                entity_list.append(entity.model_dump(exclude_none=True))
-            else:
-                entity_list.append(dict(entity) if not isinstance(entity, dict) else entity)
-        
-        self._log_operation("bulkCreateEntities", {"count": len(entity_list)})
-        
-        try:
-            response = self.client.bulkCreateEntities(body={"entities": entity_list})
-        except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Bulk create failed: {str(e)}")
-            raise
-        
-        if isinstance(response, dict):
-            return EntityBulkResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def bulk_update_entities(self, updates: Dict[str, EntityUpdateRequest]) -> EntityBulkResponse:
-        """Bulk update multiple entities.
-        
-        Args:
-            updates: Dictionary mapping entity IDs to EntityUpdateRequest objects
-            
-        Returns:
-            EntityBulkResponse with results
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
-        """
-        # Convert Pydantic models to dicts if needed
-        update_list = []
-        for entity_id, update_req in updates.items():
-            if hasattr(update_req, 'model_dump'):
-                update_data = update_req.model_dump(exclude_none=True)
-            else:
-                update_data = dict(update_req) if not isinstance(update_req, dict) else update_req
-            update_list.append({"id": entity_id, "updates": update_data})
-        
-        self._log_operation("bulkUpdateEntities", {"count": len(update_list)})
-        
-        try:
-            response = self.client.bulkUpdateEntities(body={"updates": update_list})
-        except Exception as e:
-            if "400" in str(e):
-                raise ValidationError(f"Bulk update failed: {str(e)}")
-            raise
-        
-        if isinstance(response, dict):
-            return EntityBulkResponse(**response)
-        return response
-    
-    @handle_rest_errors
     def search_by_type(self, entity_type: str,
                        limit: int = 20, offset: int = 0) -> EntityListResponse:
         """Convenience method to search entities by type.
@@ -407,21 +323,7 @@ class EntityOperations(BaseOperation):
             EntityListResponse filtered by type
         """
         return self.search_entities(
-            condition={"conditionType": "objecttype", "objectTypeId": entity_type}
+            condition={"conditionType": "objecttype", "objectType": entity_type}
         )
     
-    @handle_rest_errors
-    def search_modified_since(self, timestamp: str,
-                             limit: int = 20, offset: int = 0) -> EntityListResponse:
-        """Convenience method to search entities modified since a timestamp.
-        
-        Args:
-            timestamp: ISO 8601 timestamp (e.g., "2025-01-01T00:00:00Z")
-            limit: Result limit
-            offset: Result offset
-            
-        Returns:
-            EntityListResponse of modified entities
-        """
-        query = f"modifiedAt >= {timestamp}"
-        return self.search_entities(query=query, limit=limit, offset=offset)
+

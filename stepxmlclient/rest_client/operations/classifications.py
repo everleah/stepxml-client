@@ -8,14 +8,9 @@ from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictE
 from ..models.classification import (
     ClassificationResponse,
     ClassificationListResponse,
-    ClassificationHierarchyResponse,
-    ClassificationSearchRequest,
     ClassificationCreateRequest,
     ClassificationUpdateRequest,
-    ClassificationValueResponse,
-    ClassificationValue,
 )
-from ..models.common import PagedResponse
 
 
 class ClassificationOperations(BaseOperation):
@@ -103,16 +98,14 @@ class ClassificationOperations(BaseOperation):
             return ClassificationListResponse(**response)
         return response
     
-    @handle_rest_errors
     def list_classifications(self) -> ClassificationListResponse:
-        """List all classifications by object type (convenience method).
+        """List all classifications (convenience method).
         
         Returns:
             ClassificationListResponse with all classifications
         """
-        # Use an objecttype condition without a specific type to list broadly
         return self.search_classifications(
-            condition={"conditionType": "objecttype", "objectTypeId": "*"}
+            condition={"conditionType": "name", "value": "*"}
         )
     
     @handle_rest_errors
@@ -129,13 +122,12 @@ class ClassificationOperations(BaseOperation):
             ValidationError: If data invalid
             RestApiError: For API errors
         """
-        # Convert Pydantic model to dict if needed
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        self._log_operation("postClassifications", create_data)
+        self._validate_required_params(
+            {"objectType": data.objectType, "parent": data.parent},
+            ["objectType", "parent"]
+        )
+        create_data = data.model_dump(exclude_none=True)
+        self._log_operation("postClassifications", {"objectType": data.objectType})
         
         try:
             response = self.client.postClassifications(body=create_data, **self._build_context_params())
@@ -172,11 +164,7 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        if hasattr(updates, 'model_dump'):
-            update_data = updates.model_dump(exclude_none=True)
-        else:
-            update_data = dict(updates) if not isinstance(updates, dict) else updates
-        
+        update_data = updates.model_dump(exclude_none=True)
         query_params = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
@@ -220,12 +208,8 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        if hasattr(data, 'model_dump'):
-            create_data = data.model_dump(exclude_none=True)
-        else:
-            create_data = dict(data) if not isinstance(data, dict) else data
-        
-        params: Dict[str, Any] = {"id": classification_id}
+        create_data = data.model_dump(exclude_none=True)
+        query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if allow_overwrite:
@@ -285,16 +269,16 @@ class ClassificationOperations(BaseOperation):
             raise
     
     @handle_rest_errors
-    def get_classification_hierarchy(self, classification_id: str,
-                                     key_id: Optional[str] = None) -> ClassificationHierarchyResponse:
-        """Get direct children of a classification node (GET /classifications/{id}/children).
+    def get_classification_children(self, classification_id: str,
+                                    key_id: Optional[str] = None) -> List[str]:
+        """Get direct children IDs of a classification (GET /classifications/{id}/children).
         
         Args:
             classification_id: The classification ID (or alternate key value if key_id is set)
             key_id: Alternate key ID to use for lookup (optional)
             
         Returns:
-            ClassificationHierarchyResponse with child nodes
+            List of child classification IDs
             
         Raises:
             ValidationError: If classification_id missing
@@ -318,53 +302,9 @@ class ClassificationOperations(BaseOperation):
                 raise NotFoundError(classification_id, "Classification")
             raise
         
-        if isinstance(response, dict):
-            return ClassificationHierarchyResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def get_classification_values(self, classification_id: str,
-                                  key_id: Optional[str] = None) -> ClassificationValueResponse:
-        """Get all value entries in a classification (GET /classifications/{id}/assets).
-        
-        NOTE: The STEP REST API spec has no 'get all values' operation.
-        This calls getClassificationAssets which returns assets associated with the
-        classification. For attribute values on the classification itself, use
-        get_classification() with include_inherited_data=True.
-        
-        Args:
-            classification_id: The classification ID (or alternate key value if key_id is set)
-            key_id: Alternate key ID to use for lookup (optional)
-            
-        Returns:
-            ClassificationValueResponse with associated assets
-            
-        Raises:
-            ValidationError: If classification_id missing
-            NotFoundError: If classification not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"classification_id": classification_id},
-            ["classification_id"]
-        )
-        
-        query_params = self._build_context_params()
-        if key_id:
-            query_params["keyId"] = key_id
-        self._log_operation("getClassificationAssets", {"classification_id": classification_id})
-        
-        try:
-            response = self.client.getClassificationAssets(id=classification_id, **query_params)
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(classification_id, "Classification")
-            raise
-        
-        if isinstance(response, dict):
-            return ClassificationValueResponse(**response)
-        return response
-    
+        if isinstance(response, list):
+            return response
+        return []
     def search_by_type(self, classification_type: str) -> ClassificationListResponse:
         """Search classifications by object type (convenience method).
         
@@ -375,21 +315,5 @@ class ClassificationOperations(BaseOperation):
             ClassificationListResponse filtered by type
         """
         return self.search_classifications(
-            condition={"conditionType": "objecttype", "objectTypeId": classification_type}
+            condition={"conditionType": "objecttype", "objectType": classification_type}
         )
-    
-    @handle_rest_errors
-    def search_modified_since(self, timestamp: str,
-                             limit: int = 20, offset: int = 0) -> ClassificationListResponse:
-        """Convenience method to search classifications modified since a timestamp.
-        
-        Args:
-            timestamp: ISO 8601 timestamp (e.g., "2025-01-01T00:00:00Z")
-            limit: Result limit
-            offset: Result offset
-            
-        Returns:
-            ClassificationListResponse of modified classifications
-        """
-        query = f"modifiedAt >= {timestamp}"
-        return self.search_classifications(query=query, limit=limit, offset=offset)

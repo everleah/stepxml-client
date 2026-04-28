@@ -3,214 +3,89 @@
 import unittest
 import logging
 from unittest.mock import MagicMock, Mock, patch
-from datetime import datetime
 from stepxmlclient.rest_client import exceptions as exc
 
 from stepxmlclient.rest_client.models.classification import (
     ClassificationResponse,
     ClassificationListResponse,
-    ClassificationHierarchyResponse,
-    ClassificationSearchRequest,
     ClassificationCreateRequest,
     ClassificationUpdateRequest,
-    ClassificationValueResponse,
-    ClassificationValue,
-    ClassificationMetadata,
-    ClassificationHierarchyNode,
 )
 from stepxmlclient.rest_client.operations.classifications import ClassificationOperations
-from stepxmlclient.rest_client.models.common import PageInfo
 from stepxmlclient.rest_client import exceptions as exc
 
 
 class TestClassificationModels(unittest.TestCase):
     """Test classification model creation and validation."""
-    
+
     def test_classification_response_creation(self):
-        """Test creating a classification response."""
-        classification = ClassificationResponse(
-            id="CLASS1",
-            name="Color",
-            description="Product color",
-            is_hierarchical=False,
-            classification_type=None,
-            is_system_owned=False,
-            values_count=None,
-            metadata=None
-        )
-        
+        """Test creating a classification response with OpenAPI fields."""
+        classification = ClassificationResponse(id="CLASS1")
+
         self.assertEqual(classification.id, "CLASS1")
-        self.assertEqual(classification.name, "Color")
-        self.assertEqual(classification.description, "Product color")
-        self.assertFalse(classification.is_hierarchical)
-    
-    def test_classification_response_with_metadata(self):
-        """Test classification response with metadata."""
-        metadata = ClassificationMetadata(
-            created_at=datetime.fromisoformat("2025-01-15T10:30:00+00:00"),
-            created_by="admin",
-            modified_at=None,
-            modified_by=None,
-            version=1
-        )
+        self.assertIsNone(classification.objectType)
+        self.assertIsNone(classification.parent)
+
+    def test_classification_response_with_all_fields(self):
+        """Test classification response with all optional fields."""
         classification = ClassificationResponse(
             id="CLASS1",
+            objectType="WebCategory",
             name="Color",
-            description=None,
-            classification_type=None,
-            is_hierarchical=False,
-            is_system_owned=False,
-            values_count=None,
-            metadata=metadata
+            parent="WebRoot",
+            values={"colorCode": {"value": "RED"}},
         )
-        
-        self.assertEqual(classification.metadata.created_by, "admin") #type: ignore
-        self.assertEqual(classification.metadata.version, 1) #type: ignore
-    
+
+        self.assertEqual(classification.id, "CLASS1")
+        self.assertEqual(classification.objectType, "WebCategory")
+        self.assertEqual(classification.parent, "WebRoot")
+
     def test_classification_list_response(self):
         """Test classification list response."""
         list_response = ClassificationListResponse(
             items=[
-                ClassificationResponse(id="CLASS1", name="Color", description=None, classification_type=None, is_hierarchical=False, is_system_owned=False, values_count=None, metadata=None),
-                ClassificationResponse(id="CLASS2", name="Size", description=None, classification_type=None, is_hierarchical=False, is_system_owned=False, values_count=None, metadata=None),
+                ClassificationResponse(id="CLASS1"),
+                ClassificationResponse(id="CLASS2"),
             ],
-            pagination=None,
             total=2
         )
-        
+
         self.assertEqual(len(list_response.items), 2)
         self.assertEqual(list_response.total, 2)
-    
-    def test_classification_list_response_with_pagination(self):
-        """Test list response with pagination info."""
-        pagination = PageInfo(limit=20, offset=0, total=50)
-        list_response = ClassificationListResponse(
-            items=[],
-            pagination=pagination,
-            total=50
-        )
-        
-        self.assertEqual(list_response.pagination.limit, 20) #type: ignore
-        self.assertEqual(list_response.pagination.total, 50) #type: ignore
-        self.assertTrue(list_response.pagination.has_more) #type: ignore
-    
-    def test_classification_hierarchy_node(self):
-        """Test classification hierarchy node."""
-        child = ClassificationHierarchyNode(
-            id="CHILD1",
-            name="Red",
-            parent_id="ROOT",
-            level=1,
-            metadata=None
-        )
-        
-        root = ClassificationHierarchyNode(
-            id="ROOT",
-            name="Colors",
-            level=0,
-            parent_id=None,
-            children=[child],
-            metadata=None
-        )
-        
-        self.assertEqual(root.id, "ROOT")
-        self.assertEqual(len(root.children), 1)
-        self.assertEqual(root.children[0].parent_id, "ROOT")
-    
-    def test_classification_hierarchy_response(self):
-        """Test classification hierarchy response."""
-        response = ClassificationHierarchyResponse(
-            classification_id="CLASS1",
-            classification_name="Color",
-            root_nodes=[
-                ClassificationHierarchyNode(id="ROOT", name="Colors", level=0, parent_id=None, metadata=None)
-            ],
-            total_nodes=10,
-            max_depth=3
-        )
-        
-        self.assertEqual(response.classification_id, "CLASS1")
-        self.assertEqual(response.total_nodes, 10)
-        self.assertEqual(response.max_depth, 3)
-    
-    def test_classification_search_request(self):
-        """Test classification search request."""
-        search = ClassificationSearchRequest(
-            query="color",
-            limit=50,
-            offset=0,
-            type_filter="Standard",
-            include_values=False
-        )
-        
-        self.assertEqual(search.query, "color")
-        self.assertEqual(search.limit, 50)
-        self.assertEqual(search.type_filter, "Standard")
-    
+
+    def test_classification_list_response_defaults(self):
+        """Test list response default values."""
+        list_response = ClassificationListResponse()
+
+        self.assertEqual(list_response.items, [])
+        self.assertIsNone(list_response.total)
+
     def test_classification_create_request(self):
-        """Test classification create request."""
+        """Test classification create request requires objectType and parent."""
         create = ClassificationCreateRequest(
-            id="NEW_CLASS",
+            objectType="WebCategory",
+            parent="WebRoot",
             name="Material",
-            description="Product material",
-            is_hierarchical=True,
-            classification_type=None,
-            attributes=None
         )
-        
-        self.assertEqual(create.id, "NEW_CLASS")
+
+        self.assertEqual(create.objectType, "WebCategory")
+        self.assertEqual(create.parent, "WebRoot")
         self.assertEqual(create.name, "Material")
-        self.assertTrue(create.is_hierarchical)
-    
+        self.assertIsNone(create.values)
+
+    def test_classification_create_request_no_id(self):
+        """Test classification create request has no id field."""
+        create = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
+        data = create.model_dump(exclude_none=True)
+        self.assertNotIn("id", data)
+
     def test_classification_update_request(self):
-        """Test classification update request."""
-        update = ClassificationUpdateRequest(
-            name="Updated Name",
-            description="Updated description",
-            classification_type=None,
-            attributes=None
-        )
-        
+        """Test classification update request allows partial updates."""
+        update = ClassificationUpdateRequest(name="Updated Name")
+
         self.assertEqual(update.name, "Updated Name")
-        self.assertEqual(update.description, "Updated description")
-    
-    def test_classification_value(self):
-        """Test classification value model."""
-        value = ClassificationValue(
-            id="VAL1",
-            name="Red",
-            description="Red color",
-            parent_id=None,
-            is_leaf=True
-        )
-        
-        self.assertEqual(value.id, "VAL1")
-        self.assertEqual(value.name, "Red")
-        self.assertTrue(value.is_leaf)
-    
-    def test_classification_value_response(self):
-        """Test classification value response."""
-        response = ClassificationValueResponse(
-            classification_id="CLASS1",
-            values=[
-                ClassificationValue(id="VAL1", name="Red", description=None, parent_id=None, is_leaf=False),
-                ClassificationValue(id="VAL2", name="Blue", description=None, parent_id=None, is_leaf=False),
-            ],
-            total=2
-        )
-        """Test classification value response."""
-        response = ClassificationValueResponse(
-            classification_id="CLASS1",
-            values=[
-                ClassificationValue(id="VAL1", name="Red", description=None, parent_id=None, is_leaf=False),
-                ClassificationValue(id="VAL2", name="Blue", description=None, parent_id=None, is_leaf=False),
-            ],
-            total=2
-        )
-        
-        self.assertEqual(response.classification_id, "CLASS1")
-        self.assertEqual(len(response.values), 2)
-        self.assertEqual(response.total, 2)
+        self.assertIsNone(update.parent)
+        self.assertIsNone(update.values)
 
 
 
@@ -256,8 +131,8 @@ class TestClassificationOperations(unittest.TestCase):
 
     def test_search_classifications_success(self):
         self.mock_client.postClassificationsSearch.return_value = {
-            "items": [{"id": "CLASS1", "name": "Class 1"}, {"id": "CLASS2", "name": "Class 2"}], "total": 2}
-        condition = {"conditionType": "objecttype", "objectTypeId": "ClassType"}
+            "items": [{"id": "CLASS1"}, {"id": "CLASS2"}], "total": 2}
+        condition = {"conditionType": "objecttype", "objectType": "ClassType"}
         result = self.operations.search_classifications(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postClassificationsSearch.call_args
@@ -268,23 +143,24 @@ class TestClassificationOperations(unittest.TestCase):
             self.operations.search_classifications(condition=None)
 
     def test_create_classification_success(self):
-        self.mock_client.postClassifications.return_value = {"id": "NEWCLASS", "name": "New"}
-        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
-        request = ClassificationCreateRequest(id="NEWCLASS", name="New")
+        self.mock_client.postClassifications.return_value = {"id": "NEWCLASS"}
+        request = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot", name="New")
         result = self.operations.create_classification(request)
         self.assertEqual(result.id, "NEWCLASS")
         self.mock_client.postClassifications.assert_called_once()
+        call_args = self.mock_client.postClassifications.call_args
+        body = call_args[1]["body"]
+        self.assertNotIn("id", body)
+        self.assertEqual(body["objectType"], "WebCategory")
 
     def test_create_classification_conflict(self):
         self.mock_client.postClassifications.side_effect = Exception("409 conflict")
-        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
-        request = ClassificationCreateRequest(id="EXISTING", name="Existing")
+        request = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         with self.assertRaises(exc.ConflictError):
             self.operations.create_classification(request)
 
     def test_update_classification_success(self):
         self.mock_client.patchClassification.return_value = {"id": "CLASS1", "name": "Updated"}
-        from stepxmlclient.rest_client.models.classification import ClassificationUpdateRequest
         updates = ClassificationUpdateRequest(name="Updated")
         result = self.operations.update_classification("CLASS1", updates)
         self.assertEqual(result.name, "Updated")
@@ -293,24 +169,21 @@ class TestClassificationOperations(unittest.TestCase):
 
     def test_update_classification_not_found(self):
         self.mock_client.patchClassification.side_effect = Exception("404 not found")
-        from stepxmlclient.rest_client.models.classification import ClassificationUpdateRequest
         updates = ClassificationUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_classification("NONEXISTENT", updates)
 
     def test_replace_classification_success(self):
-        self.mock_client.putClassification.return_value = {"id": "CLASS1", "name": "Root"}
-        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
-        data = ClassificationCreateRequest(id="CLASS1", name="Root")
+        self.mock_client.putClassification.return_value = {"id": "CLASS1"}
+        data = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         result = self.operations.replace_classification("CLASS1", data)
         self.assertEqual(result.id, "CLASS1")
         call_args = self.mock_client.putClassification.call_args
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_replace_classification_with_allow_overwrite(self):
-        self.mock_client.putClassification.return_value = {"id": "CLASS1", "name": "Root"}
-        from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest
-        data = ClassificationCreateRequest(id="CLASS1", name="Root")
+        self.mock_client.putClassification.return_value = {"id": "CLASS1"}
+        data = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         self.operations.replace_classification("CLASS1", data, allow_overwrite=True)
         call_args = self.mock_client.putClassification.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
@@ -327,12 +200,10 @@ class TestClassificationOperations(unittest.TestCase):
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_classification("NONEXISTENT")
 
-    def test_get_classification_hierarchy(self):
-        self.mock_client.getClassificationChildren.return_value = {
-            "classification_id": "CLASS1", "classification_name": "Root",
-            "root_nodes": [{"id": "CHILD1", "name": "Child 1"}]}
-        result = self.operations.get_classification_hierarchy("CLASS1")
-        self.assertIsNotNone(result)
+    def test_get_classification_children(self):
+        self.mock_client.getClassificationChildren.return_value = ["CHILD1", "CHILD2"]
+        result = self.operations.get_classification_children("CLASS1")
+        self.assertIsInstance(result, list)
         call_args = self.mock_client.getClassificationChildren.call_args
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
@@ -342,7 +213,7 @@ class TestClassificationOperations(unittest.TestCase):
         call_args = self.mock_client.postClassificationsSearch.call_args
         body = call_args[1]["body"]
         self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectTypeId"], "ClassType")
+        self.assertEqual(body["condition"]["objectType"], "ClassType")
 
     def test_list_classifications(self):
         self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
@@ -352,3 +223,4 @@ class TestClassificationOperations(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
