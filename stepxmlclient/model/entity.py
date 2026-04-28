@@ -24,6 +24,26 @@ class Entity(BaseObject):
     - ``Values`` and ``DataContainers``
 
     Supports cross-references and also ``CurrentTasks`` / ``Terms`` children.
+
+    Usage examples:
+        Dict-first style::
+
+            entity = Entity({"ID": "E100", "UserTypeID": "UT_ENTITY"})
+            entity.add_product_reference(product_id="P100", type_="Owner")
+            entity.add_term({"TermsListID": "NET", "value": "Net 30"})
+
+        Pre-built object style::
+
+            from stepxmlclient.model import Task, Terms, Term
+            entity = Entity({"ID": "E101", "UserTypeID": "UT_ENTITY"})
+            entity.add_current_task(task_object=Task({
+                "STEPWorkflowID": "WF2",
+                "StateID": "S2",
+                "AssigneeID": "U2",
+                "AssignedToGroup": False,
+                "EntryTime": "2026-02-02T00:00:00Z",
+            }))
+            entity.add_term(terms_object=Terms({"Term": [Term({"TermsListID": "T1", "value": "Immediate"})]}))
     """
     _GROUP_NAME: str = 'entities'
     _TAG_NAME: str = 'Entity'

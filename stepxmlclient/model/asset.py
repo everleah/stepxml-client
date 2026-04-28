@@ -25,6 +25,24 @@ class Asset(BaseObject):
     - ``KeyValue`` (dict or list): External key references
       (for example ``{"KeyID": "ExternalKey", "value": "A-100"}``)
     - ``Values`` (dict): Attribute values map
+
+    Usage examples:
+        Dict-first style::
+
+            asset = Asset({"ID": "A100", "UserTypeID": "UT_ASSET"})
+            asset.add_classification_reference(classification_id="C_ASSETS")
+            asset.add_asset_push_location({"ConfigurationID": "PUSH_CFG", "Status": "DONE"})
+
+        Pre-built object style::
+
+            from stepxmlclient.model import AssetContent, AssetContentSpecification
+            asset = Asset({"ID": "A101", "UserTypeID": "UT_ASSET"})
+            asset.add_asset_content(content_object=AssetContent({
+                "QualifierID": "en",
+                "AssetContentSpecification": [
+                    AssetContentSpecification({"RelativeURL": "/assets/a101.jpg"})
+                ],
+            }))
     """
     _GROUP_NAME: str = 'assets'
     _TAG_NAME: str = 'Asset'

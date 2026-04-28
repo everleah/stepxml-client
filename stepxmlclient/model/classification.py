@@ -25,6 +25,26 @@ class Classification(BaseObject):
 
     Additional supported children include ``SequenceProduct``, ``Tables``,
     embedded ``Asset``, ``CurrentTasks`` and standard cross-references.
+
+    Usage examples:
+        Dict-first style::
+
+            cls = Classification({"ID": "C100", "UserTypeID": "UT_CLASS"})
+            cls.add_sequence_product(product_id="P100")
+            cls.add_current_task({
+                "STEPWorkflowID": "WF1",
+                "StateID": "S1",
+                "AssigneeID": "U1",
+                "AssignedToGroup": True,
+                "EntryTime": "2026-01-01T00:00:00Z",
+            })
+
+        Pre-built object style::
+
+            from stepxmlclient.model import SequenceProduct, Tables
+            cls = Classification({"ID": "C101", "UserTypeID": "UT_CLASS"})
+            cls.add_sequence_product(sequence_object=SequenceProduct({"ID": "P101"}))
+            cls.add_table(tables_object=Tables({"Table": [{"ID": "T1"}]}))
     """
     _GROUP_NAME: str = 'classifications'
     _TAG_NAME: str = 'Classification'

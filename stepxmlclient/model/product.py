@@ -38,6 +38,22 @@ class Product(BaseObject):
     - ``ClassificationReference``
     - ``ClassificationCrossReference``
     - ``EntityCrossReference``
+
+    Usage examples:
+        Dict-first style::
+
+            product = Product({"ID": "P100", "UserTypeID": "UT_PRODUCT", "Name": "Bike"})
+            product.set_workflow_state_bind(workflow_id="WF_APPROVAL", state_id="STATE_DRAFT")
+            product.add_packaging_reference(product_id="BOX_01", quantity="1")
+
+        Pre-built object style::
+
+            from stepxmlclient.model import STEPWorkflowStateBind, SequenceProduct
+            product = Product({"ID": "P200", "UserTypeID": "UT_PRODUCT"})
+            product.set_workflow_state_bind(bind_object=STEPWorkflowStateBind({
+                "WorkflowID": "WF_APPROVAL", "StateID": "STATE_READY"
+            }))
+            product.add_sequence_product(sequence_object=SequenceProduct({"ID": "P201"}))
     """
 
     _GROUP_NAME: str = "products"
