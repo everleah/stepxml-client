@@ -277,6 +277,7 @@ from .business import BusinessRule, Workflow, Collection, CollectionGroup
 from .deletion import DeleteAsset, DeleteProduct, DeleteAssetCrossReference, DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference
 from .replacement import ReplaceValues, ReplaceCrossReferences, ReplaceAttributeLinks, ReplaceClassificationReferences, ReplaceProducts, ReplaceClassifications, ReplaceEntities, ReplaceAssets, ReplaceAttributes
 from .relations import AssetCrossReference, ProductCrossReference, ClassificationReference, ClassificationCrossReference, EntityCrossReference
+from .complex_elements import STEPWorkflowStateBind, SequenceProduct, OverrideSubProduct, PackagingReference, AssetPushLocation, AssetContent, AssetContentSpecification, BinaryContent, AssetBinaryContent
 
 def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
     """Get model class by its class name as string (case-insensitive).
@@ -329,6 +330,15 @@ def get_model_class(class_name: str) -> Optional[Type[BaseObject]]:
         'classificationreference': ClassificationReference,
         'classificationcrossreference': ClassificationCrossReference,
         'entitycrossreference': EntityCrossReference,
+        'stepworkflowstatebind': STEPWorkflowStateBind,
+        'sequenceproduct': SequenceProduct,
+        'overridesubproduct': OverrideSubProduct,
+        'packagingreference': PackagingReference,
+        'assetpushlocation': AssetPushLocation,
+        'assetcontent': AssetContent,
+        'assetcontentspecification': AssetContentSpecification,
+        'binarycontent': BinaryContent,
+        'assetbinarycontent': AssetBinaryContent,
         'replacevalues': ReplaceValues,
         'replacecrossreferences': ReplaceCrossReferences,
         'replaceattributelinks': ReplaceAttributeLinks,
@@ -377,6 +387,15 @@ __all__ = [
     'ProductCrossReference',
     'ClassificationCrossReference',
     'EntityCrossReference',
+    'STEPWorkflowStateBind',
+    'SequenceProduct',
+    'OverrideSubProduct',
+    'PackagingReference',
+    'AssetPushLocation',
+    'AssetContent',
+    'AssetContentSpecification',
+    'BinaryContent',
+    'AssetBinaryContent',
     'ReplaceValues',
     'ReplaceCrossReferences',
     'ReplaceAttributeLinks',

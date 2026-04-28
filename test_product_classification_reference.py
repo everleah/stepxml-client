@@ -55,7 +55,7 @@ def test_product_serializes_suppressed_and_delete_suppressed_classification_tags
 def test_product_serializes_workflow_attribute_and_data_container_links():
     creator = Creator("Context2", "Main")
     product = Product({"ID": "P103", "UserTypeID": "UT_PRODUCT"})
-    product._data["STEPWorkflowStateBind"] = {"ID": "WF_APPROVAL", "CurrentStateID": "STATE_DRAFT"}
+    product._data["STEPWorkflowStateBind"] = {"WorkflowID": "WF_APPROVAL", "StateID": "STATE_DRAFT"}
     product._data["AttributeLink"] = [{"AttributeID": "ATTR_COLOR"}]
     product._data["DeleteAttributeLink"] = [{"AttributeID": "ATTR_OLD"}]
     product._data["DataContainerTypeLink"] = [{"DataContainerTypeID": "DCT_MARKETING"}]
@@ -65,7 +65,7 @@ def test_product_serializes_workflow_attribute_and_data_container_links():
     creator.build()
 
     xml = creator.to_string()
-    assert "<STEPWorkflowStateBind ID=\"WF_APPROVAL\" CurrentStateID=\"STATE_DRAFT\"" in xml
+    assert "<STEPWorkflowStateBind WorkflowID=\"WF_APPROVAL\" StateID=\"STATE_DRAFT\"" in xml
     assert "<AttributeLink AttributeID=\"ATTR_COLOR\"" in xml
     assert "<DeleteAttributeLink AttributeID=\"ATTR_OLD\"" in xml
     assert "<DataContainerTypeLink DataContainerTypeID=\"DCT_MARKETING\"" in xml

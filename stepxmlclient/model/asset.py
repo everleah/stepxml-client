@@ -10,19 +10,21 @@ from . import BaseObject
 
 if TYPE_CHECKING:
     from .relations import ClassificationReference, EntityCrossReference
+    from .complex_elements import AssetPushLocation, AssetContent, AssetBinaryContent
 
 class Asset(BaseObject):
     """Asset entity in STEP MDM.
-    
-    Represents a binary asset (file) with metadata and relationships.
-    
-    Attributes:
-        ID: Unique asset identifier
-        Name: Asset name or description
-        KeyValue: Optional key value for asset lookup
-        Values: Dictionary of attribute ID to attribute values
-        ClassificationReference: List of classifications
-        EntityCrossReference: List of linked business entities
+
+    This model serializes to the STEP ``Asset`` element and supports helper
+    methods for common relationship/content elements.
+
+    Common top-level ``data`` keys:
+    - ``ID`` (str): Asset identifier
+    - ``UserTypeID`` (str): STEP object type
+    - ``Name`` (str or dict/list): Asset name
+    - ``KeyValue`` (dict or list): External key references
+      (for example ``{"KeyID": "ExternalKey", "value": "A-100"}``)
+    - ``Values`` (dict): Attribute values map
     """
     _GROUP_NAME: str = 'assets'
     _TAG_NAME: str = 'Asset'
@@ -75,11 +77,17 @@ class Asset(BaseObject):
                                    qualifier_id: Optional[str] = None,
                                    mount_location: Optional[str] = None,
                                    ref_object: Optional['ClassificationReference'] = None) -> None:
-        """Add classification reference to this asset.
-        
-        Can be called two ways:
-        1. With parameters: add_classification_reference(classification_id="C001")
-        2. With object: add_classification_reference(ref_object=class_ref_obj)
+        """Add a ``ClassificationReference`` child.
+
+        If a legacy ``ClassificationCrossReference`` object is passed, it is
+        normalized to ``ClassificationReference``.
+
+        Args:
+            classification_id: Value for ``ClassificationID``.
+            type_: Optional ``Type``.
+            qualifier_id: Optional ``QualifierID``.
+            mount_location: Optional ``MountLocation``.
+            ref_object: Pre-built relation object.
         """
         from .relations import ClassificationReference, ClassificationCrossReference
         
@@ -109,11 +117,14 @@ class Asset(BaseObject):
                            qualifier_id: Optional[str] = None,
                            mount_location: Optional[str] = None,
                            ref_object: Optional['EntityCrossReference'] = None) -> None:
-        """Add entity cross-reference to this asset.
-        
-        Can be called two ways:
-        1. With parameters: add_entity_reference(entity_id="E001", type_="Component")
-        2. With object: add_entity_reference(ref_object=entity_ref_obj)
+        """Add an ``EntityCrossReference`` child.
+
+        Args:
+            entity_id: Value for ``EntityID``.
+            type_: Optional ``Type``.
+            qualifier_id: Optional ``QualifierID``.
+            mount_location: Optional ``MountLocation``.
+            ref_object: Pre-built ``EntityCrossReference`` instance.
         """
         from .relations import EntityCrossReference
         
@@ -132,3 +143,90 @@ class Asset(BaseObject):
         if not isinstance(self._data["EntityCrossReference"], list):
             self._data["EntityCrossReference"] = []
         self._data["EntityCrossReference"].append(ref)
+
+    # ===== Additional Asset Content Helpers =====
+
+    def add_asset_push_location(self, push_location_data: Optional[Dict[str, Any]] = None) -> None:
+        """Add an ``AssetPushLocation`` child entry.
+
+        Args:
+            push_location_data: Dictionary with keys:
+                - ``ConfigurationID`` (required)
+                - ``Status`` (optional)
+                - ``QualifierID`` (optional)
+                - ``value`` or ``text`` (optional element text)
+        """
+        if not isinstance(self._data.get("AssetPushLocation"), list):
+            self._data["AssetPushLocation"] = []
+        self._data["AssetPushLocation"].append(push_location_data or {})
+
+    def add_asset_push_location_object(self, push_location_object: 'AssetPushLocation') -> None:
+        """Add pre-built ``AssetPushLocation`` object."""
+        if not isinstance(self._data.get("AssetPushLocation"), list):
+            self._data["AssetPushLocation"] = []
+        self._data["AssetPushLocation"].append(push_location_object)
+
+    def add_current_task(self, task_data: Optional[Dict[str, Any]] = None) -> None:
+        """Add a ``CurrentTasks`` child entry.
+
+        Args:
+            task_data: Dictionary mapped to ``Task`` attributes. Typical keys:
+                - ``STEPWorkflowID``
+                - ``StateID``
+                - ``AssigneeID``
+                - ``AssignedToGroup``
+                - ``EntryTime``
+                - optional: ``Deadline``, ``Priority``, ``StatusID``
+        """
+        if not isinstance(self._data.get("CurrentTasks"), list):
+            self._data["CurrentTasks"] = []
+        self._data["CurrentTasks"].append(task_data or {})
+
+    def add_page(self, page_data: Optional[Dict[str, Any]] = None) -> None:
+        """Add a ``Pages`` child entry.
+
+        Args:
+            page_data: Dictionary with optional top-level key ``Page``.
+                ``Page`` objects commonly use attributes ``VersionID`` (required
+                by XSD), ``ID`` and ``PageNumber``.
+        """
+        if not isinstance(self._data.get("Pages"), list):
+            self._data["Pages"] = []
+        self._data["Pages"].append(page_data or {})
+
+    def add_asset_content(self,
+                         content_data: Optional[Dict[str, Any]] = None,
+                         content_object: Optional['AssetContent'] = None) -> None:
+        """Add an ``AssetContent`` child entry.
+
+        Args:
+            content_data: Dictionary with keys:
+                - ``QualifierID`` (optional)
+                - ``AssetContentSpecification`` (optional list), each entry with
+                  ``ImageConversionConfigurationID``, ``IncludesBinaryContent``,
+                  ``RelativeURL``
+            content_object: Pre-built ``AssetContent`` object.
+        """
+        if not isinstance(self._data.get("AssetContent"), list):
+            self._data["AssetContent"] = []
+        self._data["AssetContent"].append(content_object or content_data or {})
+
+    def add_asset_binary_content(self,
+                                binary_content_data: Optional[Dict[str, Any]] = None,
+                                binary_content_object: Optional['AssetBinaryContent'] = None) -> None:
+        """Add an ``AssetBinaryContent`` child entry.
+
+        Args:
+            binary_content_data: Dictionary with keys:
+                - ``QualifierID`` (optional)
+                - ``ImageConversionConfigurationID`` (optional)
+                - ``MIMEType`` (optional)
+                - ``Checksum`` (optional)
+                - ``Filename`` (optional)
+                - ``BinaryContent`` (required for full XSD compliance), e.g.
+                  ``{"value": "<base64>"}``
+            binary_content_object: Pre-built ``AssetBinaryContent`` object.
+        """
+        if not isinstance(self._data.get("AssetBinaryContent"), list):
+            self._data["AssetBinaryContent"] = []
+        self._data["AssetBinaryContent"].append(binary_content_object or binary_content_data or {})
