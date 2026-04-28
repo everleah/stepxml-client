@@ -16,15 +16,15 @@ The `rest_client` subpackage provides comprehensive, type-safe, and fully tested
 |-------|-----------------------|-------------|-------|-----------------------------------|
 | 0     | Foundation            | ✅ Complete | 37    | PagedResponse, ErrorResponse, ApiResponse, BaseOperation, Exception Hierarchy |
 | 1     | Products              | ✅ Complete | 36    | Product CRUD, Search, Attributes, Values |
-| 2     | Assets                | ✅ Complete | 40    | Asset CRUD, Search, Binary Upload/Download |
-| 3     | Classifications       | ✅ Complete | 33    | Classification CRUD, Hierarchy, Values |
-| 4     | Entities              | ✅ Complete | 37    | Entity CRUD, Bulk, Attributes, Relationships |
-| 5     | Attributes/Metadata   | ✅ Complete | 33    | Attribute CRUD, LOV, Contexts, System Metadata |
-| 6     | Import/Export         | ✅ Complete | 29    | Import/Export Jobs, Progress, Data Download |
-| 7     | Relations             | ✅ Complete | 39    | Relationship CRUD, Types, Graph, Cross-References, Links |
+| 2     | Assets                | ✅ Complete | 37    | Asset CRUD, Search, Binary Upload/Download |
+| 3     | Classifications       | ✅ Complete | 26    | Classification CRUD, Hierarchy (children list), Search by type |
+| 4     | Entities              | ✅ Complete | 27    | Entity CRUD, Search, Attributes, Relationships |
+| 5     | Attributes/Metadata   | ✅ Complete | 29    | Attribute CRUD, LOV, Contexts, System Metadata |
+| 6     | Import/Export         | ✅ Complete | 17    | Import/Export Jobs, Progress, Data Download |
+| 7     | Relations             | ✅ Complete | 14    | Relationship CRUD, Types, Graph, Cross-References, Links |
 | 8     | Advanced              | ✅ Complete | 34    | Bulk Ops, Workflows, Advanced Search, Cache, Streaming |
 
-**Total:** 318/318 tests passing (100%)
+**Total:** 257/257 tests passing (100%)
 
 ---
 
@@ -78,10 +78,14 @@ stepxmlclient/
 - Integrated with asset upload module.
 
 ### Phase 3: Classification Operations
-- CRUD, hierarchy traversal, value management.
+- CRUD, search by type, and hierarchy (direct children list via `get_classification_children()`).
+- `objectType` + `parent` required on create; no `id` in POST body.
+- Removed: `get_classification_values()`, `search_modified_since()`, `ClassificationHierarchyResponse`, `ClassificationValue`.
 
 ### Phase 4: Entity Operations
-- CRUD, bulk create/update, advanced search, attribute/relationship management.
+- CRUD, advanced search, attribute/relationship management.
+- `objectType` + `parent` required on create; no `id` in POST body.
+- Removed: bulk create/update, `search_modified_since()`, `EntityBulkRequest/Response`, `EntityAttribute`, `EntityMetadata`.
 
 ### Phase 5: Attribute & Metadata Operations
 - Attribute CRUD, LOV/context/qualifier/dimension retrieval, system metadata.
@@ -100,7 +104,7 @@ stepxmlclient/
 ## Test Coverage
 
 All phases have dedicated test scripts (e.g., `test_rest_client_phase1_products.py`).
-- **Total tests:** 318
+- **Total tests:** 257
 - **Pass rate:** 100%
 - **Coverage:** All planned models and operations are implemented and tested.
 

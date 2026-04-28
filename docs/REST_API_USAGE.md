@@ -118,18 +118,36 @@ created = client.client.create_asset(asset=asset)
 
 ### Classification
 
-**Model:** `Classification`
+**Model:** `ClassificationCreateRequest`, `ClassificationUpdateRequest`, `ClassificationResponse`
 
 **Common Operations:**
-- `get_classification_by_id(classification_id)`
+- `get_classification(classification_id)`
 - `list_classifications()`
-- `create_classification(classification: Classification)`
+- `search_classifications(condition)`
+- `search_by_type(classification_type)`
+- `create_classification(data: ClassificationCreateRequest)`
+- `update_classification(classification_id, updates: ClassificationUpdateRequest)`
+- `replace_classification(classification_id, data: ClassificationCreateRequest)`
+- `delete_classification(classification_id)`
+- `get_classification_children(classification_id)` → `List[str]`
 
 **Example:**
 ```python
-from stepxmlclient.model.classification import Classification
-classification = Classification(id="C001", name="Category1")
-created = client.client.create_classification(classification=classification)
+from stepxmlclient.rest_client.models.classification import ClassificationCreateRequest, ClassificationUpdateRequest
+
+# Create requires objectType and parent (no id in POST body)
+request = ClassificationCreateRequest(
+    objectType="WebCategory",
+    parent="WebRoot",
+    name="Category1"
+)
+created = ops.create_classification(request)
+
+# Partial update
+ops.update_classification("CLASS1", ClassificationUpdateRequest(name="New Name"))
+
+# Get direct children
+children = ops.get_classification_children("CLASS1")  # returns List[str]
 ```
 
 ---
@@ -186,18 +204,34 @@ org = client.client.get_organization_by_id(org_id="ORG001")
 
 ### Entity
 
-**Model:** `Entity`
+**Model:** `EntityCreateRequest`, `EntityUpdateRequest`, `EntityResponse`
 
 **Common Operations:**
-- `get_entity_by_id(entity_id)`
+- `get_entity(entity_id)`
 - `list_entities()`
-- `create_entity(entity: Entity)`
+- `search_entities(condition)`
+- `search_by_type(entity_type)`
+- `create_entity(data: EntityCreateRequest)`
+- `update_entity(entity_id, updates: EntityUpdateRequest)`
+- `replace_entity(entity_id, data: EntityCreateRequest)`
+- `delete_entity(entity_id)`
+- `get_entity_relationships(entity_id)`
 
 **Example:**
 ```python
-from stepxmlclient.model.entity import Entity
-entity = Entity(id="E001", name="Entity1")
-created = client.client.create_entity(entity=entity)
+from stepxmlclient.rest_client.models.entity import EntityCreateRequest, EntityUpdateRequest
+
+# Create requires objectType and parent (no id in POST body)
+request = EntityCreateRequest(
+    objectType="Contact",
+    parent="ContactsRoot",
+    name="Macy, Charles",
+    values={"Email": {"value": "charles@example.com"}}
+)
+created = ops.create_entity(request)
+
+# Partial update
+ops.update_entity("E001", EntityUpdateRequest(name="Updated Name"))
 ```
 
 ---

@@ -1,9 +1,9 @@
 # STEP XML Creator - Feature Status & Roadmap
 
-**Last Updated:** February 4, 2026  
-**Current Version:** Phase 1 Complete - Phase 2 Planning  
+**Last Updated:** April 28, 2026  
+**Current Version:** Phase 2 Complete - Phase 3 Planning  
 **Parser Coverage:** ~80% of STEP-XML schema  
-**Creator Coverage:** ~10% of STEP-XML schema
+**Creator Coverage:** ~25% of STEP-XML schema
 
 ---
 
@@ -25,29 +25,72 @@ The **Creator** currently supports only ~10% and focuses on the basic entities. 
 ### Tier 1: Core Entities (Phase 1 - COMPLETE)
 
 #### Product & Asset Management
-- ✅ **Products**
-  - Attributes: ID, ParentId, UserTypeID, Name
+- ✅ **Products** (fully XSD-aligned)
+  - Attributes: ID, ParentId, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
+  - Text: Name
   - Values (attribute data)
-  - All 4 cross-reference types (Asset, Product, Classification, Entity)
+  - All cross-reference types: Asset, Product, ClassificationReference, ClassificationCrossReference, Entity
   - Both deletion types (full deletion + link severance)
+  - Complex children: STEPWorkflowStateBind, SequenceProduct, OverrideSubProduct, PackagingReference, Terms, CurrentTasks, Tables, DataContainers
+  - Helper methods for all child types
   
-- ✅ **Assets**
-  - Attributes: ID, Name, KeyValue
+- ✅ **Assets** (fully XSD-aligned)
+  - Attributes: ID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
+  - Text: Name, KeyValue
   - Values (attribute data)
-  - Product, Classification, Entity cross-references
-  - Deletion operations
+  - Cross-references: Classification (ClassificationReference), Entity, AssetCrossReference
+  - Complex children: AssetContent, AssetBinaryContent, AssetPushLocation, Pages, CurrentTasks
+  - Helper methods for all child types
+
+- ✅ **Classifications** (fully XSD-aligned, Phase 2)
+  - Attributes: ID, ParentID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
+  - Text: Name
+  - Values, MetaData, AttributeLink, DataContainerTypeLink
+  - All cross-reference types: Product, ProductCrossReference, Classification, Entity, Asset
+  - Suppressed and Delete variants for all reference types
+  - Complex children: SequenceProduct, CurrentTasks, Terms, Tables, PublicationGroup
+  - Nested Classification hierarchy
+  - Helper methods for all child types
+
+- ✅ **Entities** (fully XSD-aligned, Phase 2)
+  - Attributes: ID, ParentID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
+  - Text: Name
+  - Values, DataContainers
+  - All cross-reference types: Product, ProductCrossReference, Classification, Entity, Asset
+  - Context/WorkspaceCrossReference variants
+  - Suppressed and Delete variants for all reference types
+  - Complex children: CurrentTasks, Terms
+  - Nested Entity hierarchy
+  - Helper methods for all child types
 
 #### Relations
-- ✅ **AssetCrossReference** - Product → Asset links
-- ✅ **ProductCrossReference** - Product → Product links
-- ✅ **ClassificationCrossReference** - Product/Asset → Classification
-- ✅ **EntityCrossReference** - Product/Asset → Entity
+- ✅ **AssetCrossReference** - links to assets
+- ✅ **ProductCrossReference** - links to products
+- ✅ **ClassificationReference** - Product/Asset → Classification (primary, XSD-correct)
+- ✅ **ClassificationCrossReference** - explicit cross-reference variant
+- ✅ **EntityCrossReference** - links to entities
 
 #### Deletion Operations
 - ✅ **DeleteAsset** - Top-level asset deletion
 - ✅ **DeleteProduct** - Top-level product deletion
 - ✅ **DeleteAssetCrossReference** - Link severance
 - ✅ **DeleteProductCrossReference** - Link severance
+
+#### Complex Element Classes (`complex_elements.py`)
+- ✅ **STEPWorkflowStateBind** - Workflow state assignment (WorkflowID, StateID)
+- ✅ **SequenceProduct** - Ordered product reference (ID, Changed, KeyValue)
+- ✅ **OverrideSubProduct** - Sub-product override (ProductID, AnalyzerResult)
+- ✅ **PackagingReference** - Packaging link (ProductID, Quantity)
+- ✅ **AssetPushLocation** - Asset delivery config (Status, ConfigurationID, QualifierID)
+- ✅ **AssetContent** - Asset content spec (QualifierID, AssetContentSpecification)
+- ✅ **AssetContentSpecification** - Content options (ImageConversionConfigurationID, IncludesBinaryContent, RelativeURL)
+- ✅ **BinaryContent** - Inline binary data
+- ✅ **AssetBinaryContent** - Binary asset metadata (QualifierID, MIMEType, Checksum, Filename)
+- ✅ **Task** - Workflow task entry (STEPWorkflowID, StateID, AssigneeID, etc.)
+- ✅ **CurrentTasks** - Task container
+- ✅ **Term** - Pricing/sourcing term (TermsListID, Quantity, Date, LeadTime, etc.)
+- ✅ **Terms** - Terms container
+- ✅ **Tables** - Table data container
 
 #### Creator Infrastructure
 - ✅ Document building (`build()`)
@@ -60,41 +103,28 @@ The **Creator** currently supports only ~10% and focuses on the basic entities. 
 
 ## ⚠️ Parser-Ready Features (Ready for Creator Implementation)
 
-### Tier 2: Classification & Entity Hierarchy (Parser Ready - Creator Needed)
+### Tier 2: Classification & Entity Hierarchy ✅ COMPLETE (Phase 2)
 
 #### Classifications
-**Parser Status:** ✅ Full support including:
-- Attributes: ID, ParentID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
-- Nested classifications (hierarchical)
-- KeyValue and ParentKeyValue (alternate identification)
-- All cross-reference types (Product, Classification, Entity, Asset)
-- MetaData, AttributeLink, DataContainerTypeLink
+**Parser Status:** ✅ Full support  
+**Creator Status:** ✅ Fully implemented
 
-**Creator Status:** ❌ Not implemented
-
-**Implementation Notes:**
-- Similar pattern to Product but with more complex attributes
-- Support for hierarchical nesting
-- Additional Boolean attributes (Changed, Republished, Selected, Referenced)
+Model: `stepxmlclient/model/classification.py`  
+All attributes, child elements, helper methods, and pre-built object support are available.  
+See [CREATOR_USAGE.md](CREATOR_USAGE.md) for usage examples.
 
 #### Entities
-**Parser Status:** ✅ Full support including:
-- Attributes: ID, ParentID, UserTypeID, QualifierID, Changed, Republished, Selected, Referenced
-- Nested entities (hierarchical)
-- KeyValue and ParentKeyValue
-- All cross-reference types plus Context and Workspace
-- Values, DataContainers, MetaData
+**Parser Status:** ✅ Full support  
+**Creator Status:** ✅ Fully implemented
 
-**Creator Status:** ❌ Not implemented
-
-**Implementation Notes:**
-- Similar to Classification but supports Context/Workspace cross-references
-- More flexible than Product for generic MDM objects
+Model: `stepxmlclient/model/entity.py`  
+All attributes, child elements, helper methods, Context/Workspace cross-references, and pre-built object support are available.  
+See [CREATOR_USAGE.md](CREATOR_USAGE.md) for usage examples.
 
 #### Deletion for Classifications & Entities
 **Parser Status:** ✅ DeleteClassification, DeleteEntity, plus suppressed variants
 
-**Creator Status:** ❌ Not implemented
+**Creator Status:** ⚠️ Partial — deletion model classes not yet in `deletion.py`
 
 ### Tier 3: Attribute System (Parser Ready - Creator Needed)
 
@@ -276,25 +306,17 @@ The **Creator** currently supports only ~10% and focuses on the basic entities. 
 
 ## 📋 Implementation Roadmap
 
-### Phase 2: Hierarchy Foundations (Recommended: Weeks 1-2)
+### Phase 2: Hierarchy Foundations ✅ COMPLETE
 
-**Priority 1 - Start Here:**
-1. **Classification Model & Creator Support**
-   - Create `stepxmlclient/model/classification.py`
-   - Add to Creator collections
-   - Implement convenience methods
-   - Estimated: 2-3 days
+1. ✅ **Classification Model** — `stepxmlclient/model/classification.py`
+2. ✅ **Entity Model** — `stepxmlclient/model/entity.py`
+3. ✅ **Complex Element Classes** — `stepxmlclient/model/complex_elements.py`
 
-2. **Entity Model & Creator Support**
-   - Create `stepxmlclient/model/entity.py`
-   - Add to Creator collections
-   - Implement convenience methods
-   - Estimated: 2-3 days
-
-**Deliverables:**
-- Classification and Entity objects can be created and exported to XML
-- All relation types supported
-- Deletion operations available
+**Phase 2 delivered:**
+- Classification and Entity fully XSD-aligned with all helper methods
+- Pre-built object pattern via `complex_elements.py`
+- ClassificationReference (distinct from ClassificationCrossReference)
+- STEPWorkflowStateBind with XSD-correct keys (WorkflowID/StateID)
 
 ### Phase 3: Attribute System (Recommended: Weeks 3-4)
 
@@ -384,8 +406,9 @@ stepxmlclient/model/
 ├── asset.py                       ✅ (Already done)
 ├── relations.py                   ✅ (Already done)
 ├── deletion.py                    ✅ (Already done)
-├── classification.py              📋 (Phase 2)
-├── entity.py                      📋 (Phase 2)
+├── classification.py              ✅ (Phase 2 Complete)
+├── entity.py                      ✅ (Phase 2 Complete)
+├── complex_elements.py            ✅ (Phase 2 Complete)
 ├── attribute.py                   📋 (Phase 3)
 ├── attribute_group.py             📋 (Phase 3)
 ├── list_of_values.py              📋 (Phase 3)
@@ -436,8 +459,8 @@ Each new model tier adds:
 |---|---|---|---|---|
 | Product | ✅ 100% | ✅ 100% | 0% | Complete |
 | Asset | ✅ 100% | ✅ 100% | 0% | Complete |
-| Classification | ✅ 100% | ❌ 0% | 100% | P1 |
-| Entity | ✅ 100% | ❌ 0% | 100% | P1 |
+| Classification | ✅ 100% | ✅ 100% | 0% | Complete |
+| Entity | ✅ 100% | ✅ 100% | 0% | Complete |
 | Attribute | ✅ 100% | ❌ 0% | 100% | P2 |
 | AttributeGroup | ✅ 100% | ❌ 0% | 100% | P2 |
 | ListOfValues | ✅ 100% | ❌ 0% | 100% | P2 |

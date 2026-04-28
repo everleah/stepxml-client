@@ -12,14 +12,18 @@ A practical guide to using the `stepxml-client` Creator for building STEP-XML do
 4. [Creating Assets](#creating-assets)
 5. [Managing Relations](#managing-relations)
 6. [Deletion Operations](#deletion-operations)
-7. [Advanced Examples](#advanced-examples)
-8. [Exporting XML](#exporting-xml)
-9. [Sending to STEP API](#sending-to-step-api)
+7. [Creating Classifications](#creating-classifications)
+8. [Creating Entities](#creating-entities)
+9. [Complex Element Helpers](#complex-element-helpers)
+10. [Advanced Examples](#advanced-examples)
+11. [Exporting XML](#exporting-xml)
+12. [Sending to STEP API](#sending-to-step-api)
 
 ---
 
 ## Basic Setup
 
+---
 ### Import the Required Classes
 
 ```python
@@ -77,7 +81,6 @@ ProductClass = get_model_class('Product')
 # Create instance
 if ProductClass is not None:
     product = ProductClass({
-        "ID": "P001",
         "Name": "Dynamic Product"
     })
     creator.add(product)
@@ -89,24 +92,44 @@ else:
 
 ```python
 available_classes = [
+    # Core entities
     'Product',
     'ProductReplacementRule',
     'Asset',
+    'Classification',
+    'Entity',
+    # Deletion
     'DeleteAsset',
     'DeleteProduct',
     'DeleteAssetCrossReference',
     'DeleteProductCrossReference',
+    # Relations
     'AssetCrossReference',
     'ProductCrossReference',
-    'ClassificationCrossReference',
-    'EntityCrossReference'
+    'ClassificationReference',       # primary: Product/Asset → Classification
+    'ClassificationCrossReference',  # explicit cross-ref variant
+    'EntityCrossReference',
+    # Complex element helpers
+    'STEPWorkflowStateBind',
+    'SequenceProduct',
+    'OverrideSubProduct',
+    'PackagingReference',
+    'AssetPushLocation',
+    'AssetContent',
+    'AssetContentSpecification',
+    'BinaryContent',
+    'AssetBinaryContent',
+    'Task',
+    'CurrentTasks',
+    'Term',
+    'Terms',
+    'Tables',
 ]
 
 # Create all classes dynamically
 instances = {}
 for class_name in available_classes:
     cls = get_model_class(class_name)
-    if cls is not None:
         instances[class_name] = cls
 ```
 
@@ -187,7 +210,6 @@ print(creator.to_string())
 ```python
 def safe_create_object(class_name: str, data: dict, default_type: str = 'Product'):
     """Create object with fallback to default type"""
-    ModelClass = get_model_class(class_name)
     
     if ModelClass is None:
         print(f"Warning: Unknown type '{class_name}', using '{default_type}'")
