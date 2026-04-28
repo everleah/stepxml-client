@@ -162,3 +162,99 @@ class AssetBinaryContent(BaseObject):
     ]
     _TEXT_NAMES: List[str] = []
     _CHILDREN_NAMES: List[str] = ["BinaryContent"]
+
+
+class Task(BaseObject):
+    """Single workflow task entry.
+
+    Required TaskType fields:
+    - STEPWorkflowID
+    - StateID
+    - AssigneeID
+    - AssignedToGroup
+    - EntryTime
+
+    Optional fields:
+    - Deadline
+    - Priority
+    - StatusID
+    """
+
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: str = "Task"
+    _ATTRIBUTE_NAMES: List[str] = [
+        "STEPWorkflowID",
+        "StateID",
+        "AssigneeID",
+        "AssignedToGroup",
+        "EntryTime",
+        "Deadline",
+        "Priority",
+        "StatusID",
+    ]
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = []
+
+
+class CurrentTasks(BaseObject):
+    """Container for one or more Task entries (CurrentTasksType)."""
+
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: str = "CurrentTasks"
+    _ATTRIBUTE_NAMES: List[str] = []
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["Task"]
+
+
+class Term(BaseObject):
+    """Single commercial term entry (TermType, mixed text + attributes).
+
+    Optional attributes:
+    - MaximumQuantity
+    - EndDate
+    - TermsListID
+    - MinimumQuantity
+    - LeadTime
+    - UnitID
+    - StartDate
+    - LotSize
+
+    Optional text content:
+    - value
+    """
+
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: str = "Term"
+    _ATTRIBUTE_NAMES: List[str] = [
+        "MaximumQuantity",
+        "EndDate",
+        "TermsListID",
+        "MinimumQuantity",
+        "LeadTime",
+        "UnitID",
+        "StartDate",
+        "LotSize",
+    ]
+    _TEXT_NAMES: List[str] = []
+    _VALUE_NAME: str = "value"
+    _CHILDREN_NAMES: List[str] = []
+
+
+class Terms(BaseObject):
+    """Container for one or more Term entries (TermsType)."""
+
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: str = "Terms"
+    _ATTRIBUTE_NAMES: List[str] = []
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["Term"]
+
+
+class Tables(BaseObject):
+    """Container for TableDefinition or Table entries (TablesType)."""
+
+    _GROUP_NAME: Optional[str] = None
+    _TAG_NAME: str = "Tables"
+    _ATTRIBUTE_NAMES: List[str] = []
+    _TEXT_NAMES: List[str] = []
+    _CHILDREN_NAMES: List[str] = ["TableDefinition", "Table"]

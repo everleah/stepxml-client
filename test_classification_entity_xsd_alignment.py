@@ -5,7 +5,7 @@ from stepxmlclient.model import Classification, Entity
 def test_classification_supports_new_xsd_children_and_omits_suppressed_product_reference():
     creator = Creator("Context2", "Main")
     classification = Classification({"ID": "C100", "UserTypeID": "UT_CLASS"})
-    classification._data["SequenceProduct"] = [{"ProductID": "PSEQ100"}]
+    classification._data["SequenceProduct"] = [{"ID": "PSEQ100"}]
     classification._data["DeleteAttributeLink"] = [{"AttributeID": "ATTR_OLD"}]
     classification._data["DeleteDataContainerTypeLink"] = [{"DataContainerTypeID": "DCT_OLD"}]
     classification._data["Tables"] = [{}]
@@ -16,7 +16,7 @@ def test_classification_supports_new_xsd_children_and_omits_suppressed_product_r
     creator.build()
 
     xml = creator.to_string()
-    assert "<SequenceProduct ProductID=\"PSEQ100\"" in xml
+    assert "<SequenceProduct ID=\"PSEQ100\"" in xml
     assert "<DeleteAttributeLink AttributeID=\"ATTR_OLD\"" in xml
     assert "<DeleteDataContainerTypeLink DataContainerTypeID=\"DCT_OLD\"" in xml
     assert "<Tables" in xml

@@ -10,32 +10,21 @@ from . import BaseObject
 if TYPE_CHECKING:
     from .relations import ProductCrossReference, ClassificationCrossReference, EntityCrossReference, AssetCrossReference
     from .deletion import DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference, DeleteAssetCrossReference
+    from .asset import Asset
+    from .complex_elements import SequenceProduct, CurrentTasks, Task, Terms, Term, Tables
 
 
 class Classification(BaseObject):
-    """Classification entity - hierarchical product categorization.
-    
-    Represents a classification node in a product hierarchy used to organize and categorize
-    products. Classifications can be nested and can reference products, other classifications,
-    entities, and assets.
-    
-    Supports:
-    - Nested classifications (parent/child hierarchy)
-    - Multiple cross-references (Product, Classification, Entity, Asset)
-    - Deletion operations (full deletion and link severance)
-    - Multi-language via QualifierID
-    - Boolean state tracking (Changed, Republished, Selected, Referenced)
-    
-    Attributes:
-        ID: Unique classification identifier
-        ParentID: Optional parent classification ID for hierarchy
-        UserTypeID: Optional user type for extended properties
-        QualifierID: Optional qualifier for multi-language/context support
-        Name: Classification name (localized)
-        Values: Dictionary of attribute ID to attribute values
-        ProductReference: Referenced products
-        ProductCrossReference: Cross-referenced products
-        Classification: Nested child classifications
+    """Classification entity in STEP MDM.
+
+    Common ``data`` keys:
+    - ``ID``, ``ParentID``, ``UserTypeID``, ``QualifierID``
+    - ``Name``
+    - ``KeyValue`` / ``ParentKeyValue``
+    - ``Values``
+
+    Additional supported children include ``SequenceProduct``, ``Tables``,
+    embedded ``Asset``, ``CurrentTasks`` and standard cross-references.
     """
     _GROUP_NAME: str = 'classifications'
     _TAG_NAME: str = 'Classification'
@@ -105,11 +94,9 @@ class Classification(BaseObject):
                             qualifier_id: Optional[str] = None,
                             mount_location: Optional[str] = None,
                             ref_object: Optional['ProductCrossReference'] = None) -> None:
-        """Add product cross-reference to this classification.
-        
-        Can be called two ways:
-        1. With parameters: add_product_reference(product_id="P001")
-        2. With object: add_product_reference(ref_object=product_ref_obj)
+        """Add ``ProductCrossReference``.
+
+        Fields: ``ProductID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .relations import ProductCrossReference
         
@@ -132,11 +119,9 @@ class Classification(BaseObject):
                                qualifier_id: Optional[str] = None,
                                mount_location: Optional[str] = None,
                                delete_ref_object: Optional['DeleteProductCrossReference'] = None) -> None:
-        """Delete/sever product reference from this classification.
-        
-        Can be called two ways:
-        1. With parameters: delete_product_reference(product_id="P001")
-        2. With object: delete_product_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteProductCrossReference``.
+
+        Fields: ``ProductID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .deletion import DeleteProductCrossReference
         
@@ -161,11 +146,10 @@ class Classification(BaseObject):
                                    qualifier_id: Optional[str] = None,
                                    mount_location: Optional[str] = None,
                                    ref_object: Optional['ClassificationCrossReference'] = None) -> None:
-        """Add classification cross-reference to this classification.
-        
-        Can be called two ways:
-        1. With parameters: add_classification_reference(classification_id="C001")
-        2. With object: add_classification_reference(ref_object=class_ref_obj)
+        """Add ``ClassificationCrossReference``.
+
+        Fields: ``ClassificationID``, ``Type``, ``QualifierID``,
+        ``MountLocation``.
         """
         from .relations import ClassificationCrossReference
         
@@ -188,11 +172,10 @@ class Classification(BaseObject):
                                       qualifier_id: Optional[str] = None,
                                       mount_location: Optional[str] = None,
                                       delete_ref_object: Optional['DeleteClassificationCrossReference'] = None) -> None:
-        """Delete/sever classification reference from this classification.
-        
-        Can be called two ways:
-        1. With parameters: delete_classification_reference(classification_id="C001")
-        2. With object: delete_classification_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteClassificationCrossReference``.
+
+        Fields: ``ClassificationID``, ``Type``, ``QualifierID``,
+        ``MountLocation``.
         """
         from .deletion import DeleteClassificationCrossReference
         
@@ -217,11 +200,9 @@ class Classification(BaseObject):
                            qualifier_id: Optional[str] = None,
                            mount_location: Optional[str] = None,
                            ref_object: Optional['EntityCrossReference'] = None) -> None:
-        """Add entity cross-reference to this classification.
-        
-        Can be called two ways:
-        1. With parameters: add_entity_reference(entity_id="E001")
-        2. With object: add_entity_reference(ref_object=entity_ref_obj)
+        """Add ``EntityCrossReference``.
+
+        Fields: ``EntityID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .relations import EntityCrossReference
         
@@ -244,11 +225,9 @@ class Classification(BaseObject):
                               qualifier_id: Optional[str] = None,
                               mount_location: Optional[str] = None,
                               delete_ref_object: Optional['DeleteEntityCrossReference'] = None) -> None:
-        """Delete/sever entity reference from this classification.
-        
-        Can be called two ways:
-        1. With parameters: delete_entity_reference(entity_id="E001")
-        2. With object: delete_entity_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteEntityCrossReference``.
+
+        Fields: ``EntityID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .deletion import DeleteEntityCrossReference
         
@@ -272,11 +251,9 @@ class Classification(BaseObject):
                           type_: Optional[str] = None,
                           qualifier_id: Optional[str] = None,
                           ref_object: Optional['AssetCrossReference'] = None) -> None:
-        """Add asset cross-reference to this classification.
-        
-        Can be called two ways:
-        1. With parameters: add_asset_reference(asset_id="A001")
-        2. With object: add_asset_reference(ref_object=asset_ref_obj)
+        """Add ``AssetCrossReference``.
+
+        Fields: ``AssetID``, ``Type``, ``QualifierID``.
         """
         from .relations import AssetCrossReference
         
@@ -297,11 +274,9 @@ class Classification(BaseObject):
                              type_: Optional[str] = None,
                              qualifier_id: Optional[str] = None,
                              delete_ref_object: Optional['DeleteAssetCrossReference'] = None) -> None:
-        """Delete/sever asset reference from this classification.
-        
-        Can be called two ways:
-        1. With parameters: delete_asset_reference(asset_id="A001")
-        2. With object: delete_asset_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteAssetCrossReference``.
+
+        Fields: ``AssetID``, ``Type``, ``QualifierID``.
         """
         from .deletion import DeleteAssetCrossReference
         
@@ -320,11 +295,10 @@ class Classification(BaseObject):
     
     def add_nested_classification(self, classification: Optional['Classification'] = None,
                                  **kwargs) -> None:
-        """Add nested child classification.
-        
-        Can be called two ways:
-        1. With object: add_nested_classification(classification=child_class)
-        2. With parameters: add_nested_classification(ID="C002", Name="Child")
+        """Add nested ``Classification``.
+
+        Either pass ``classification`` object or provide kwargs like
+        ``ID`` and ``Name``.
         """
         if classification is not None:
             nested = classification
@@ -334,3 +308,82 @@ class Classification(BaseObject):
         if not isinstance(self._data["Classification"], list):
             self._data["Classification"] = []
         self._data["Classification"].append(nested)
+
+    def add_sequence_product(self,
+                             product_id: Optional[str] = None,
+                             changed: Optional[bool] = None,
+                             key_values: Optional[List[Dict[str, Any]]] = None,
+                             sequence_data: Optional[Dict[str, Any]] = None,
+                             sequence_object: Optional['SequenceProduct'] = None) -> None:
+        """Add ``SequenceProduct`` entry.
+
+        XSD fields: ``ID`` (required), ``Changed`` (optional), ``KeyValue``
+        (optional list).
+        """
+        if sequence_object is not None:
+            entry: Any = sequence_object
+        elif sequence_data is not None:
+            entry = sequence_data
+        else:
+            entry = {"ID": product_id, "Changed": changed, "KeyValue": key_values}
+
+        if not isinstance(self._data.get("SequenceProduct"), list):
+            self._data["SequenceProduct"] = []
+        self._data["SequenceProduct"].append(entry)
+
+    def add_current_task(self,
+                         task_data: Optional[Dict[str, Any]] = None,
+                         task_object: Optional['Task'] = None,
+                         current_tasks_object: Optional['CurrentTasks'] = None) -> None:
+        """Add ``CurrentTasks`` with task entries.
+
+        Task keys: ``STEPWorkflowID``, ``StateID``, ``AssigneeID``,
+        ``AssignedToGroup``, ``EntryTime``, optional ``Deadline``, ``Priority``,
+        ``StatusID``.
+        """
+        from .complex_elements import CurrentTasks, Task
+
+        if current_tasks_object is not None:
+            entry: Any = current_tasks_object
+        else:
+            task = task_object or Task(task_data or {})
+            entry = CurrentTasks({"Task": [task]})
+
+        if not isinstance(self._data.get("CurrentTasks"), list):
+            self._data["CurrentTasks"] = []
+        self._data["CurrentTasks"].append(entry)
+
+    def add_table(self,
+                  table_data: Optional[Dict[str, Any]] = None,
+                  tables_object: Optional['Tables'] = None) -> None:
+        """Add ``Tables`` wrapper.
+
+        ``table_data`` supports container forms like:
+        - ``{"Table": {...}}``
+        - ``{"TableDefinition": {...}}``
+        """
+        from .complex_elements import Tables
+
+        if tables_object is not None:
+            entry: Any = tables_object
+        else:
+            payload = table_data or {}
+            if "Table" not in payload and "TableDefinition" not in payload:
+                payload = {"Table": [payload]}
+            entry = Tables(payload)
+
+        if not isinstance(self._data.get("Tables"), list):
+            self._data["Tables"] = []
+        self._data["Tables"].append(entry)
+
+    def add_asset(self, asset: Optional['Asset'] = None, **kwargs) -> None:
+        """Add embedded ``Asset`` child.
+
+        Pass either a pre-built ``Asset`` object or kwargs for ``Asset(...)``.
+        """
+        from .asset import Asset
+
+        entry = asset if asset is not None else Asset(kwargs)
+        if not isinstance(self._data.get("Asset"), list):
+            self._data["Asset"] = []
+        self._data["Asset"].append(entry)

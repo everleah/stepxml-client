@@ -11,35 +11,19 @@ from . import BaseObject
 if TYPE_CHECKING:
     from .relations import ProductCrossReference, ClassificationCrossReference, EntityCrossReference, AssetCrossReference
     from .deletion import DeleteProductCrossReference, DeleteClassificationCrossReference, DeleteEntityCrossReference, DeleteAssetCrossReference
+    from .complex_elements import CurrentTasks, Task, Terms, Term
 
 
 class Entity(BaseObject):
-    """Entity - generic MDM object with flexible structure.
-    
-    Represents a generic Master Data entity with flexible structure. Entities can model
-    various business object types and support hierarchical organization and cross-references.
-    
-    Supports:
-    - Nested entities (parent/child hierarchy)
-    - Multiple cross-references (Product, Classification, Entity, Asset, Context, Workspace)
-    - Deletion operations (full deletion and link severance)
-    - Multi-language via QualifierID
-    - Boolean state tracking (Changed, Republished, Selected, Referenced)
-    - Values (attribute data)
-    - DataContainers
-    
-    Attributes:
-        ID: Unique entity identifier
-        ParentID: Optional parent entity ID for hierarchy
-        UserTypeID: Optional user type for extended properties
-        QualifierID: Optional qualifier for multi-language/context support
-        Name: Entity name (localized)
-        Values: Dictionary of attribute ID to attribute values
-        Entity: Nested child entities
-        ProductCrossReference: Cross-referenced products
-        ClassificationCrossReference: Cross-referenced classifications
-        EntityCrossReference: Cross-referenced entities
-        AssetCrossReference: Cross-referenced assets
+    """Entity model in STEP MDM.
+
+    Common ``data`` keys:
+    - ``ID``, ``ParentID``, ``UserTypeID``, ``QualifierID``
+    - ``Name``
+    - ``KeyValue`` / ``ParentKeyValue``
+    - ``Values`` and ``DataContainers``
+
+    Supports cross-references and also ``CurrentTasks`` / ``Terms`` children.
     """
     _GROUP_NAME: str = 'entities'
     _TAG_NAME: str = 'Entity'
@@ -103,11 +87,9 @@ class Entity(BaseObject):
                             qualifier_id: Optional[str] = None,
                             mount_location: Optional[str] = None,
                             ref_object: Optional['ProductCrossReference'] = None) -> None:
-        """Add product cross-reference to this entity.
-        
-        Can be called two ways:
-        1. With parameters: add_product_reference(product_id="P001")
-        2. With object: add_product_reference(ref_object=product_ref_obj)
+        """Add ``ProductCrossReference``.
+
+        Fields: ``ProductID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .relations import ProductCrossReference
         
@@ -130,11 +112,9 @@ class Entity(BaseObject):
                                qualifier_id: Optional[str] = None,
                                mount_location: Optional[str] = None,
                                delete_ref_object: Optional['DeleteProductCrossReference'] = None) -> None:
-        """Delete/sever product reference from this entity.
-        
-        Can be called two ways:
-        1. With parameters: delete_product_reference(product_id="P001")
-        2. With object: delete_product_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteProductCrossReference``.
+
+        Fields: ``ProductID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .deletion import DeleteProductCrossReference
         
@@ -159,11 +139,10 @@ class Entity(BaseObject):
                                    qualifier_id: Optional[str] = None,
                                    mount_location: Optional[str] = None,
                                    ref_object: Optional['ClassificationCrossReference'] = None) -> None:
-        """Add classification cross-reference to this entity.
-        
-        Can be called two ways:
-        1. With parameters: add_classification_reference(classification_id="C001")
-        2. With object: add_classification_reference(ref_object=class_ref_obj)
+        """Add ``ClassificationCrossReference``.
+
+        Fields: ``ClassificationID``, ``Type``, ``QualifierID``,
+        ``MountLocation``.
         """
         from .relations import ClassificationCrossReference
         
@@ -186,11 +165,10 @@ class Entity(BaseObject):
                                       qualifier_id: Optional[str] = None,
                                       mount_location: Optional[str] = None,
                                       delete_ref_object: Optional['DeleteClassificationCrossReference'] = None) -> None:
-        """Delete/sever classification reference from this entity.
-        
-        Can be called two ways:
-        1. With parameters: delete_classification_reference(classification_id="C001")
-        2. With object: delete_classification_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteClassificationCrossReference``.
+
+        Fields: ``ClassificationID``, ``Type``, ``QualifierID``,
+        ``MountLocation``.
         """
         from .deletion import DeleteClassificationCrossReference
         
@@ -215,11 +193,9 @@ class Entity(BaseObject):
                            qualifier_id: Optional[str] = None,
                            mount_location: Optional[str] = None,
                            ref_object: Optional['EntityCrossReference'] = None) -> None:
-        """Add entity cross-reference to this entity.
-        
-        Can be called two ways:
-        1. With parameters: add_entity_reference(entity_id="E001")
-        2. With object: add_entity_reference(ref_object=entity_ref_obj)
+        """Add ``EntityCrossReference``.
+
+        Fields: ``EntityID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .relations import EntityCrossReference
         
@@ -242,11 +218,9 @@ class Entity(BaseObject):
                               qualifier_id: Optional[str] = None,
                               mount_location: Optional[str] = None,
                               delete_ref_object: Optional['DeleteEntityCrossReference'] = None) -> None:
-        """Delete/sever entity reference from this entity.
-        
-        Can be called two ways:
-        1. With parameters: delete_entity_reference(entity_id="E001")
-        2. With object: delete_entity_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteEntityCrossReference``.
+
+        Fields: ``EntityID``, ``Type``, ``QualifierID``, ``MountLocation``.
         """
         from .deletion import DeleteEntityCrossReference
         
@@ -270,11 +244,9 @@ class Entity(BaseObject):
                           type_: Optional[str] = None,
                           qualifier_id: Optional[str] = None,
                           ref_object: Optional['AssetCrossReference'] = None) -> None:
-        """Add asset cross-reference to this entity.
-        
-        Can be called two ways:
-        1. With parameters: add_asset_reference(asset_id="A001")
-        2. With object: add_asset_reference(ref_object=asset_ref_obj)
+        """Add ``AssetCrossReference``.
+
+        Fields: ``AssetID``, ``Type``, ``QualifierID``.
         """
         from .relations import AssetCrossReference
         
@@ -295,11 +267,9 @@ class Entity(BaseObject):
                              type_: Optional[str] = None,
                              qualifier_id: Optional[str] = None,
                              delete_ref_object: Optional['DeleteAssetCrossReference'] = None) -> None:
-        """Delete/sever asset reference from this entity.
-        
-        Can be called two ways:
-        1. With parameters: delete_asset_reference(asset_id="A001")
-        2. With object: delete_asset_reference(delete_ref_object=delete_ref_obj)
+        """Add ``DeleteAssetCrossReference``.
+
+        Fields: ``AssetID``, ``Type``, ``QualifierID``.
         """
         from .deletion import DeleteAssetCrossReference
         
@@ -320,11 +290,9 @@ class Entity(BaseObject):
     
     def add_nested_entity(self, entity: Optional['Entity'] = None,
                          **kwargs) -> None:
-        """Add nested child entity.
-        
-        Can be called two ways:
-        1. With object: add_nested_entity(entity=child_entity)
-        2. With parameters: add_nested_entity(ID="E002", Name="Child")
+        """Add nested ``Entity`` object.
+
+        Pass either ``entity`` or kwargs for ``Entity(...)``.
         """
         if entity is not None:
             nested = entity
@@ -334,3 +302,47 @@ class Entity(BaseObject):
         if not isinstance(self._data["Entity"], list):
             self._data["Entity"] = []
         self._data["Entity"].append(nested)
+
+    def add_current_task(self,
+                         task_data: Optional[Dict[str, Any]] = None,
+                         task_object: Optional['Task'] = None,
+                         current_tasks_object: Optional['CurrentTasks'] = None) -> None:
+        """Add ``CurrentTasks`` with task entries.
+
+        Task keys: ``STEPWorkflowID``, ``StateID``, ``AssigneeID``,
+        ``AssignedToGroup``, ``EntryTime``, optional ``Deadline``, ``Priority``,
+        ``StatusID``.
+        """
+        from .complex_elements import CurrentTasks, Task
+
+        if current_tasks_object is not None:
+            entry: Any = current_tasks_object
+        else:
+            task = task_object or Task(task_data or {})
+            entry = CurrentTasks({"Task": [task]})
+
+        if not isinstance(self._data.get("CurrentTasks"), list):
+            self._data["CurrentTasks"] = []
+        self._data["CurrentTasks"].append(entry)
+
+    def add_term(self,
+                 term_data: Optional[Dict[str, Any]] = None,
+                 term_object: Optional['Term'] = None,
+                 terms_object: Optional['Terms'] = None) -> None:
+        """Add ``Terms`` with one or more term entries.
+
+        Term keys: ``TermsListID``, ``MinimumQuantity``, ``MaximumQuantity``,
+        ``StartDate``, ``EndDate``, ``LeadTime``, ``UnitID``, ``LotSize`` and
+        optional text value via ``value``.
+        """
+        from .complex_elements import Terms, Term
+
+        if terms_object is not None:
+            entry: Any = terms_object
+        else:
+            term = term_object or Term(term_data or {})
+            entry = Terms({"Term": [term]})
+
+        if not isinstance(self._data.get("Terms"), list):
+            self._data["Terms"] = []
+        self._data["Terms"].append(entry)
