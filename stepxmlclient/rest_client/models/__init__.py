@@ -32,7 +32,6 @@ from .asset import (
     AssetUpdateRequest,
     AssetUploadRequest,
     AssetDownloadResponse,
-    AssetKeyValue,
     AssetMetadata,
 )
 from .classification import (
@@ -151,7 +150,6 @@ __all__ = [
     'AssetUpdateRequest',
     'AssetUploadRequest',
     'AssetDownloadResponse',
-    'AssetKeyValue',
     'AssetMetadata',
     'ClassificationResponse',
     'ClassificationListResponse',

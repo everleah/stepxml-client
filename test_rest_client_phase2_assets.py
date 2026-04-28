@@ -18,7 +18,6 @@ from stepxmlclient.rest_client.models.asset import (
     AssetUpdateRequest,
     AssetUploadRequest,
     AssetDownloadResponse,
-    AssetKeyValue,
     AssetMetadata,
 )
 from stepxmlclient.rest_client import exceptions as exc
@@ -26,12 +25,6 @@ from stepxmlclient.rest_client import exceptions as exc
 
 class TestAssetModels(unittest.TestCase):
     """Tests for asset model classes."""
-    
-    def test_asset_key_value_creation(self):
-        """Test AssetKeyValue creation."""
-        kv = AssetKeyValue(key="Usage", value="ProductImage")
-        self.assertEqual(kv.key, "Usage")
-        self.assertEqual(kv.value, "ProductImage")
     
     def test_asset_metadata_creation(self):
         """Test AssetMetadata creation."""
@@ -64,62 +57,35 @@ class TestAssetModels(unittest.TestCase):
         """Test AssetResponse creation."""
         asset = AssetResponse(
             id="ASSET123",
-            user_type_id="Image",
+            objectType="ProductImage",
             name="Product Image",
-            attributes=None,
-            metadata=None,
-            created_date=None,
-            modified_date=None,
-            version=None
+            classifications=["ProductImageRoot"],
+            values=None,
+            references=None,
+            contentMetadata=None,
         )
         self.assertEqual(asset.id, "ASSET123")
         self.assertEqual(asset.name, "Product Image")
     
-    def test_asset_response_with_metadata(self):
-        """Test AssetResponse with metadata."""
-        meta = AssetMetadata(
-            filename="image.jpg",
-            mime_type="image/jpeg",
-            size=102400,
-            creation_date=None,
-            modification_date=None,
-            checksum=None
-        )
+    def test_asset_response_with_content_metadata(self):
+        """Test AssetResponse with contentMetadata."""
         asset = AssetResponse(
             id="ASSET123",
-            user_type_id=None,
+            objectType=None,
             name=None,
-            metadata=meta,
-            attributes=None,
-            created_date=None,
-            modified_date=None,
-            version=None
+            classifications=[],
+            values=None,
+            references=None,
+            contentMetadata={"originalFilename": "image.jpg"},
         )
-        self.assertIsNotNone(asset.metadata)
-        self.assertEqual(asset.metadata.filename, "image.jpg") #type: ignore
-    
-    def test_asset_response_with_key_values(self):
-        """Test AssetResponse with key-values."""
-        kvs = [AssetKeyValue(key="Usage", value="ProductImage")]
-        asset = AssetResponse(
-            id="ASSET123",
-            user_type_id=None,
-            name=None,
-            key_values=kvs,
-            attributes=None,
-            metadata=None,
-            created_date=None,
-            modified_date=None,
-            version=None
-        )
-        self.assertEqual(len(asset.key_values), 1) #type: ignore
-        self.assertEqual(asset.key_values[0].value, "ProductImage") #type: ignore
+        self.assertIsNotNone(asset.contentMetadata)
+        self.assertEqual(asset.contentMetadata["originalFilename"], "image.jpg") #type: ignore[index]
     
     def test_asset_list_response_creation(self):
         """Test AssetListResponse creation."""
         assets = [
-            AssetResponse(id="ASSET1", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None),
-            AssetResponse(id="ASSET2", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None),
+            AssetResponse(id="ASSET1", objectType=None, name=None, classifications=[], values=None, references=None, contentMetadata=None),
+            AssetResponse(id="ASSET2", objectType=None, name=None, classifications=[], values=None, references=None, contentMetadata=None),
         ]
         response = AssetListResponse(
             items=assets,
@@ -133,7 +99,7 @@ class TestAssetModels(unittest.TestCase):
     
     def test_asset_list_response_has_more(self):
         """Test AssetListResponse has_more calculation."""
-        assets = [AssetResponse(id=f"ASSET{i}", user_type_id=None, name=None, attributes=None, metadata=None, created_date=None, modified_date=None, version=None) for i in range(20)]
+        assets = [AssetResponse(id=f"ASSET{i}", objectType=None, name=None, classifications=[], values=None, references=None, contentMetadata=None) for i in range(20)]
         
         response = AssetListResponse(
             items=assets,
@@ -148,7 +114,7 @@ class TestAssetModels(unittest.TestCase):
         """Test AssetSearchRequest creation."""
         request = AssetSearchRequest(
             query="image",
-            user_type_id=None,
+            object_type=None,
             modified_since=None,
             limit=50,
             offset=10,
@@ -162,7 +128,7 @@ class TestAssetModels(unittest.TestCase):
         """Test AssetSearchRequest defaults."""
         request = AssetSearchRequest(
             query="*",
-            user_type_id=None,
+            object_type=None,
             modified_since=None,
             limit=20,
             offset=0,
@@ -176,21 +142,21 @@ class TestAssetModels(unittest.TestCase):
     def test_asset_create_request(self):
         """Test AssetCreateRequest creation."""
         request = AssetCreateRequest(
-            id="NEWASSET",
-            user_type_id="Image",
+            objectType="ProductImage",
+            classifications=["ProductImageRoot"],
             name="New Asset",
-            key_values=None,
-            attributes=None
+            values=None,
+            references=None,
         )
-        self.assertEqual(request.id, "NEWASSET")
+        self.assertEqual(request.objectType, "ProductImage")
     
     def test_asset_update_request(self):
         """Test AssetUpdateRequest creation."""
         request = AssetUpdateRequest(
             name="Updated Name",
-            user_type_id=None,
-            key_values=None,
-            attributes=None
+            classifications=None,
+            values=None,
+            references=None,
         )
         self.assertEqual(request.name, "Updated Name")
     
@@ -229,7 +195,7 @@ class TestAssetOperations(unittest.TestCase):
         self.assertEqual(self.operations.operation_name, "AssetOperations")
 
     def test_get_asset_success(self):
-        self.mock_client.getAsset.return_value = {"id": "ASSET123", "user_type_id": "Image", "name": "Test Asset"}
+        self.mock_client.getAsset.return_value = {"id": "ASSET123", "objectType": "ProductImage", "name": "Test Asset"}
         result = self.operations.get_asset("ASSET123")
         self.assertEqual(result.id, "ASSET123")
         call_args = self.mock_client.getAsset.call_args
@@ -253,7 +219,7 @@ class TestAssetOperations(unittest.TestCase):
 
     def test_search_assets_success(self):
         self.mock_client.postAssetsSearch.return_value = {"items": [{"id": "ASSET1"}, {"id": "ASSET2"}], "total": 2}
-        condition = {"conditionType": "objecttype", "objectTypeId": "Image"}
+        condition = {"conditionType": "objecttype", "objectType": "ProductImage"}
         result = self.operations.search_assets(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postAssetsSearch.call_args
@@ -265,20 +231,32 @@ class TestAssetOperations(unittest.TestCase):
 
     def test_create_asset_success(self):
         self.mock_client.postAssets.return_value = {"id": "NEWASSET", "name": "New Asset"}
-        request = AssetCreateRequest(id="NEWASSET", user_type_id=None, name="New Asset", key_values=None, attributes=None)
+        request = AssetCreateRequest(
+            objectType="ProductImage",
+            classifications=["ProductImageRoot"],
+            name="New Asset",
+            values=None,
+            references=None,
+        )
         result = self.operations.create_asset(request)
         self.assertEqual(result.id, "NEWASSET")
         self.mock_client.postAssets.assert_called_once()
 
     def test_create_asset_conflict(self):
         self.mock_client.postAssets.side_effect = Exception("409 conflict")
-        request = AssetCreateRequest(id="EXISTING", user_type_id=None, name=None, key_values=None, attributes=None)
+        request = AssetCreateRequest(
+            objectType="ProductImage",
+            classifications=["ProductImageRoot"],
+            name=None,
+            values=None,
+            references=None,
+        )
         with self.assertRaises(exc.ConflictError):
             self.operations.create_asset(request)
 
     def test_update_asset_success(self):
         self.mock_client.patchAsset.return_value = {"id": "ASSET123", "name": "Updated"}
-        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
+        updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         result = self.operations.update_asset("ASSET123", updates)
         self.assertEqual(result.name, "Updated")
         call_args = self.mock_client.patchAsset.call_args
@@ -287,20 +265,26 @@ class TestAssetOperations(unittest.TestCase):
 
     def test_update_asset_not_found(self):
         self.mock_client.patchAsset.side_effect = Exception("404 not found")
-        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
+        updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_asset("NONEXISTENT", updates)
 
     def test_update_asset_with_key_id(self):
         self.mock_client.patchAsset.return_value = {"id": "ASSET123"}
-        updates = AssetUpdateRequest(name="Updated", user_type_id=None, key_values=None, attributes=None)
+        updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         self.operations.update_asset("ASSET123", updates, key_id="MyKey")
         call_args = self.mock_client.patchAsset.call_args
         self.assertEqual(call_args[1]["keyId"], "MyKey")
 
     def test_replace_asset_success(self):
         self.mock_client.putAsset.return_value = {"id": "ASSET123", "name": "Replaced"}
-        data = AssetCreateRequest(id="ASSET123", user_type_id=None, name="Replaced", key_values=None, attributes=None)
+        data = AssetCreateRequest(
+            objectType="ProductImage",
+            classifications=["ProductImageRoot"],
+            name="Replaced",
+            values=None,
+            references=None,
+        )
         result = self.operations.replace_asset("ASSET123", data)
         self.assertEqual(result.id, "ASSET123")
         call_args = self.mock_client.putAsset.call_args
@@ -308,7 +292,13 @@ class TestAssetOperations(unittest.TestCase):
 
     def test_replace_asset_with_allow_overwrite(self):
         self.mock_client.putAsset.return_value = {"id": "ASSET123"}
-        data = AssetCreateRequest(id="ASSET123", user_type_id=None, name=None, key_values=None, attributes=None)
+        data = AssetCreateRequest(
+            objectType="ProductImage",
+            classifications=["ProductImageRoot"],
+            name=None,
+            values=None,
+            references=None,
+        )
         self.operations.replace_asset("ASSET123", data, allow_overwrite=True)
         call_args = self.mock_client.putAsset.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
@@ -394,7 +384,7 @@ class TestAssetOperations(unittest.TestCase):
         call_args = self.mock_client.postAssetsSearch.call_args
         body = call_args[1]["body"]
         self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectTypeId"], "ImageType")
+        self.assertEqual(body["condition"]["objectType"], "ImageType")
 
     def test_list_assets(self):
         self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}

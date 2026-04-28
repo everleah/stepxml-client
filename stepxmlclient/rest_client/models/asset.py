@@ -1,22 +1,10 @@
 """Asset-related REST API models.
 
-Provides Pydantic models for asset data, binary content, and CRUD operations.
+Provides Pydantic models aligned with STEP REST API v2 asset schemas.
 """
 
-from typing import Optional, Any, List, Dict, BinaryIO
+from typing import Optional, Any, List, Dict
 from pydantic import BaseModel, Field, ConfigDict
-
-
-class AssetKeyValue(BaseModel):
-    """Key-value pair for asset identification.
-    
-    Attributes:
-        key: Key name (e.g., "Usage", "Reference")
-        value: Key value
-    """
-    
-    key: str = Field(..., description="Key name")
-    value: str = Field(..., description="Key value")
 
 
 class AssetMetadata(BaseModel):
@@ -41,47 +29,44 @@ class AssetMetadata(BaseModel):
 
 class AssetResponse(BaseModel):
     """Single asset response data.
-    
-    Attributes:
-        id: Asset ID
-        user_type_id: Asset type/classification
-        name: Asset name/description
-        key_values: Asset identification key-values
-        attributes: Asset-specific attributes
-        metadata: File metadata
-        created_date: Asset creation date
-        modified_date: Last modification date
-        version: Asset version number
+
+    Mirrors the REST API Asset schema:
+    - objectType/classifications describe placement and type
+    - values/references are dynamic maps keyed by ID
+    - contentMetadata is read-only metadata returned by STEP
     """
     
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "id": "ASSET123",
-                "user_type_id": "Image",
+                "objectType": "ProductImage",
                 "name": "Product Image",
-                "key_values": [{"key": "Usage", "value": "ProductImage"}],
-                "metadata": {
-                    "filename": "product.jpg",
-                    "mime_type": "image/jpeg",
-                    "size": 102400
+                "classifications": ["ProductImageRoot"],
+                "values": {
+                    "AssetKeywords": {
+                        "values": [
+                            {"value": "TV"},
+                            {"value": "Television"}
+                        ]
+                    }
                 },
-                "created_date": "2024-01-01T00:00:00Z",
-                "modified_date": "2024-02-04T10:00:00Z",
-                "version": 1
+                "references": {},
+                "contentMetadata": {
+                    "originalFilename": "product.jpg",
+                    "mimeType": "image/jpeg"
+                }
             }
         }
     )
-    
+
     id: str = Field(..., description="Asset ID")
-    user_type_id: Optional[str] = Field(None, description="Asset type/classification")
+    objectType: Optional[str] = Field(None, description="Object type ID")
     name: Optional[str] = Field(None, description="Asset name/description")
-    key_values: Optional[List[AssetKeyValue]] = Field(default_factory=list, description="Asset key-values")
-    attributes: Optional[Dict[str, Any]] = Field(None, description="Asset attributes")
-    metadata: Optional[AssetMetadata] = Field(None, description="File metadata")
-    created_date: Optional[str] = Field(None, description="Creation timestamp")
-    modified_date: Optional[str] = Field(None, description="Last modification timestamp")
-    version: Optional[int] = Field(None, description="Asset version")
+    classifications: Optional[List[str]] = Field(default_factory=list, description="Linked classification IDs")
+    values: Optional[Dict[str, Any]] = Field(None, description="Asset values keyed by attribute ID")
+    references: Optional[Dict[str, Any]] = Field(None, description="Asset references keyed by reference type ID")
+    contentMetadata: Optional[Dict[str, str]] = Field(None, description="Read-only asset content metadata")
 
 
 class AssetListResponse(BaseModel):
@@ -119,7 +104,7 @@ class AssetSearchRequest(BaseModel):
     
     Attributes:
         query: Free-text search query
-        user_type_id: Filter by asset type
+        object_type: Filter by object type
         modified_since: Only assets modified after this date (ISO 8601)
         limit: Max results to return
         offset: Result offset for pagination
@@ -131,6 +116,7 @@ class AssetSearchRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "query": "*",
+                "object_type": "ProductImage",
                 "limit": 20,
                 "offset": 0,
                 "include_metadata": True
@@ -139,7 +125,7 @@ class AssetSearchRequest(BaseModel):
     )
     
     query: str = Field("*", description="Free-text search query")
-    user_type_id: Optional[str] = Field(None, description="Filter by asset type")
+    object_type: Optional[str] = Field(None, description="Filter by object type")
     modified_since: Optional[str] = Field(None, description="ISO 8601 timestamp filter")
     limit: int = Field(20, ge=1, le=1000, description="Max results")
     offset: int = Field(0, ge=0, description="Result offset")
@@ -149,31 +135,35 @@ class AssetSearchRequest(BaseModel):
 
 class AssetCreateRequest(BaseModel):
     """Request to create a new asset.
-    
+
     Attributes:
-        id: Asset ID (required)
-        user_type_id: Asset type/classification
+        objectType: Asset object type (required)
+        classifications: Classification IDs to link asset into (required, min 1)
         name: Asset name/description
-        key_values: Asset identification key-values
-        attributes: Asset attributes
+        values: Asset values map keyed by attribute ID
+        references: Asset references map keyed by reference/link type ID
     """
-    
+
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "id": "NEWASSET123",
-                "user_type_id": "Image",
+                "objectType": "ProductImage",
+                "classifications": ["ProductImageRoot"],
                 "name": "New Asset",
-                "key_values": [{"key": "Usage", "value": "ProductImage"}]
+                "values": {
+                    "AssetKeywords": {
+                        "values": [{"value": "TV"}]
+                    }
+                }
             }
         }
     )
-    
-    id: str = Field(..., description="Asset ID")
-    user_type_id: Optional[str] = Field(None, description="Asset type/classification")
+
+    objectType: str = Field(..., description="Object type ID")
+    classifications: List[str] = Field(..., min_length=1, description="Parent classification IDs")
     name: Optional[str] = Field(None, description="Asset name/description")
-    key_values: Optional[List[AssetKeyValue]] = Field(None, description="Asset key-values")
-    attributes: Optional[Dict[str, Any]] = Field(None, description="Asset attributes")
+    values: Optional[Dict[str, Any]] = Field(None, description="Asset values")
+    references: Optional[Dict[str, Any]] = Field(None, description="Asset references")
 
 
 class AssetUpdateRequest(BaseModel):
@@ -181,24 +171,29 @@ class AssetUpdateRequest(BaseModel):
     
     Attributes:
         name: Updated asset name/description
-        key_values: Updated key-values
-        attributes: Updated attributes
-        user_type_id: Updated asset type
+        classifications: Classifications to add
+        values: Updated asset values
+        references: Updated references
     """
     
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "name": "Updated Asset Name",
-                "user_type_id": "Image"
+                "classifications": ["ProductImageRoot"],
+                "values": {
+                    "AssetKeywords": {
+                        "values": [{"value": "TV"}]
+                    }
+                }
             }
         }
     )
-    
+
     name: Optional[str] = Field(None, description="Updated asset name")
-    user_type_id: Optional[str] = Field(None, description="Updated asset type")
-    key_values: Optional[List[AssetKeyValue]] = Field(None, description="Updated key-values")
-    attributes: Optional[Dict[str, Any]] = Field(None, description="Updated attributes")
+    classifications: Optional[List[str]] = Field(None, description="Classifications to add")
+    values: Optional[Dict[str, Any]] = Field(None, description="Values to update")
+    references: Optional[Dict[str, Any]] = Field(None, description="References to update")
 
 
 class AssetUploadRequest(BaseModel):

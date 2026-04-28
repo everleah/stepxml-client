@@ -3,23 +3,19 @@
 Provides CRUD, search, and binary content operations for assets.
 """
 
-from typing import Optional, List, Dict, Any, BinaryIO
+from typing import Optional, Dict, Any
 import logging
 import os
 
 import requests_openapi as roa
 
 from ..base import BaseOperation, handle_rest_errors
-from ..models.common import PagedResponse, PageInfo
 from ..models.asset import (
     AssetResponse,
     AssetListResponse,
-    AssetSearchRequest,
     AssetCreateRequest,
     AssetUpdateRequest,
-    AssetUploadRequest,
     AssetDownloadResponse,
-    AssetKeyValue,
 )
 from .. import exceptions as exc
 
@@ -147,21 +143,25 @@ class AssetOperations(BaseOperation):
             ConflictError: If asset ID already exists
             RestApiError: For other API errors
         """
-        # Validate that ID is present
         self._validate_required_params(
-            {"id": asset_data.id},
-            ["id"]
+            {
+                "objectType": asset_data.objectType,
+                "classifications": asset_data.classifications,
+            },
+            ["objectType", "classifications"]
         )
+        if not asset_data.classifications:
+            raise exc.ValidationError("At least one classification is required")
         
         # Convert request to dict for API call
         asset_dict = asset_data.model_dump(exclude_none=True)
-        self._log_operation("postAssets", {"assetId": asset_data.id})
+        self._log_operation("postAssets", {"objectType": asset_data.objectType})
         
         try:
             response = self.client.postAssets(body=asset_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
-                raise exc.ConflictError(409, f"Asset {asset_data.id} already exists")
+                raise exc.ConflictError(409, "Asset conflict while creating asset")
             if "400" in str(e):
                 raise exc.ValidationError(str(e))
             raise
@@ -516,7 +516,7 @@ class AssetOperations(BaseOperation):
             AssetListResponse with paginated results
         """
         return self.search_assets(
-            condition={"conditionType": "objecttype", "objectTypeId": user_type_id}
+            condition={"conditionType": "objecttype", "objectType": user_type_id}
         )
     
     def search_modified_since(self, modified_since: str,
