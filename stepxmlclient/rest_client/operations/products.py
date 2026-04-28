@@ -9,11 +9,9 @@ import logging
 import requests_openapi as roa
 
 from ..base import BaseOperation, handle_rest_errors
-from ..models.common import PagedResponse, PageInfo
 from ..models.product import (
     ProductResponse,
     ProductListResponse,
-    ProductSearchRequest,
     ProductCreateRequest,
     ProductUpdateRequest,
 )
@@ -96,7 +94,7 @@ class ProductOperations(BaseOperation):
                        Supported conditionTypes: 'and', 'or', 'id', 'name',
                        'textvalue', 'numericvalue', 'objecttype', 'simplebelow',
                        'lovvalue', 'hasreferenceto', 'hasdatacontainerobject'.
-                       Example: {"conditionType": "objecttype", "objectTypeId": "MyType"}
+                       Example: {"conditionType": "objecttype", "objectType": "MyType"}
             
         Returns:
             ProductListResponse with matching products
@@ -146,21 +144,24 @@ class ProductOperations(BaseOperation):
             ConflictError: If product ID already exists
             RestApiError: For other API errors
         """
-        # Validate that ID is present
+        # POST /products requires objectType and parent. ID is auto-generated server-side.
         self._validate_required_params(
-            {"id": product_data.id},
-            ["id"]
+            {
+                "objectType": product_data.objectType,
+                "parent": product_data.parent,
+            },
+            ["objectType", "parent"]
         )
         
         # Convert request to dict for API call
         product_dict = product_data.model_dump(exclude_none=True)
-        self._log_operation("postProducts", {"productId": product_data.id})
+        self._log_operation("postProducts", {"objectType": product_data.objectType, "parent": product_data.parent})
         
         try:
             response = self.client.postProducts(body=product_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
-                raise exc.ConflictError(409, f"Product {product_data.id} already exists")
+                raise exc.ConflictError(409, "Product conflict while creating product")
             if "400" in str(e):
                 raise exc.ValidationError(str(e))
             raise
@@ -389,7 +390,7 @@ class ProductOperations(BaseOperation):
             ProductListResponse with matching products
         """
         return self.search_products(
-            condition={"conditionType": "objecttype", "objectTypeId": user_type_id}
+            condition={"conditionType": "objecttype", "objectType": user_type_id}
         )
     
     def search_by_id(self, product_id: str) -> ProductListResponse:

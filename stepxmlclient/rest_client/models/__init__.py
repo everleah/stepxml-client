@@ -20,9 +20,6 @@ from .product import (
     ProductSearchRequest,
     ProductCreateRequest,
     ProductUpdateRequest,
-    ProductAttribute,
-    ProductValue,
-    CrossReference,
 )
 from .asset import (
     AssetResponse,
@@ -140,9 +137,6 @@ __all__ = [
     'ProductSearchRequest',
     'ProductCreateRequest',
     'ProductUpdateRequest',
-    'ProductAttribute',
-    'ProductValue',
-    'CrossReference',
     'AssetResponse',
     'AssetListResponse',
     'AssetSearchRequest',
