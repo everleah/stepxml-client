@@ -46,34 +46,33 @@ class Entity(BaseObject):
     _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentID", "UserTypeID", "QualifierID", "Changed", "Republished", "Selected", "Referenced"]
     _TEXT_NAMES: List[str] = ["Name"]
     _CHILDREN_NAMES: List[str] = [
-        "Values",
         "KeyValue",
         "ParentKeyValue",
         "Entity",  # Nested entities
-        "ProductCrossReference",
-        "DeleteProductCrossReference",
-        "SuppressedProductCrossReference",
-        "DeleteSuppressedProductCrossReference",
-        "ClassificationCrossReference",
+        "DeleteSuppressedClassificationCrossReference",
         "DeleteClassificationCrossReference",
         "SuppressedClassificationCrossReference",
-        "DeleteSuppressedClassificationCrossReference",
-        "EntityCrossReference",
-        "DeleteEntityCrossReference",
-        "SuppressedEntityCrossReference",
-        "DeleteSuppressedEntityCrossReference",
-        "AssetCrossReference",
+        "ClassificationCrossReference",
+        "DeleteSuppressedProductCrossReference",
+        "DeleteProductCrossReference",
+        "SuppressedProductCrossReference",
+        "ProductCrossReference",
+        "DeleteSuppressedAssetCrossReference",
         "DeleteAssetCrossReference",
         "SuppressedAssetCrossReference",
-        "DeleteSuppressedAssetCrossReference",
-        "ContextCrossReference",
+        "AssetCrossReference",
+        "DeleteSuppressedEntityCrossReference",
+        "DeleteEntityCrossReference",
+        "SuppressedEntityCrossReference",
+        "EntityCrossReference",
         "SuppressedContextCrossReference",
-        "WorkspaceCrossReference",
+        "ContextCrossReference",
         "SuppressedWorkspaceCrossReference",
-        "MetaData",
-        "AttributeLink",
+        "WorkspaceCrossReference",
+        "Values",
         "DataContainers",
-        "DataContainerTypeLink"
+        "CurrentTasks",
+        "Terms"
     ]
     
     def __init__(self, data: Dict[str, Any]) -> None:
@@ -88,7 +87,8 @@ class Entity(BaseObject):
                         "AssetCrossReference", "DeleteAssetCrossReference",
                         "SuppressedAssetCrossReference", "DeleteSuppressedAssetCrossReference",
                         "ContextCrossReference", "SuppressedContextCrossReference",
-                        "WorkspaceCrossReference", "SuppressedWorkspaceCrossReference"]:
+                        "WorkspaceCrossReference", "SuppressedWorkspaceCrossReference",
+                        "Values", "DataContainers", "CurrentTasks", "Terms"]:
             if rel_name not in self._data:
                 self._data[rel_name] = []
         

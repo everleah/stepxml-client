@@ -42,48 +42,55 @@ class Classification(BaseObject):
     _ATTRIBUTE_NAMES: List[str] = ["ID", "ParentID", "UserTypeID", "QualifierID", "Changed", "Republished", "Selected", "Referenced"]
     _TEXT_NAMES: List[str] = ["Name"]
     _CHILDREN_NAMES: List[str] = [
-        "Values",
         "KeyValue",
         "ParentKeyValue",
+        "SequenceProduct",
         "Classification",  # Nested classifications
-        "ProductReference",
-        "ProductCrossReference",
-        "DeleteProductReference",
-        "DeleteProductCrossReference",
-        "SuppressedProductReference",
-        "SuppressedProductCrossReference",
         "DeleteSuppressedProductReference",
+        "DeleteProductReference",
+        "ProductReference",
+        "DeleteProductCrossReference",
         "DeleteSuppressedProductCrossReference",
-        "ClassificationCrossReference",
+        "SuppressedProductCrossReference",
+        "ProductCrossReference",
+        "DeleteSuppressedClassificationCrossReference",
         "DeleteClassificationCrossReference",
         "SuppressedClassificationCrossReference",
-        "DeleteSuppressedClassificationCrossReference",
-        "EntityCrossReference",
+        "ClassificationCrossReference",
+        "DeleteSuppressedEntityCrossReference",
         "DeleteEntityCrossReference",
         "SuppressedEntityCrossReference",
-        "DeleteSuppressedEntityCrossReference",
-        "AssetCrossReference",
+        "EntityCrossReference",
+        "DeleteSuppressedAssetCrossReference",
         "DeleteAssetCrossReference",
         "SuppressedAssetCrossReference",
-        "DeleteSuppressedAssetCrossReference",
-        "MetaData",
+        "AssetCrossReference",
+        "DeleteAttributeLink",
         "AttributeLink",
-        "DataContainerTypeLink"
+        "DeleteDataContainerTypeLink",
+        "DataContainerTypeLink",
+        "MetaData",
+        "Tables",
+        "Asset",
+        "PublicationGroup",
+        "CurrentTasks",
+        "Values"
     ]
     
     def __init__(self, data: Dict[str, Any]) -> None:
         super().__init__(data)
         # Initialize relation lists if not provided
-        for rel_name in ["ProductReference", "ProductCrossReference",
-                        "DeleteProductReference", "DeleteProductCrossReference",
-                        "SuppressedProductReference", "SuppressedProductCrossReference",
-                        "DeleteSuppressedProductReference", "DeleteSuppressedProductCrossReference",
+        for rel_name in ["SequenceProduct", "ProductReference", "ProductCrossReference",
+                "DeleteSuppressedProductReference", "DeleteProductReference", "DeleteProductCrossReference",
+                "DeleteSuppressedProductCrossReference", "SuppressedProductCrossReference",
                         "ClassificationCrossReference", "DeleteClassificationCrossReference",
                         "SuppressedClassificationCrossReference", "DeleteSuppressedClassificationCrossReference",
                         "EntityCrossReference", "DeleteEntityCrossReference",
                         "SuppressedEntityCrossReference", "DeleteSuppressedEntityCrossReference",
-                        "AssetCrossReference", "DeleteAssetCrossReference",
-                        "SuppressedAssetCrossReference", "DeleteSuppressedAssetCrossReference"]:
+                        "AssetCrossReference", "DeleteAssetCrossReference", "DeleteSuppressedAssetCrossReference",
+                        "SuppressedAssetCrossReference", "DeleteAttributeLink", "AttributeLink",
+                        "DeleteDataContainerTypeLink", "DataContainerTypeLink", "Tables", "Asset",
+                        "PublicationGroup", "CurrentTasks", "Values"]:
             if rel_name not in self._data:
                 self._data[rel_name] = []
         
