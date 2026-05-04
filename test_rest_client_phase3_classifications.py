@@ -136,7 +136,7 @@ class TestClassificationOperations(unittest.TestCase):
         result = self.operations.search_classifications(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postClassificationsSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_classifications_requires_condition(self):
         with self.assertRaises(exc.ValidationError):
@@ -149,9 +149,9 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(result.id, "NEWCLASS")
         self.mock_client.postClassifications.assert_called_once()
         call_args = self.mock_client.postClassifications.call_args
-        body = call_args[1]["body"]
-        self.assertNotIn("id", body)
-        self.assertEqual(body["objectType"], "WebCategory")
+        payload = call_args[1]["json"]
+        self.assertNotIn("id", payload)
+        self.assertEqual(payload["objectType"], "WebCategory")
 
     def test_create_classification_conflict(self):
         self.mock_client.postClassifications.side_effect = Exception("409 conflict")
@@ -211,9 +211,9 @@ class TestClassificationOperations(unittest.TestCase):
         self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("ClassType")
         call_args = self.mock_client.postClassificationsSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectType"], "ClassType")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "objecttype")
+        self.assertEqual(payload["condition"]["objectType"], "ClassType")
 
     def test_list_classifications(self):
         self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}

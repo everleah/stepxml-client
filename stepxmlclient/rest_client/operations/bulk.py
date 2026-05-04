@@ -64,7 +64,7 @@ class BulkOperations(BaseOperation):
         })
         
         try:
-            response = self.client.bulkCreateEntities(body=request_data)
+            response = self.client.bulkCreateEntities(json=request_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Bulk create failed: {str(e)}")
@@ -105,7 +105,7 @@ class BulkOperations(BaseOperation):
         })
         
         try:
-            response = self.client.bulkUpdateEntities(body=request_data)
+            response = self.client.bulkUpdateEntities(json=request_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Bulk update failed: {str(e)}")
@@ -146,7 +146,7 @@ class BulkOperations(BaseOperation):
         })
         
         try:
-            response = self.client.bulkDeleteEntities(body=request_data)
+            response = self.client.bulkDeleteEntities(json=request_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Bulk delete failed: {str(e)}")
@@ -372,7 +372,7 @@ class WorkflowOperations(BaseOperation):
         try:
             response = self.client.transitionWorkflow(
                 entityId=entity_id,
-                body=transition_data
+                json=transition_data
             )
         except Exception as e:
             if "404" in str(e):
@@ -422,7 +422,7 @@ class AdvancedSearchOperations(BaseOperation):
         })
         
         try:
-            response = self.client.advancedSearch(body=request_data)
+            response = self.client.advancedSearch(json=request_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Advanced search failed: {str(e)}")
@@ -507,7 +507,7 @@ class CacheOperations(BaseOperation):
         })
         
         try:
-            self.client.configureCache(body=config_data)
+            self.client.configureCache(json=config_data)
             return True
         except Exception as e:
             if "400" in str(e):
@@ -594,7 +594,7 @@ class StreamingOperations(BaseOperation):
         })
         
         try:
-            response = self.client.startStreaming(body=request_data)
+            response = self.client.startStreaming(json=request_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Stream start failed: {str(e)}")

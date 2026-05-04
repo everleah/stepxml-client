@@ -107,7 +107,7 @@ class ProductOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("postProductsSearch", {"condition": condition})
         
-        response = self.client.postProductsSearch(body=body, **self._build_context_params())
+        response = self.client.postProductsSearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             items = response.get("items", [])
@@ -158,7 +158,7 @@ class ProductOperations(BaseOperation):
         self._log_operation("postProducts", {"objectType": product_data.objectType, "parent": product_data.parent})
         
         try:
-            response = self.client.postProducts(body=product_dict, **self._build_context_params())
+            response = self.client.postProducts(json=product_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, "Product conflict while creating product")
@@ -204,7 +204,7 @@ class ProductOperations(BaseOperation):
         try:
             response = self.client.patchProduct(
                 id=product_id,
-                body=updates_dict,
+                json=updates_dict,
                 **query_params
             )
         except Exception as e:
@@ -255,7 +255,7 @@ class ProductOperations(BaseOperation):
         try:
             response = self.client.putProduct(
                 id=product_id,
-                body=product_dict,
+                json=product_dict,
                 **query_params
             )
         except Exception as e:

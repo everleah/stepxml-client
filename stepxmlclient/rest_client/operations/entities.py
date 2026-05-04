@@ -93,7 +93,7 @@ class EntityOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("postEntitiesSearch", {"condition": condition})
         
-        response = self.client.postEntitiesSearch(body=body, **self._build_context_params())
+        response = self.client.postEntitiesSearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return EntityListResponse(**response)
@@ -131,7 +131,7 @@ class EntityOperations(BaseOperation):
         self._log_operation("postEntities", {"objectType": data.objectType})
         
         try:
-            response = self.client.postEntities(body=create_data, **self._build_context_params())
+            response = self.client.postEntities(json=create_data, **self._build_context_params())
         except Exception as e:
             if "409" in str(e):
                 raise ConflictError(409, str(e))
@@ -174,7 +174,7 @@ class EntityOperations(BaseOperation):
         try:
             response = self.client.patchEntity(
                 id=entity_id,
-                body=update_data,
+                json=update_data,
                 **query_params
             )
         except Exception as e:
@@ -220,7 +220,7 @@ class EntityOperations(BaseOperation):
         try:
             response = self.client.putEntity(
                 id=entity_id,
-                body=create_data,
+                json=create_data,
                 **query_params
             )
         except Exception as e:

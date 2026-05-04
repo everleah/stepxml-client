@@ -92,7 +92,7 @@ class ClassificationOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("postClassificationsSearch", {"condition": condition})
         
-        response = self.client.postClassificationsSearch(body=body, **self._build_context_params())
+        response = self.client.postClassificationsSearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return ClassificationListResponse(**response)
@@ -130,7 +130,7 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("postClassifications", {"objectType": data.objectType})
         
         try:
-            response = self.client.postClassifications(body=create_data, **self._build_context_params())
+            response = self.client.postClassifications(json=create_data, **self._build_context_params())
         except Exception as e:
             if "409" in str(e):
                 raise ConflictError(409, str(e))
@@ -173,7 +173,7 @@ class ClassificationOperations(BaseOperation):
         try:
             response = self.client.patchClassification(
                 id=classification_id,
-                body=update_data,
+                json=update_data,
                 **query_params
             )
         except Exception as e:
@@ -219,7 +219,7 @@ class ClassificationOperations(BaseOperation):
         try:
             response = self.client.putClassification(
                 id=classification_id,
-                body=create_data,
+                json=create_data,
                 **query_params
             )
         except Exception as e:

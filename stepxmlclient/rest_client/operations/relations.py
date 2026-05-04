@@ -221,7 +221,7 @@ class RelationOperations(BaseOperation):
         try:
             op_func = getattr(self.client, op_id)
             if data:
-                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, body=data, **query_params)
+                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, json=data, **query_params)
             else:
                 response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
         except Exception as e:

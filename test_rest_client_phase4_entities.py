@@ -149,7 +149,7 @@ class TestEntityOperations(unittest.TestCase):
         result = self.operations.search_entities(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postEntitiesSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_entities_requires_condition(self):
         with self.assertRaises(exc.ValidationError):
@@ -219,9 +219,9 @@ class TestEntityOperations(unittest.TestCase):
         self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("EntityType")
         call_args = self.mock_client.postEntitiesSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectType"], "EntityType")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "objecttype")
+        self.assertEqual(payload["condition"]["objectType"], "EntityType")
 
     def test_list_entities(self):
         self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}

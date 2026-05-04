@@ -241,10 +241,10 @@ class TestProductOperations(unittest.TestCase):
         
         self.mock_client.postProductsSearch.assert_called_once()
         call_args = self.mock_client.postProductsSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
     
-    def test_search_products_uses_body(self):
-        """Test that search_products passes condition in request body."""
+    def test_search_products_uses_json(self):
+        """Test that search_products passes condition in JSON payload."""
         mock_response = {"items": [], "total": 0}
         self.mock_client.postProductsSearch.return_value = mock_response
         condition = {"conditionType": "name", "value": "Widget*"}
@@ -252,8 +252,8 @@ class TestProductOperations(unittest.TestCase):
         self.operations.search_products(condition=condition)
         
         call_args = self.mock_client.postProductsSearch.call_args
-        self.assertIn("body", call_args[1])
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertIn("json", call_args[1])
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
     
     def test_search_products_requires_condition(self):
         """Test that search_products requires a condition."""
@@ -503,9 +503,9 @@ class TestProductOperations(unittest.TestCase):
         self.operations.search_by_type("ProductType1")
         
         call_args = self.mock_client.postProductsSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectType"], "ProductType1")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "objecttype")
+        self.assertEqual(payload["condition"]["objectType"], "ProductType1")
     
     def test_search_by_id(self):
         """Test search_by_id convenience method uses condition."""
@@ -515,9 +515,9 @@ class TestProductOperations(unittest.TestCase):
         self.operations.search_by_id("PROD123")
         
         call_args = self.mock_client.postProductsSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "id")
-        self.assertEqual(body["condition"]["id"], "PROD123")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "id")
+        self.assertEqual(payload["condition"]["id"], "PROD123")
     
 
 if __name__ == '__main__':

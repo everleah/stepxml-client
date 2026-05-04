@@ -81,7 +81,7 @@ class AttributeOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("postAttributesSearch", {"condition": condition})
         
-        response = self.client.postAttributesSearch(body=body, **self._build_context_params())
+        response = self.client.postAttributesSearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return AttributeListResponse(**response)
@@ -117,7 +117,7 @@ class AttributeOperations(BaseOperation):
         self._log_operation("postAttributes", create_data)
         
         try:
-            response = self.client.postAttributes(body=create_data, **self._build_context_params())
+            response = self.client.postAttributes(json=create_data, **self._build_context_params())
         except Exception as e:
             if "409" in str(e):
                 raise ConflictError(409, str(e))
@@ -154,7 +154,7 @@ class AttributeOperations(BaseOperation):
         try:
             response = self.client.patchAttribute(
                 id=attribute_id,
-                body=update_data,
+                json=update_data,
                 **self._build_context_params()
             )
         except Exception as e:
@@ -240,7 +240,7 @@ class AttributeOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("postListOfValuesSearch", {"condition": condition})
         
-        response = self.client.postListOfValuesSearch(body=body, **self._build_context_params())
+        response = self.client.postListOfValuesSearch(json=body, **self._build_context_params())
         return response if isinstance(response, dict) else response
     
     def search_by_type(self, attribute_type: str) -> AttributeListResponse:

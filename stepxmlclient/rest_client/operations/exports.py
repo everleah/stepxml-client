@@ -68,7 +68,7 @@ class ExportOperations(BaseOperation):
 
         try:
             if create_data:
-                response = self.client.postExport(exportConfigurationId=export_configuration_id, body=create_data, **query_params)
+                response = self.client.postExport(exportConfigurationId=export_configuration_id, json=create_data, **query_params)
             else:
                 response = self.client.postExport(exportConfigurationId=export_configuration_id, **query_params)
         except Exception as e:
@@ -130,7 +130,7 @@ class ExportOperations(BaseOperation):
                 
                 response = self.client.postImport(
                     importConfigurationId=import_configuration_id,
-                    body=binary_data,
+                    data=binary_data,
                     **query_params
                 )
                 response_dict = response if isinstance(response, dict) else {"success": True}

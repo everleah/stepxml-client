@@ -51,7 +51,7 @@ class ImportOperations(BaseOperation):
         })
         
         try:
-            response = self.client.createImportJob(body=create_data)
+            response = self.client.createImportJob(json=create_data)
         except Exception as e:
             if "400" in str(e):
                 raise ValidationError(f"Create import job failed: {str(e)}")

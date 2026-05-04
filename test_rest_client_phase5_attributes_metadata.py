@@ -230,7 +230,7 @@ class TestAttributeOperations(unittest.TestCase):
         result = self.operations.search_attributes(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postAttributesSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_attributes_requires_condition(self):
         with self.assertRaises(exc.ValidationError):
@@ -293,7 +293,7 @@ class TestAttributeOperations(unittest.TestCase):
         condition = {"conditionType": "name", "value": "Colors"}
         result = self.operations.search_list_of_values(condition=condition)
         call_args = self.mock_client.postListOfValuesSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_list_attributes(self):
         self.mock_client.postAttributesSearch.return_value = {"items": [], "total": 0}
@@ -304,9 +304,9 @@ class TestAttributeOperations(unittest.TestCase):
         self.mock_client.postAttributesSearch.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("AttributeType")
         call_args = self.mock_client.postAttributesSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectTypeId"], "AttributeType")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "objecttype")
+        self.assertEqual(payload["condition"]["objectTypeId"], "AttributeType")
 
 
 
