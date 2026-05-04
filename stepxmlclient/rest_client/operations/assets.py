@@ -106,7 +106,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("postAssetsSearch", {"condition": condition})
         
         params = self._build_context_params()
-        response = self.client.postAssetsSearch(body=body, **params)
+        response = self.client.postAssetsSearch(json=body, **params)
         
         if isinstance(response, dict):
             items = response.get("items", [])
@@ -158,7 +158,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("postAssets", {"objectType": asset_data.objectType})
         
         try:
-            response = self.client.postAssets(body=asset_dict, **self._build_context_params())
+            response = self.client.postAssets(json=asset_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, "Asset conflict while creating asset")
@@ -204,7 +204,7 @@ class AssetOperations(BaseOperation):
         try:
             response = self.client.patchAsset(
                 id=asset_id,
-                body=updates_dict,
+                json=updates_dict,
                 **query_params
             )
         except Exception as e:
@@ -255,7 +255,7 @@ class AssetOperations(BaseOperation):
         try:
             response = self.client.putAsset(
                 id=asset_id,
-                body=asset_dict,
+                json=asset_dict,
                 **query_params
             )
         except Exception as e:
@@ -364,7 +364,7 @@ class AssetOperations(BaseOperation):
             with open(file_path, 'rb') as f:
                 response = self.client.putAssetContent(
                     id=asset_id,
-                    body=f.read(),
+                    data=f.read(),
                     **query_params
                 )
                 

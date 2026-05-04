@@ -223,7 +223,7 @@ class TestAssetOperations(unittest.TestCase):
         result = self.operations.search_assets(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.postAssetsSearch.call_args
-        self.assertEqual(call_args[1]["body"]["condition"], condition)
+        self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_assets_requires_condition(self):
         with self.assertRaises(exc.ValidationError):
@@ -382,9 +382,9 @@ class TestAssetOperations(unittest.TestCase):
         self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("ImageType")
         call_args = self.mock_client.postAssetsSearch.call_args
-        body = call_args[1]["body"]
-        self.assertEqual(body["condition"]["conditionType"], "objecttype")
-        self.assertEqual(body["condition"]["objectType"], "ImageType")
+        payload = call_args[1]["json"]
+        self.assertEqual(payload["condition"]["conditionType"], "objecttype")
+        self.assertEqual(payload["condition"]["objectType"], "ImageType")
 
     def test_list_assets(self):
         self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
