@@ -138,6 +138,22 @@ content = uploader.get_content(
 )
 with open('downloaded.jpg', 'wb') as f:
     f.write(content)
+
+# Download OIEP REST delivery result by ResultURI (uses same client credentials)
+result_uri = "restapi/integrationendpoints/asdf/BGP_213226/result.zip"
+downloaded_file = client.download_result_uri(
+    result_uri,
+    target_dir="./downloads"
+)
+print(f"Result file downloaded to: {downloaded_file}")
+
+# Or pass the complete OIEP response directly
+oiep_response = {"ResultURI": "restapi/integrationendpoints/asdf/BGP_213226/result.zip"}
+downloaded_file = client.download_oiep_result(
+    oiep_response,
+    target_dir="./downloads"
+)
+print(f"Result file downloaded to: {downloaded_file}")
 ```
 
 ### XML Parsing (Comprehensive)

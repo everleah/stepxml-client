@@ -4,6 +4,7 @@ import logging
 import os
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 def _lazy_import_inbound_operations():
@@ -150,6 +151,159 @@ class StiboStepRestClient:
         self.client = roa.Client()
         self.client.load_spec(spec)
         return
+
+    def _get_server_base_url(self):
+        """Get configured server base URL from the OpenAPI client.
+
+        Returns:
+            Configured server URL
+
+        Raises:
+            ValueError: If server URL cannot be determined
+        """
+        server = getattr(self.client, 'server', None) or getattr(self.client, '_server', None)
+        base_url = getattr(server, 'url', None)
+        if not base_url:
+            raise ValueError("Cannot determine server URL from client configuration")
+        return base_url
+
+    def resolve_download_url(self, uri_or_url):
+        """Resolve absolute URL or STEP-relative ResultURI to absolute URL.
+
+        STEP OIEP REST delivery often returns a payload such as:
+        ``{"ResultURI": "restapi/integrationendpoints/<endpoint>/<job>/result.zip"}``
+        This helper converts that relative URI into an absolute URL using the
+        configured server host while preserving already absolute URLs.
+
+        Args:
+            uri_or_url: Absolute URL or relative ResultURI
+
+        Returns:
+            Absolute download URL
+
+        Raises:
+            ValueError: If uri_or_url is empty or server URL is unavailable
+        """
+        if not uri_or_url or not str(uri_or_url).strip():
+            raise ValueError("uri_or_url must not be empty")
+
+        value = str(uri_or_url).strip()
+        parsed = urlparse(value)
+        if parsed.scheme in ('http', 'https'):
+            return value
+
+        base_url = self._get_server_base_url()
+        base_parts = urlparse(base_url)
+        if not base_parts.scheme or not base_parts.netloc:
+            raise ValueError(f"Invalid server URL: {base_url}")
+
+        root_url = f"{base_parts.scheme}://{base_parts.netloc}"
+        return f"{root_url}/{value.lstrip('/')}"
+
+    def download_result_uri(self, uri_or_url, target_dir,
+                            filename=None, overwrite=False,
+                            chunk_size=1024 * 1024, timeout=120):
+        """Download a file from OIEP ResultURI/URL using configured credentials.
+
+        Args:
+            uri_or_url: Absolute URL or relative ResultURI from STEP
+            target_dir: Directory where the file should be stored
+            filename: Optional output filename (defaults to URL basename)
+            overwrite: Whether to overwrite an existing local file
+            chunk_size: Download chunk size in bytes
+            timeout: HTTP timeout in seconds
+
+        Returns:
+            Absolute path to the downloaded file
+
+        Raises:
+            ValueError: If input parameters are invalid
+            FileExistsError: If destination exists and overwrite is False
+            requests.exceptions.RequestException: On HTTP/network failures
+            OSError: On file system write errors
+        """
+        if not target_dir or not str(target_dir).strip():
+            raise ValueError("target_dir must not be empty")
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be > 0")
+
+        download_url = self.resolve_download_url(uri_or_url)
+        parsed_url = urlparse(download_url)
+        default_name = os.path.basename(parsed_url.path.rstrip('/')) or 'download.bin'
+        output_name = filename or default_name
+
+        os.makedirs(target_dir, exist_ok=True)
+        output_path = os.path.abspath(os.path.join(target_dir, output_name))
+        if os.path.exists(output_path) and not overwrite:
+            raise FileExistsError(f"Target file already exists: {output_path}")
+
+        requestor = getattr(self.client, 'requestor', None)
+        if requestor is None or not hasattr(requestor, 'get'):
+            raise ValueError("Client requestor does not support HTTP GET")
+
+        self.logger.info(f"Downloading result from {download_url} to {output_path}")
+        response = requestor.get(
+            download_url,
+            stream=True,
+            allow_redirects=True,
+            timeout=timeout
+        )
+        response.raise_for_status()
+
+        try:
+            with open(output_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=chunk_size):
+                    if chunk:
+                        f.write(chunk)
+        finally:
+            response.close()
+
+        return output_path
+
+    def download_oiep_result(self, result_payload, target_dir,
+                             filename=None, overwrite=False,
+                             chunk_size=1024 * 1024, timeout=120):
+        """Download OIEP REST delivery result from response payload.
+
+        Expects payload containing ``ResultURI``, for example:
+        ``{"ResultURI": "restapi/integrationendpoints/<endpoint>/<job>/result.zip"}``
+
+        Args:
+            result_payload: Dict payload returned by OIEP REST delivery endpoint
+            target_dir: Directory where the file should be stored
+            filename: Optional output filename override
+            overwrite: Whether to overwrite an existing local file
+            chunk_size: Download chunk size in bytes
+            timeout: HTTP timeout in seconds
+
+        Returns:
+            Absolute path to the downloaded file
+
+        Raises:
+            ValueError: If payload is invalid or missing ResultURI
+            FileExistsError: If destination exists and overwrite is False
+            requests.exceptions.RequestException: On HTTP/network failures
+            OSError: On file system write errors
+        """
+        if not isinstance(result_payload, dict):
+            raise ValueError("result_payload must be a dict containing ResultURI")
+
+        result_uri = (
+            result_payload.get("ResultURI")
+            or result_payload.get("resultURI")
+            or result_payload.get("result_uri")
+        )
+        if not result_uri:
+            raise ValueError("result_payload does not contain ResultURI")
+
+        return self.download_result_uri(
+            uri_or_url=result_uri,
+            target_dir=target_dir,
+            filename=filename,
+            overwrite=overwrite,
+            chunk_size=chunk_size,
+            timeout=timeout,
+        )
 
 class __Authorisation:
     """Abstract base class for authentication handlers.
