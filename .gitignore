@@ -139,8 +139,16 @@ cython_debug/
 .idea/
 
 # VS Code
-.vscode/
 *.code-workspace
+# Ignoriere den gesamten .vscode-Ordner standardmäßig
+.vscode/*
+# Erlaube explizit nur die Dateien, die das Team teilen soll
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+# Ignoriere persönliche oder vom System generierte Zusatzdateien
+.vscode/tags
 
 # Vim
 *.swp
