@@ -50,13 +50,13 @@ This library enables seamless integration with STEP systems via:
 - **Products** - Create with attributes, values, and cross-references
 - **Assets** - Create with key values and cross-references
 - **Cross-References** - All relationship types (Asset, Product, Classification, Entity)
-- **Deletion Operations** - Delete products/assets and severe links
+- **Deletion Operations** - Delete products/assets and sever links
 - **Product Replacement Rules** - Create replacement configurations
 
 ## Installation
 
 
-**Latest Version**: 0.5 (REST API v2 client feature-complete)
+**Latest Version**: See `setup.py` for the current package version.
 
 ```bash
 # Install from PyPI (or your package repository)
@@ -65,7 +65,7 @@ pip install stepxmlclient
 # Or build from source
 pip install -r requirements.txt
 python setup.py bdist_wheel
-pip install dist/stepxmlclient-0.4-py3-none-any.whl
+pip install dist/stepxmlclient-x.x.x-py3-none-any.whl
 ```
 
 **Requirements**:
@@ -80,20 +80,35 @@ pip install dist/stepxmlclient-0.4-py3-none-any.whl
 ### REST API Client (Full Usage)
 
 ```python
-from stepxmlclient.client import StiboStepRestClient
-from stepxmlclient.model.product import Product
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+from stepxmlclient.rest_client import StepRestClient
+from stepxmlclient.rest_client.models.product import ProductCreateRequest
 
-# Initialize REST client
-client = StiboStepRestClient(
-    base_url="https://your-step-server/api/v2",
-    username="your-username",
-    password="your-password"
+# Shared authentication
+auth = BasicAuthorisation(user="your-username", pwd="your-password")
+
+# 1) Direct OpenAPI access (raw operation IDs)
+raw_client = StiboStepRestClient(
+    location_base="https://your-step-server/restapiv2",
+    authorisation=auth,
+    context="Context1"
 )
 
-# Create and retrieve a product
-product = Product(id="P123", name="Sample Product", description="A demo product.")
-created = client.client.create_product(product=product)
-retrieved = client.client.get_product_by_id(product_id="P123")
+# 2) Grouped wrapper access (recommended for most usage)
+ops_client = StepRestClient(
+    location_base="https://your-step-server/restapiv2",
+    authorisation=auth,
+    context="Context1"
+)
+
+created = ops_client.products.create_product(
+    ProductCreateRequest(
+        objectType="SalesItem",
+        parent="RootProduct",
+        name="Sample Product"
+    )
+)
+retrieved = ops_client.products.get_product(created.id)
 ```
 
 See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for detailed usage and all operation/model examples.
@@ -171,11 +186,11 @@ assets = parser.assets
 classifications = parser.classifications
 entities = parser.entities
 attributes = parser.attributes
-attribute_groups = parser.attributegroups
-list_of_values = parser.listofvalues
+attribute_groups = parser.attribute_groups
+list_of_values = parser.list_of_values
 tags = parser.tags
 workflows = parser.workflows
-business_rules = parser.businessrules
+business_rules = parser.business_rules
 
 # Handle deletion operations
 deleted_products = parser.delete_products
@@ -404,7 +419,8 @@ def _parse_my_entity(element: ET.Element) -> dict:
 ### Testing Strategy
 
 The project uses a phased testing approach:
-- **Main runner**: `test.py` for integration tests
+- **Primary coverage**: phase suites (`test_parser_phaseX_*.py`, `test_rest_client_phaseX_*.py`) plus focused `test_*.py` modules
+- **Utility script**: `test.py` is a simple manual connectivity/example script
 - **Phase tests**: `test_parser_phaseX_*.py` target specific entity types
 - **Validation**: `validate_xml_xsd.py` ensures generated XML matches STEP.xsd
 - **Roundtrip tests**: `test_creator_roundtrip.py` parses generated XML
@@ -462,7 +478,7 @@ parser = Parser()
 parser.parse_file('data.xml')
 
 # Parse from string
-parser.parse_string(xml_string)
+parser.parse_str(xml_string)
 
 # Access results
 products = parser.products

@@ -36,28 +36,21 @@ pip install dist/stepxmlclient-x.x-py3-none-any.whl
 Import the REST client and models:
 
 ```python
-from stepxmlclient.client import StiboStepRestClient
-from stepxmlclient.model.product import Product
-# ... import other models as needed
+from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
+from stepxmlclient.rest_client import StepRestClient
+# ... import operation request models as needed
 ```
 
 ---
 
 ## Authentication
 
-The REST client uses HTTP Basic Auth or Bearer Token (API Key). Provide credentials on initialization:
+The REST client uses HTTP Basic Auth via an authorization object:
 
 ```python
-client = StiboStepRestClient(
-    base_url="https://your-step-server/api/v2",
-    username="your-username",
-    password="your-password"
-)
-# Or with API key:
-client = StiboStepRestClient(
-    base_url="https://your-step-server/api/v2",
-    api_key="your-api-key"
-)
+from stepxmlclient.client import BasicAuthorisation
+
+auth = BasicAuthorisation(user="your-username", pwd="your-password")
 ```
 
 ---
@@ -66,10 +59,26 @@ client = StiboStepRestClient(
 
 ```python
 from stepxmlclient.client import StiboStepRestClient
-client = StiboStepRestClient(base_url="https://your-step-server/api/v2", username="user", password="pass")
+from stepxmlclient.rest_client import StepRestClient
+
+# 1) Raw OpenAPI access (operation IDs on .client)
+raw_client = StiboStepRestClient(
+    location_base="https://your-step-server/restapiv2",
+    authorisation=auth,
+    context="Context1",
+    workspace="Main"
+)
+
+# 2) Grouped wrapper access (recommended)
+ops_client = StepRestClient(
+    location_base="https://your-step-server/restapiv2",
+    authorisation=auth,
+    context="Context1",
+    workspace="Main"
+)
 ```
 
-The client exposes the OpenAPI client as `client.client`. All operations are available as methods on this object, named after the OpenAPI operation IDs.
+The raw client exposes the OpenAPI client as `raw_client.client`. Grouped wrappers are available on `ops_client` (for example `ops_client.products`, `ops_client.assets`, `ops_client.inbound`).
 
 ---
 
@@ -77,41 +86,54 @@ The client exposes the OpenAPI client as `client.client`. All operations are ava
 
 ### Product
 
-**Model:** `Product`
+**Model:** `ProductCreateRequest`, `ProductUpdateRequest`, `ProductResponse`
 
 **Common Operations:**
-- `get_product_by_id(product_id)`
-- `list_products()`
-- `create_product(product: Product)`
-- `update_product(product_id, product: Product)`
+- `get_product(product_id)`
+- `search_products(condition)`
+- `create_product(product_data: ProductCreateRequest)`
+- `update_product(product_id, updates: ProductUpdateRequest)`
 - `delete_product(product_id)`
 
 **Example:**
 ```python
-from stepxmlclient.model.product import Product
-product = Product(id="P123", name="Sample Product", description="A demo product.")
-created = client.client.create_product(product=product)
-retrieved = client.client.get_product_by_id(product_id="P123")
+from stepxmlclient.rest_client.models.product import ProductCreateRequest
+
+created = ops_client.products.create_product(
+    ProductCreateRequest(
+        objectType="SalesItem",
+        parent="RootProduct",
+        name="Sample Product"
+    )
+)
+retrieved = ops_client.products.get_product(created.id)
 ```
 
 ---
 
 ### Asset
 
-**Model:** `Asset`
+**Model:** `AssetCreateRequest`, `AssetUpdateRequest`, `AssetResponse`
 
 **Common Operations:**
-- `get_asset_by_id(asset_id)`
-- `list_assets()`
-- `create_asset(asset: Asset)`
-- `update_asset(asset_id, asset: Asset)`
+- `get_asset(asset_id)`
+- `search_assets(condition)`
+- `create_asset(asset_data: AssetCreateRequest)`
+- `update_asset(asset_id, updates: AssetUpdateRequest)`
 - `delete_asset(asset_id)`
 
 **Example:**
 ```python
-from stepxmlclient.model.asset import Asset
-asset = Asset(id="A001", name="Image1.jpg", type="image/jpeg")
-created = client.client.create_asset(asset=asset)
+from stepxmlclient.rest_client.models.asset import AssetCreateRequest
+
+created = ops_client.assets.create_asset(
+    AssetCreateRequest(
+        objectType="ProductImage",
+        classifications=["ProductImageRoot"],
+        name="Image1.jpg"
+    )
+)
+retrieved = ops_client.assets.get_asset(created.id)
 ```
 
 ---
@@ -141,63 +163,68 @@ request = ClassificationCreateRequest(
     parent="WebRoot",
     name="Category1"
 )
-created = ops.create_classification(request)
+created = ops_client.classifications.create_classification(request)
 
 # Partial update
-ops.update_classification("CLASS1", ClassificationUpdateRequest(name="New Name"))
+ops_client.classifications.update_classification("CLASS1", ClassificationUpdateRequest(name="New Name"))
 
 # Get direct children
-children = ops.get_classification_children("CLASS1")  # returns List[str]
+children = ops_client.classifications.get_classification_children("CLASS1")  # returns List[str]
 ```
 
 ---
 
 ### Attribute
 
-**Model:** `Attribute`
+**Model:** `AttributeCreateRequest`, `AttributeUpdateRequest`, `AttributeResponse`
 
 **Common Operations:**
-- `get_attribute_by_id(attribute_id)`
+- `get_attribute(attribute_id)`
 - `list_attributes()`
-- `create_attribute(attribute: Attribute)`
+- `create_attribute(data: AttributeCreateRequest)`
 
 **Example:**
 ```python
-from stepxmlclient.model.attribute import Attribute
-attribute = Attribute(id="Attr1", name="Color", type="string")
-created = client.client.create_attribute(attribute=attribute)
+from stepxmlclient.rest_client.models.attribute import AttributeCreateRequest
+
+created = ops_client.attributes.create_attribute(
+    AttributeCreateRequest(
+        objectType="Description",
+        name="Color"
+    )
+)
 ```
 
 ---
 
 ### Business Rule
 
-**Model:** `BusinessRule`
+Business-rule endpoints are accessible through raw OpenAPI operation IDs on `raw_client.client`.
 
-**Common Operations:**
-- `get_business_rule_by_id(rule_id)`
-- `list_business_rules()`
+Use this style when no dedicated wrapper operation group is available:
 
 **Example:**
 ```python
-from stepxmlclient.model.business import BusinessRule
-rule = client.client.get_business_rule_by_id(rule_id="BR001")
+# Operation names follow OpenAPI operationId values
+rule = raw_client.client.someBusinessRuleOperationId(...)
 ```
 
 ---
 
 ### Organization
 
-**Model:** `Organization`
+Organization-related metadata is exposed via the `metadata` wrapper group.
 
 **Common Operations:**
-- `get_organization_by_id(org_id)`
-- `list_organizations()`
+- `list_contexts(limit=100, offset=0)`
+- `get_context(context_id)`
+- `list_workspaces(limit=100, offset=0)`
+- `get_workspace(workspace_id)`
 
 **Example:**
 ```python
-from stepxmlclient.model.organization import Organization
-org = client.client.get_organization_by_id(org_id="ORG001")
+contexts = ops_client.metadata.list_contexts(limit=50)
+first_context = contexts.items[0] if contexts.items else None
 ```
 
 ---
@@ -228,42 +255,46 @@ request = EntityCreateRequest(
     name="Macy, Charles",
     values={"Email": {"value": "charles@example.com"}}
 )
-created = ops.create_entity(request)
+created = ops_client.entities.create_entity(request)
 
 # Partial update
-ops.update_entity("E001", EntityUpdateRequest(name="Updated Name"))
+ops_client.entities.update_entity("E001", EntityUpdateRequest(name="Updated Name"))
 ```
 
 ---
 
 ### Replacement
 
-**Model:** `Replacement`
+Replacement endpoints are available through raw OpenAPI operation IDs on `raw_client.client`.
 
-**Common Operations:**
-- `get_replacement_by_id(replacement_id)`
-- `list_replacements()`
+Use this style when no dedicated wrapper operation group exists for a specific endpoint:
 
-**Example:**
 ```python
-from stepxmlclient.model.replacement import Replacement
-replacement = client.client.get_replacement_by_id(replacement_id="R001")
+# Operation names follow OpenAPI operationId values
+data = raw_client.client.someReplacementOperationId(...)
 ```
 
 ---
 
 ### Relations
 
-**Model:** `Relation`
+**Model:** `RelationshipResponse`, `RelationshipListResponse`
 
 **Common Operations:**
-- `get_relation_by_id(relation_id)`
-- `list_relations()`
+- `list_references(entity_type, entity_id, reference_type_id)`
+- `get_reference(entity_type, entity_id, reference_type_id, target_id)`
+- `put_reference(entity_type, entity_id, reference_type_id, target_id, data)`
+- `delete_reference(entity_type, entity_id, reference_type_id, target_id)`
 
 **Example:**
 ```python
-from stepxmlclient.model.relations import Relation
-relation = client.client.get_relation_by_id(relation_id="REL001")
+ops_client.relations.put_reference(
+    entity_type="products",
+    entity_id="P123",
+    reference_type_id="Accessory",
+    target_id="P456",
+    data={"metadata": {"note": "linked by docs example"}}
+)
 ```
 
 ---
@@ -367,10 +398,16 @@ except ValidationError as e:
 For binary asset uploads (images, documents), use the specialized uploader:
 
 ```python
-from stepxmlclient.upload import StepAssetUploader
-uploader = StepAssetUploader(client)
-with open("image.jpg", "rb") as f:
-    uploader.upload_asset(asset_id="A001", file=f)
+from stepxmlclient.upload import AssetUploader
+
+uploader = AssetUploader(client)
+result = uploader.upload_file(
+    file_path="image.jpg",
+    asset_id="A001",
+    context_id="Context1",
+    workspace_id="Main"
+)
+print(result)
 ```
 
 ---
@@ -381,7 +418,7 @@ All client operations raise exceptions on HTTP errors. Use try/except blocks to 
 
 ```python
 try:
-    product = client.client.get_product_by_id(product_id="P123")
+    product = ops_client.products.get_product("P123")
 except Exception as e:
     print("Error:", e)
 ```
@@ -390,11 +427,11 @@ except Exception as e:
 
 ## Advanced: Custom Operations
 
-You can access any operation defined in the OpenAPI spec via the `client.client` object. Operation names match the OpenAPI operationId.
+You can access any operation defined in the OpenAPI spec via the `raw_client.client` object. Operation names match the OpenAPI operationId.
 
 ```python
 # Example: call a custom operation
-data = client.client.custom_operation_name(param1="value1")
+data = raw_client.client.custom_operation_name(param1="value1")
 ```
 
 ---

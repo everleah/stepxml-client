@@ -40,14 +40,17 @@ class MyEntity(BaseObject):
 ### 3. Parser Architecture
 The `Parser` class maintains separate lists for each entity type (`self.products`, `self.assets`, `self.attributes`, etc.).
 - **Parsing Logic**: Use `_parse_item_list(xml_tag, item_tag, parser_func)` to populate these lists.
-- **Parser Functions**: Strictly named `_parse_<element_name>(element) -> dict`.
+- **Parser Functions**: Primarily follow `_parse_<element_name>(...)` naming and usually return dictionaries, with helper/utility parsing methods as needed for list/tuple/dict orchestration.
 - **Boolean Handling**: Use `_str_to_bool()` for XML "true"/"false" strings.
 - **Context**: The parser is stateful regarding the document it just parsed.
 
 ### 4. REST API Integration
 - Wraps `requests-openapi` via `StiboStepRestClient`.
-- **No Method Wrappers**: The client exposes the underlying `client` object (`client.client.operation_id(...)`).
-- **Uploads**: Use `StepAssetUploader` in `upload.py` for pushing binary content.
+- **Two Access Styles**:
+    - Direct OpenAPI access through `StiboStepRestClient.client` (`client.client.operation_id(...)`).
+    - Grouped operation wrappers through `StepRestClient` in `stepxmlclient/rest_client/client.py` (e.g., `products`, `assets`, `classifications`, `entities`, `inbound`, etc.).
+- **Inbound Operations**: `StiboStepRestClient` also initializes `inbound` operations (lazy import) for IIEP upload/status helpers.
+- **Uploads**: Use `AssetUploader` in `upload.py` for pushing binary content.
 
 ## Workflows & Testing
 
@@ -57,7 +60,8 @@ The `Parser` class maintains separate lists for each entity type (`self.products
 
 ### Testing Strategy
 The project follows a phased testing approach using `unittest`.
-- **Main Runner**: `test.py` (runs core integration tests).
+- **Primary Coverage**: Phase-based test modules (`test_parser_phaseX_*.py`, `test_rest_client_phaseX_*.py`) and focused behavior tests in `test_*.py` files.
+- **Utility Script**: `test.py` is a simple manual connectivity/example script, not the canonical full test runner.
 - **Phase Tests**: `test_parser_phaseX_....py` target specific functionalities (e.g., `test_parser_phase5_attributes.py`).
 - **Validation**: `validate_xml_xsd.py` checks generated XML against `STEP.xsd`.
 - **Development**: When adding a feature, either extend an existing phase test or create a new phase file if it enters a new domain.
