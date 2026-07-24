@@ -3,38 +3,38 @@
 Operation groups for different STEP entity types.
 """
 
-from .products import ProductOperations
 from .assets import AssetOperations
-from .classifications import ClassificationOperations
-from .entities import EntityOperations
 from .attributes import AttributeOperations
-from .metadata import MetadataOperations
-from .imports import ImportOperations
-from .exports import ExportOperations
-from .relations import RelationOperations
-from .inbound import InboundOperations
 from .bulk import (
-    BulkOperations,
-    WorkflowOperations,
     AdvancedSearchOperations,
+    BulkOperations,
     CacheOperations,
     StreamingOperations,
+    WorkflowOperations,
 )
+from .classifications import ClassificationOperations
+from .entities import EntityOperations
+from .exports import ExportOperations
+from .imports import ImportOperations
+from .inbound import InboundOperations
+from .metadata import MetadataOperations
+from .products import ProductOperations
+from .relations import RelationOperations
 
 __all__ = [
-    'ProductOperations',
+    'AdvancedSearchOperations',
     'AssetOperations',
+    'AttributeOperations',
+    'BulkOperations',
+    'CacheOperations',
     'ClassificationOperations',
     'EntityOperations',
-    'AttributeOperations',
-    'MetadataOperations',
-    'ImportOperations',
     'ExportOperations',
-    'RelationOperations',
+    'ImportOperations',
     'InboundOperations',
-    'BulkOperations',
-    'WorkflowOperations',
-    'AdvancedSearchOperations',
-    'CacheOperations',
+    'MetadataOperations',
+    'ProductOperations',
+    'RelationOperations',
     'StreamingOperations',
+    'WorkflowOperations',
 ]

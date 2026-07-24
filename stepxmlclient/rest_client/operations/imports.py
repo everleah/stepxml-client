@@ -16,14 +16,20 @@ from ..models.import_export import (
 class ImportOperations(BaseOperation):
     """Operations for STEP data imports and bulk operations."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, 
+                 client, 
+                 logger: Optional[logging.Logger] = None, 
+                 context: Optional[str] = None, 
+                 workspace: Optional[str] = None):
         """Initialize import operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
         """
-        super().__init__(client, operation_name="ImportOperations", logger=logger)
+        super().__init__(client, 
+                         operation_name="ImportOperations", 
+                         logger=logger, context=context, workspace=workspace)
     
     @handle_rest_errors
     def create_import_job(self, data: ImportJobCreateRequest) -> ImportJobResponse:

@@ -3,21 +3,21 @@
 Provides CRUD, search, and binary content operations for assets.
 """
 
-from typing import Optional, Dict, Any
 import logging
 import os
+from typing import Any, Optional
 
 import requests_openapi as roa
 
+from .. import exceptions as exc
 from ..base import BaseOperation, handle_rest_errors
 from ..models.asset import (
-    AssetResponse,
-    AssetListResponse,
     AssetCreateRequest,
-    AssetUpdateRequest,
     AssetDownloadResponse,
+    AssetListResponse,
+    AssetResponse,
+    AssetUpdateRequest,
 )
-from .. import exceptions as exc
 
 
 class AssetOperations(BaseOperation):
@@ -245,7 +245,7 @@ class AssetOperations(BaseOperation):
         )
         
         asset_dict = asset_data.model_dump(exclude_none=True)
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if allow_overwrite:

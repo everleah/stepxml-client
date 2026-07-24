@@ -1,14 +1,14 @@
 """Classification operations for STEP REST API v2."""
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictError
+from ..exceptions import ConflictError, NotFoundError, ValidationError
 from ..models.classification import (
-    ClassificationResponse,
-    ClassificationListResponse,
     ClassificationCreateRequest,
+    ClassificationListResponse,
+    ClassificationResponse,
     ClassificationUpdateRequest,
 )
 
@@ -53,7 +53,7 @@ class ClassificationOperations(BaseOperation):
             ["classification_id"]
         )
         
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if include_inherited_data:
@@ -209,7 +209,7 @@ class ClassificationOperations(BaseOperation):
         )
         
         create_data = data.model_dump(exclude_none=True)
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if allow_overwrite:
@@ -270,7 +270,7 @@ class ClassificationOperations(BaseOperation):
     
     @handle_rest_errors
     def get_classification_children(self, classification_id: str,
-                                    key_id: Optional[str] = None) -> List[str]:
+                                    key_id: Optional[str] = None) -> list[str]:
         """Get direct children IDs of a classification (GET /classifications/{id}/children).
         
         Args:

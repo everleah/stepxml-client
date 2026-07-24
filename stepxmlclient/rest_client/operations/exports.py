@@ -1,14 +1,12 @@
 """Export and Import operations for STEP REST API v2."""
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError
+from ..exceptions import NotFoundError, ValidationError
 from ..models.import_export import (
     BackgroundProcessResponse,
-    ExportJobResponse,  # backward-compat alias
-    ExportJobListResponse,
     ExportJobCreateRequest,
 )
 
@@ -95,7 +93,7 @@ class ExportOperations(BaseOperation):
             process_description: Optional human-readable description for the import process
 
         Returns:
-            ExportJobResponse with job/process details
+            BackgroundProcessResponse with job/process details
 
         Raises:
             ValidationError: If import_configuration_id is missing or data is invalid
@@ -122,6 +120,7 @@ class ExportOperations(BaseOperation):
                 else:
                     # For Pydantic models or dicts, convert to JSON bytes
                     import json
+                    
                     from pydantic import BaseModel
                     if isinstance(data, BaseModel):
                         binary_data = json.dumps(data.model_dump(exclude_none=True)).encode('utf-8')
@@ -133,18 +132,18 @@ class ExportOperations(BaseOperation):
                     data=binary_data,
                     **query_params
                 )
-                response_dict = response if isinstance(response, dict) else {"success": True}
+                response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
             else:
                 response = self.client.postImport(
                     importConfigurationId=import_configuration_id,
                     **query_params
                 )
-                response_dict = response if isinstance(response, dict) else {"success": True}
+                response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(import_configuration_id, "ImportConfiguration")
             if "400" in str(e):
-                raise ValidationError(f"Import failed: {str(e)}")
+                raise ValidationError(f"Import failed: {e!s}")
             raise
 
         self._check_for_api_error(response_dict, import_configuration_id, "ImportConfiguration")

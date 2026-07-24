@@ -5,10 +5,10 @@ and managing their status, including enabling/disabling endpoints and retrieving
 """
 
 import logging
-from typing import Optional, List, Dict, Any, Union
+from typing import Any, Optional, Union
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError
+from ..exceptions import NotFoundError, RestApiError, ValidationError
 
 
 class InboundOperations(BaseOperation):
@@ -61,7 +61,7 @@ class InboundOperations(BaseOperation):
 
     @handle_rest_errors
     def upload_and_invoke(self, endpoint_id: str, xml_data: Union[bytes, str],
-                          file_name: Optional[str] = None) -> Dict[str, Any]:
+                          file_name: Optional[str] = None) -> dict[str, Any]:
         """Upload STEP-XML to an inbound endpoint and trigger processing.
         
         Posts STEP-XML content to a configured Inbound Integration Endpoint
@@ -96,7 +96,7 @@ class InboundOperations(BaseOperation):
             xml_data = xml_data.encode('utf-8')
 
         # Prepare query parameters (context and workspace, plus optional fileName)
-        params: Dict[str, Any] = {}
+        params: dict[str, Any] = {}
         if file_name:
             params["fileName"] = file_name
         params.update(self._build_context_params())
@@ -144,7 +144,7 @@ class InboundOperations(BaseOperation):
 
 
     @handle_rest_errors
-    def list_endpoints(self) -> List[Dict[str, Any]]:
+    def list_endpoints(self) -> list[dict[str, Any]]:
         """Get all accessible inbound integration endpoints.
         
         Returns:
@@ -172,7 +172,7 @@ class InboundOperations(BaseOperation):
             return []
 
     @handle_rest_errors
-    def get_status(self, endpoint_id: str) -> Dict[str, Any]:
+    def get_status(self, endpoint_id: str) -> dict[str, Any]:
         """Get the current status of an inbound endpoint.
         
         Args:
@@ -212,7 +212,7 @@ class InboundOperations(BaseOperation):
         return {"endpoint": endpoint_id}
 
     @handle_rest_errors
-    def enable_endpoint(self, endpoint_id: str) -> Dict[str, Any]:
+    def enable_endpoint(self, endpoint_id: str) -> dict[str, Any]:
         """Enable an inbound integration endpoint.
         
         Enables the endpoint so it can receive and process uploads.
@@ -255,7 +255,7 @@ class InboundOperations(BaseOperation):
         return {"success": True, "endpoint": endpoint_id, "action": "enabled"}
 
     @handle_rest_errors
-    def disable_endpoint(self, endpoint_id: str) -> Dict[str, Any]:
+    def disable_endpoint(self, endpoint_id: str) -> dict[str, Any]:
         """Disable an inbound integration endpoint.
         
         Disables the endpoint so it will not accept uploads or process data.
@@ -298,7 +298,7 @@ class InboundOperations(BaseOperation):
         return {"success": True, "endpoint": endpoint_id, "action": "disabled"}
 
     @handle_rest_errors
-    def get_execution_report(self, endpoint_id: str) -> List[Dict[str, Any]]:
+    def get_execution_report(self, endpoint_id: str) -> list[dict[str, Any]]:
         """Get the execution report for an inbound endpoint's main process.
         
         Returns detailed information about the last execution or current state.
@@ -342,7 +342,7 @@ class InboundOperations(BaseOperation):
         return []
 
     @handle_rest_errors
-    def get_statistics(self, endpoint_id: str) -> Dict[str, Any]:
+    def get_statistics(self, endpoint_id: str) -> dict[str, Any]:
         """Get statistics for an inbound integration endpoint.
         
         Returns operational statistics and metrics about the endpoint.
@@ -385,7 +385,7 @@ class InboundOperations(BaseOperation):
 
     @handle_rest_errors
     def get_worker_processes(self, endpoint_id: str,
-                             status_filter: Optional[str] = None) -> List[str]:
+                             status_filter: Optional[str] = None) -> list[str]:
         """Get background process IDs started by this endpoint.
         
         Args:
@@ -405,7 +405,7 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        params: Dict[str, Any] = self._build_context_params()
+        params: dict[str, Any] = self._build_context_params()
         if status_filter:
             params["status"] = status_filter
 

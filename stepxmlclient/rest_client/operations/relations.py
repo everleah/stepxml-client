@@ -115,6 +115,7 @@ class RelationOperations(BaseOperation):
             response = op_func(id=entity_id, referenceTypeId=reference_type_id, **query_params)
         except Exception as e:
             if "404" in str(e):
+                prefix = _OP_PREFIX.get(entity_type, "Product")
                 raise NotFoundError(entity_id, prefix)
             raise
 

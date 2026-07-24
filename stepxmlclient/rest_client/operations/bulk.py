@@ -1,40 +1,43 @@
 """Bulk operations, workflows, and advanced search for STEP REST API v2."""
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import ValidationError, NotFoundError, RestApiError
+from ..exceptions import NotFoundError, ValidationError
 from ..models.bulk import (
-    BulkOperationRequest,
-    BulkOperationResponse,
-    BulkOperationResultResponse,
-    WorkflowDefinition,
-    WorkflowInstance,
-    WorkflowTransitionRequest,
     AdvancedSearchRequest,
     AdvancedSearchResponse,
+    BulkOperationResponse,
+    BulkOperationResultResponse,
     CacheConfigRequest,
     CacheStatistics,
     StreamingRequest,
     StreamingResponse,
+    WorkflowDefinition,
+    WorkflowInstance,
+    WorkflowTransitionRequest,
 )
 
 
 class BulkOperations(BaseOperation):
     """Operations for bulk processing of entities."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, 
+                 logger: Optional[logging.Logger] = None, 
+                 context: Optional[str] = None, 
+                 workspace: Optional[str] = None):
         """Initialize bulk operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
         """
-        super().__init__(client, operation_name="BulkOperations", logger=logger)
+        super().__init__(client, operation_name="BulkOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
-    def bulk_create_entities(self, entities: List[Dict[str, Any]],
+    def bulk_create_entities(self, entities: list[dict[str, Any]],
                             continue_on_error: bool = True) -> BulkOperationResponse:
         """Bulk create entities in one operation.
         
@@ -75,7 +78,7 @@ class BulkOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def bulk_update_entities(self, entities: List[Dict[str, Any]],
+    def bulk_update_entities(self, entities: list[dict[str, Any]],
                             continue_on_error: bool = True) -> BulkOperationResponse:
         """Bulk update entities in one operation.
         
@@ -116,7 +119,7 @@ class BulkOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def bulk_delete_entities(self, entity_ids: List[str],
+    def bulk_delete_entities(self, entity_ids: list[str],
                             continue_on_error: bool = True) -> BulkOperationResponse:
         """Bulk delete entities in one operation.
         
@@ -242,17 +245,23 @@ class BulkOperations(BaseOperation):
 class WorkflowOperations(BaseOperation):
     """Operations for workflow management."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, 
+                 logger: Optional[logging.Logger] = None, 
+                 context: Optional[str] = None, 
+                 workspace: Optional[str] = None):
         """Initialize workflow operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="WorkflowOperations", logger=logger)
+        super().__init__(client, operation_name="WorkflowOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
-    def get_workflow_definitions(self) -> List[WorkflowDefinition]:
+    def get_workflow_definitions(self) -> list[WorkflowDefinition]:
         """Get all available workflow definitions.
         
         Returns:
@@ -387,14 +396,18 @@ class WorkflowOperations(BaseOperation):
 class AdvancedSearchOperations(BaseOperation):
     """Operations for advanced search and aggregations."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None, 
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize advanced search operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="AdvancedSearchOperations", logger=logger)
+        super().__init__(client, operation_name="AdvancedSearchOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def advanced_search(self, search_request: AdvancedSearchRequest) -> AdvancedSearchResponse:
@@ -435,7 +448,7 @@ class AdvancedSearchOperations(BaseOperation):
     @handle_rest_errors
     def get_search_suggestions(self, entity_type: str,
                               prefix: str,
-                              field: Optional[str] = None) -> Dict[str, Any]:
+                              field: Optional[str] = None) -> dict[str, Any]:
         """Get search suggestions for auto-complete.
         
         Args:
@@ -473,14 +486,18 @@ class AdvancedSearchOperations(BaseOperation):
 class CacheOperations(BaseOperation):
     """Operations for managing result caching."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize cache operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="CacheOperations", logger=logger)
+        super().__init__(client, operation_name="CacheOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def configure_cache(self, config: CacheConfigRequest) -> bool:
@@ -552,21 +569,27 @@ class CacheOperations(BaseOperation):
         try:
             self.client.clearCache(**params)
             return True
-        except Exception:
+        except Exception as e:
+            if "404" in str(e):
+                raise NotFoundError(cache_key, "CacheEntry")
             raise
 
 
 class StreamingOperations(BaseOperation):
     """Operations for streaming large result sets."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self, client, logger: Optional[logging.Logger] = None,
+                 context: Optional[str] = None, workspace: Optional[str] = None):
         """Initialize streaming operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
+            context: STEP context ID for all API calls
+            workspace: STEP workspace ID (defaults to "Main" server-side)
         """
-        super().__init__(client, operation_name="StreamingOperations", logger=logger)
+        super().__init__(client, operation_name="StreamingOperations", logger=logger,
+                         context=context, workspace=workspace)
     
     @handle_rest_errors
     def start_streaming(self, stream_request: StreamingRequest) -> StreamingResponse:

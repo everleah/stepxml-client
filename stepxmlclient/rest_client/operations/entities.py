@@ -1,16 +1,16 @@
 """Entity operations for STEP REST API v2."""
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictError
+from ..exceptions import ConflictError, NotFoundError, ValidationError
 from ..models.entity import (
-    EntityResponse,
-    EntityListResponse,
     EntityCreateRequest,
-    EntityUpdateRequest,
+    EntityListResponse,
     EntityRelationshipResponse,
+    EntityResponse,
+    EntityUpdateRequest,
 )
 
 
@@ -181,7 +181,7 @@ class EntityOperations(BaseOperation):
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
             if "400" in str(e):
-                raise ValidationError(f"Update failed: {str(e)}")
+                raise ValidationError(f"Update failed: {e!s}")
             raise
         
         if isinstance(response, dict):
@@ -210,7 +210,7 @@ class EntityOperations(BaseOperation):
         )
         
         create_data = data.model_dump(exclude_none=True)
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if allow_overwrite:

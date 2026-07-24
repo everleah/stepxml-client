@@ -1,18 +1,16 @@
 """Attribute operations for STEP REST API v2."""
 
 import logging
-from typing import Optional, List, Dict, Any
+from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError, ConflictError
+from ..exceptions import ConflictError, NotFoundError, ValidationError
 from ..models.attribute import (
-    AttributeResponse,
-    AttributeListResponse,
-    ListOfValueResponse,
-    AttributeSearchRequest,
     AttributeCreateRequest,
+    AttributeListResponse,
+    AttributeResponse,
     AttributeUpdateRequest,
-    ListOfValueItem,
+    ListOfValueResponse,
 )
 
 
@@ -227,7 +225,7 @@ class AttributeOperations(BaseOperation):
         return response
     
     @handle_rest_errors
-    def search_list_of_values(self, condition: dict) -> Dict[str, Any]:
+    def search_list_of_values(self, condition: dict) -> dict[str, Any]:
         """Search List of Values using a STEP condition query (POST /listofvalues/search).
         
         Args:

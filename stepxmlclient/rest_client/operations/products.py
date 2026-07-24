@@ -3,19 +3,19 @@
 Provides CRUD and search operations for products.
 """
 
-from typing import Optional, List, Dict, Any
 import logging
+from typing import Any, Optional
 
 import requests_openapi as roa
 
+from .. import exceptions as exc
 from ..base import BaseOperation, handle_rest_errors
 from ..models.product import (
-    ProductResponse,
-    ProductListResponse,
     ProductCreateRequest,
+    ProductListResponse,
+    ProductResponse,
     ProductUpdateRequest,
 )
-from .. import exceptions as exc
 
 
 class ProductOperations(BaseOperation):
@@ -66,7 +66,7 @@ class ProductOperations(BaseOperation):
             ["product_id"]
         )
         
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if include_inherited_data:
@@ -245,7 +245,7 @@ class ProductOperations(BaseOperation):
         )
         
         product_dict = product_data.model_dump(exclude_none=True)
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if allow_overwrite:
@@ -304,7 +304,7 @@ class ProductOperations(BaseOperation):
             raise
     
     @handle_rest_errors
-    def get_product_attributes(self, product_id: str) -> List[Dict[str, Any]]:
+    def get_product_attributes(self, product_id: str) -> list[dict[str, Any]]:
         """Get all attributes for a product.
         
         Args:
@@ -343,7 +343,7 @@ class ProductOperations(BaseOperation):
             return getattr(response, "items", [])
     
     @handle_rest_errors
-    def get_product_values(self, product_id: str) -> List[Dict[str, Any]]:
+    def get_product_values(self, product_id: str) -> list[dict[str, Any]]:
         """Get all values (variants/SKUs) for a product.
         
         Args:

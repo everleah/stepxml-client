@@ -23,14 +23,20 @@ from ..models.metadata import (
 class MetadataOperations(BaseOperation):
     """Operations for STEP system metadata and configuration."""
     
-    def __init__(self, client, logger: Optional[logging.Logger] = None):
+    def __init__(self,  
+                 client, 
+                 logger: Optional[logging.Logger] = None, 
+                 context: Optional[str] = None, 
+                 workspace: Optional[str] = None):
         """Initialize metadata operations.
         
         Args:
             client: The REST API client
             logger: Optional logger instance
         """
-        super().__init__(client, operation_name="MetadataOperations", logger=logger)
+        super().__init__(client, 
+                         operation_name="MetadataOperations", 
+                         logger=logger, context=context, workspace=workspace)
     
     @handle_rest_errors
     def get_system_info(self) -> SystemMetadataResponse:
