@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError
+from ..models.collection import CollectionResponse
 
 
 class CollectionOperations(BaseOperation):
@@ -13,17 +14,17 @@ class CollectionOperations(BaseOperation):
         super().__init__(client, operation_name="CollectionOperations", logger=logger, context=context, workspace=workspace)
 
     @handle_rest_errors
-    def create_collection(self, data: dict[str, Any]) -> dict[str, Any]:
+    def create_collection(self, data: dict[str, Any]) -> CollectionResponse:
         self._log_operation("createCollection", data)
         try:
             r = self.client.createCollection(json=data, **self._build_context_params())
         except Exception as e:
             if "409" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return CollectionResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def get_collection(self, collection_id: str) -> dict[str, Any]:
+    def get_collection(self, collection_id: str) -> CollectionResponse:
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("getCollection", {"id": collection_id})
         try:
@@ -31,10 +32,10 @@ class CollectionOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(collection_id, "Collection")
             raise
-        return r if isinstance(r, dict) else r
+        return CollectionResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def create_or_replace_collection(self, collection_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def create_or_replace_collection(self, collection_id: str, data: dict[str, Any]) -> CollectionResponse:
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("createOrReplaceCollection", {"id": collection_id})
         try:
@@ -42,7 +43,7 @@ class CollectionOperations(BaseOperation):
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return CollectionResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def delete_collection(self, collection_id: str) -> bool:
@@ -56,7 +57,7 @@ class CollectionOperations(BaseOperation):
             raise
 
     @handle_rest_errors
-    def get_collection_content(self, collection_id: str) -> dict[str, Any]:
+    def get_collection_content(self, collection_id: str) -> CollectionResponse:
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("getCollectionContent", {"id": collection_id})
         try:
@@ -64,4 +65,4 @@ class CollectionOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(collection_id, "Collection")
             raise
-        return r if isinstance(r, dict) else r
+        return CollectionResponse(**r) if isinstance(r, dict) else r

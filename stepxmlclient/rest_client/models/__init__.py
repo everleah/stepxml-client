@@ -69,10 +69,41 @@ from .relations import (
     LinkCreateRequest,
     RelationshipGraphResponse,
 )
-from .bulk import (
-    WorkflowDefinition,
-    WorkflowInstance,
-    WorkflowTransitionRequest,
+from .context import (
+    ContextResponse,
+)
+from .system_information import (
+    SystemInformationResponse,
+)
+from .user import (
+    UserResponse,
+    UserGroupResponse,
+)
+from .collection import (
+    CollectionResponse,
+    CollectionGroupResponse,
+)
+from .background_process import (
+    BackgroundProcessResponse,
+)
+from .event_processor import (
+    EventProcessorResponse,
+)
+from .integration_endpoint import (
+    IntegrationEndpointResponse,
+)
+from .workflow import (
+    WorkflowResponse,
+    WorkflowTaskResponse,
+)
+from .batch import (
+    BatchRequest,
+    BatchResponse,
+    OperationRequest,
+    OperationResponse,
+)
+from .data_type_group import (
+    DataTypeGroupResponse,
 )
 
 __all__ = [
@@ -126,7 +157,19 @@ __all__ = [
     'LinkListResponse',
     'LinkCreateRequest',
     'RelationshipGraphResponse',
-    'WorkflowDefinition',
-    'WorkflowInstance',
-    'WorkflowTransitionRequest',
+    'WorkflowResponse',
+    'WorkflowTaskResponse',
+    'ContextResponse',
+    'SystemInformationResponse',
+    'UserResponse',
+    'UserGroupResponse',
+    'CollectionResponse',
+    'CollectionGroupResponse',
+    'EventProcessorResponse',
+    'IntegrationEndpointResponse',
+    'BatchRequest',
+    'BatchResponse',
+    'OperationRequest',
+    'OperationResponse',
+    'DataTypeGroupResponse',
 ]

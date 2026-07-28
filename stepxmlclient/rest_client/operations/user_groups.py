@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError
+from ..models.user import UserGroupResponse
 
 
 class UserGroupOperations(BaseOperation):
@@ -13,7 +14,7 @@ class UserGroupOperations(BaseOperation):
         super().__init__(client, operation_name="UserGroupOperations", logger=logger, context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_user_group(self, group_id: str) -> dict[str, Any]:
+    def get_user_group(self, group_id: str) -> UserGroupResponse:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getUserGroup", {"id": group_id})
         try:
@@ -21,10 +22,10 @@ class UserGroupOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
-        return r if isinstance(r, dict) else r
+        return UserGroupResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def create_or_replace_user_group(self, group_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def create_or_replace_user_group(self, group_id: str, data: dict[str, Any]) -> UserGroupResponse:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("createOrReplaceUserGroup", {"id": group_id})
         try:
@@ -32,10 +33,10 @@ class UserGroupOperations(BaseOperation):
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return UserGroupResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def update_user_group(self, group_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def update_user_group(self, group_id: str, data: dict[str, Any]) -> UserGroupResponse:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("updateUserGroup", {"id": group_id})
         try:
@@ -43,7 +44,7 @@ class UserGroupOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
-        return r if isinstance(r, dict) else r
+        return UserGroupResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def delete_user_group(self, group_id: str) -> bool:

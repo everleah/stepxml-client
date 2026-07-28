@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError
+from ..models.data_type_group import DataTypeGroupResponse
 
 
 class DataTypeGroupOperations(BaseOperation):
@@ -13,7 +14,7 @@ class DataTypeGroupOperations(BaseOperation):
         super().__init__(client, operation_name="DataTypeGroupOperations", logger=logger, context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_data_type_group(self, group_id: str) -> dict[str, Any]:
+    def get_data_type_group(self, group_id: str) -> DataTypeGroupResponse:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroup", {"id": group_id})
         try:
@@ -21,7 +22,7 @@ class DataTypeGroupOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise
-        return r if isinstance(r, dict) else r
+        return DataTypeGroupResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_data_type_group_children(self, group_id: str) -> list[str]:

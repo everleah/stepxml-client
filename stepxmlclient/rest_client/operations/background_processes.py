@@ -3,13 +3,14 @@ import logging
 from typing import Any, Optional
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError
+from ..models.background_process import BackgroundProcessResponse
 
 class BackgroundProcessOperations(BaseOperation):
     def __init__(self, client, logger=None, context=None, workspace=None):
         super().__init__(client, operation_name="BackgroundProcessOperations", logger=logger, context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_background_process(self, process_id: str) -> dict[str, Any]:
+    def get_background_process(self, process_id: str) -> BackgroundProcessResponse:
         self._validate_required_params({"process_id": process_id}, ["process_id"])
         self._log_operation("getBackgroundProcess", {"id": process_id})
         try:
@@ -17,7 +18,7 @@ class BackgroundProcessOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
-        return r if isinstance(r, dict) else r
+        return BackgroundProcessResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_execution_report(self, process_id: str) -> list[dict[str, Any]]:
@@ -42,7 +43,7 @@ class BackgroundProcessOperations(BaseOperation):
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
-    def get_attachment_metadata(self, process_id: str, attachment_id: str) -> dict[str, Any]:
+    def get_attachment_metadata(self, process_id: str, attachment_id: str) -> BackgroundProcessResponse:
         self._validate_required_params({"process_id": process_id, "attachment_id": attachment_id}, ["process_id", "attachment_id"])
         self._log_operation("getBackgroundProcessAttachmentMetadata", {"id": process_id, "attachmentId": attachment_id})
         try:
@@ -50,7 +51,7 @@ class BackgroundProcessOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
-        return r if isinstance(r, dict) else r
+        return BackgroundProcessResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_attachment_content(self, process_id: str, attachment_id: str) -> bytes:

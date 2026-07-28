@@ -3,6 +3,7 @@ import logging
 from typing import Any, Optional
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError
+from ..models.workflow import WorkflowResponse
 
 class WorkflowOperations(BaseOperation):
     def __init__(self, client, logger=None, context=None, workspace=None):
@@ -15,7 +16,7 @@ class WorkflowOperations(BaseOperation):
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
-    def get_workflow(self, workflow_id: str) -> dict[str, Any]:
+    def get_workflow(self, workflow_id: str) -> WorkflowResponse:
         self._validate_required_params({"workflow_id": workflow_id}, ["workflow_id"])
         self._log_operation("getWorkflow", {"id": workflow_id})
         try:
@@ -23,10 +24,10 @@ class WorkflowOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(workflow_id, "Workflow")
             raise
-        return r if isinstance(r, dict) else r
+        return WorkflowResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def create_workflow_instance(self, workflow_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def create_workflow_instance(self, workflow_id: str, data: dict[str, Any]) -> WorkflowResponse:
         self._validate_required_params({"workflow_id": workflow_id}, ["workflow_id"])
         self._log_operation("createWorkflowInstance", {"id": workflow_id})
         try:
@@ -34,7 +35,7 @@ class WorkflowOperations(BaseOperation):
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return WorkflowResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def delete_workflow_instance(self, workflow_id: str, instance_id: str) -> bool:

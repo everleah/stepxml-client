@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError
+from ..models.user import UserResponse
 
 
 class UserOperations(BaseOperation):
@@ -19,7 +20,7 @@ class UserOperations(BaseOperation):
                          context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_user(self, user_id: str) -> dict[str, Any]:
+    def get_user(self, user_id: str) -> UserResponse:
         """Get a user by ID.
         Calls: GET /users/{id} -> getUser
         """
@@ -30,10 +31,10 @@ class UserOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(user_id, "User")
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def create_or_replace_user(self, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def create_or_replace_user(self, user_id: str, data: dict[str, Any]) -> UserResponse:
         """Create or fully replace a user.
         Calls: PUT /users/{id} -> createOrReplaceUser
         """
@@ -44,10 +45,10 @@ class UserOperations(BaseOperation):
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def update_user(self, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    def update_user(self, user_id: str, data: dict[str, Any]) -> UserResponse:
         """Partially update a user.
         Calls: PATCH /users/{id} -> updateUser
         """
@@ -59,7 +60,7 @@ class UserOperations(BaseOperation):
             if "404" in str(e): raise NotFoundError(user_id, "User")
             if "400" in str(e): raise ValidationError(str(e))
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def delete_user(self, user_id: str) -> bool:
@@ -76,7 +77,7 @@ class UserOperations(BaseOperation):
             raise
 
     @handle_rest_errors
-    def randomize_password(self, user_id: str) -> dict[str, Any]:
+    def randomize_password(self, user_id: str) -> UserResponse:
         """Randomize a user's password.
         Calls: POST /users/{id}/randomize-password -> randomizeStepPassword
         """
@@ -87,10 +88,10 @@ class UserOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(user_id, "User")
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def add_user_to_group(self, user_id: str, group_data: dict[str, Any]) -> dict[str, Any]:
+    def add_user_to_group(self, user_id: str, group_data: dict[str, Any]) -> UserResponse:
         """Add a user to a group.
         Calls: POST /users/{id}/add-to-group -> addUserToGroup
         """
@@ -101,10 +102,10 @@ class UserOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(user_id, "User")
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def remove_user_from_group(self, user_id: str, group_data: dict[str, Any]) -> dict[str, Any]:
+    def remove_user_from_group(self, user_id: str, group_data: dict[str, Any]) -> UserResponse:
         """Remove a user from a group.
         Calls: POST /users/{id}/remove-from-group -> removeUserFromGroup
         """
@@ -115,4 +116,4 @@ class UserOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(user_id, "User")
             raise
-        return r if isinstance(r, dict) else r
+        return UserResponse(**r) if isinstance(r, dict) else r

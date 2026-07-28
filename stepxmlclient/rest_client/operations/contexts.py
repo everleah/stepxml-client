@@ -8,6 +8,7 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError
+from ..models.context import ContextResponse
 
 
 class ContextOperations(BaseOperation):
@@ -19,7 +20,7 @@ class ContextOperations(BaseOperation):
                          context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_contexts(self) -> list[dict[str, Any]]:
+    def get_contexts(self) -> list[ContextResponse]:
         """List all available contexts.
 
         Calls: GET /contexts -> getContexts
@@ -33,7 +34,7 @@ class ContextOperations(BaseOperation):
         return []
 
     @handle_rest_errors
-    def get_context(self, context_id: str) -> dict[str, Any]:
+    def get_context(self, context_id: str) -> ContextResponse:
         """Get a specific context by ID.
 
         Calls: GET /contexts/{id} -> getContext
@@ -46,4 +47,4 @@ class ContextOperations(BaseOperation):
             if "404" in str(e):
                 raise NotFoundError(context_id, "Context")
             raise
-        return response if isinstance(response, dict) else response
+        return ContextResponse(**response) if isinstance(response, dict) else response

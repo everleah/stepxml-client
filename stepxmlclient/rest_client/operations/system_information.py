@@ -7,6 +7,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
+from ..models.system_information import SystemInformationResponse
 
 
 class SystemInformationOperations(BaseOperation):
@@ -18,11 +19,11 @@ class SystemInformationOperations(BaseOperation):
                          context=context, workspace=workspace)
 
     @handle_rest_errors
-    def get_system_information(self) -> dict[str, Any]:
+    def get_system_information(self) -> SystemInformationResponse:
         """Get system information and capabilities.
 
         Calls: GET /system-information -> getSystemInformation
         """
         self._log_operation("getSystemInformation", {})
         response = self.client.getSystemInformation(**self._build_context_params())
-        return response if isinstance(response, dict) else response
+        return SystemInformationResponse(**response) if isinstance(response, dict) else response
