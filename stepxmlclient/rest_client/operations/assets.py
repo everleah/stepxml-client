@@ -352,7 +352,7 @@ class AssetOperations(BaseOperation):
         if key_id:
             query_params["keyId"] = key_id
         
-        self._log_operation("createOrReplaceAssetContent", {
+        self._log_operation("replaceAssetContent", {
             "asset_id": asset_id,
             "file_path": file_path,
             "size": file_size,
@@ -362,7 +362,7 @@ class AssetOperations(BaseOperation):
         try:
             # Open file in binary mode and upload
             with open(file_path, 'rb') as f:
-                response = self.client.createOrReplaceAssetContent(
+                response = self.client.replaceAssetContent(
                     id=asset_id,
                     data=f.read(),
                     **query_params

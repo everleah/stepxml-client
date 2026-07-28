@@ -48,12 +48,14 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-print("\nTest 2: Testing upload_asset_content() with correct putAssetContent call...")
+print("\nTest 2: Testing upload_asset_content() with correct replaceAssetContent call...")
 
 # Reset mock
 mock_client.reset_mock()
+mock_client.server = MagicMock()
+mock_client.server.url = "https://hoerl-sb01.mdm.stibosystems.com"
 mock_upload_response = MagicMock()
-mock_client.putAssetContent.return_value = mock_upload_response
+mock_client.replaceAssetContent.return_value = mock_upload_response
 
 # Create a temporary test file
 import tempfile
@@ -66,12 +68,12 @@ try:
     # Call upload method
     result = asset_ops.upload_asset_content("22215", test_file)
     
-    # Verify that putAssetContent was called with id= parameter (not assetId=)
-    mock_client.putAssetContent.assert_called_once()
-    call_kwargs = mock_client.putAssetContent.call_args.kwargs
+    # Verify that replaceAssetContent was called with id= parameter (not assetId=)
+    mock_client.replaceAssetContent.assert_called_once()
+    call_kwargs = mock_client.replaceAssetContent.call_args.kwargs
     
     if 'id' in call_kwargs and call_kwargs['id'] == "22215":
-        print("[PASS] upload_asset_content() correctly calls putAssetContent(id=...)")
+        print("[PASS] upload_asset_content() correctly calls replaceAssetContent(id=...)")
         print(f"  Called with: id='{call_kwargs['id']}', fileName='{call_kwargs.get('fileName')}'")
         if call_kwargs.get('fileName') == os.path.basename(test_file):
             print("[PASS] fileName parameter correctly extracted from file path")
@@ -112,10 +114,10 @@ try:
         print(f"[FAIL] GET operation is {get_op_id}, expected getAssetContent")
         sys.exit(1)
     
-    if put_op_id == 'putAssetContent':
+    if put_op_id == 'replaceAssetContent':
         print(f"[PASS] PUT /assets/{{id}}/content has operationId: {put_op_id}")
     else:
-        print(f"[FAIL] PUT operation is {put_op_id}, expected putAssetContent")
+        print(f"[FAIL] PUT operation is {put_op_id}, expected replaceAssetContent")
         sys.exit(1)
 except Exception as e:
     print(f"[FAIL] Error reading OpenAPI spec: {e}")

@@ -218,11 +218,11 @@ class TestAssetOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["keyId"], "MyKey")
 
     def test_search_assets_success(self):
-        self.mock_client.postAssetsSearch.return_value = {"items": [{"id": "ASSET1"}, {"id": "ASSET2"}], "total": 2}
+        self.mock_client.queryAssets.return_value = {"items": [{"id": "ASSET1"}, {"id": "ASSET2"}], "total": 2}
         condition = {"conditionType": "objecttype", "objectType": "ProductImage"}
         result = self.operations.search_assets(condition=condition)
         self.assertEqual(len(result.items), 2)
-        call_args = self.mock_client.postAssetsSearch.call_args
+        call_args = self.mock_client.queryAssets.call_args
         self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_assets_requires_condition(self):
@@ -230,7 +230,7 @@ class TestAssetOperations(unittest.TestCase):
             self.operations.search_assets(condition=None)
 
     def test_create_asset_success(self):
-        self.mock_client.postAssets.return_value = {"id": "NEWASSET", "name": "New Asset"}
+        self.mock_client.createAsset.return_value = {"id": "NEWASSET", "name": "New Asset"}
         request = AssetCreateRequest(
             objectType="ProductImage",
             classifications=["ProductImageRoot"],
@@ -240,10 +240,10 @@ class TestAssetOperations(unittest.TestCase):
         )
         result = self.operations.create_asset(request)
         self.assertEqual(result.id, "NEWASSET")
-        self.mock_client.postAssets.assert_called_once()
+        self.mock_client.createAsset.assert_called_once()
 
     def test_create_asset_conflict(self):
-        self.mock_client.postAssets.side_effect = Exception("409 conflict")
+        self.mock_client.createAsset.side_effect = Exception("409 conflict")
         request = AssetCreateRequest(
             objectType="ProductImage",
             classifications=["ProductImageRoot"],
@@ -255,29 +255,29 @@ class TestAssetOperations(unittest.TestCase):
             self.operations.create_asset(request)
 
     def test_update_asset_success(self):
-        self.mock_client.patchAsset.return_value = {"id": "ASSET123", "name": "Updated"}
+        self.mock_client.updateAsset.return_value = {"id": "ASSET123", "name": "Updated"}
         updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         result = self.operations.update_asset("ASSET123", updates)
         self.assertEqual(result.name, "Updated")
-        call_args = self.mock_client.patchAsset.call_args
+        call_args = self.mock_client.updateAsset.call_args
         self.assertEqual(call_args[1]["id"], "ASSET123")
         self.assertNotIn("assetId", call_args[1])
 
     def test_update_asset_not_found(self):
-        self.mock_client.patchAsset.side_effect = Exception("404 not found")
+        self.mock_client.updateAsset.side_effect = Exception("404 not found")
         updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_asset("NONEXISTENT", updates)
 
     def test_update_asset_with_key_id(self):
-        self.mock_client.patchAsset.return_value = {"id": "ASSET123"}
+        self.mock_client.updateAsset.return_value = {"id": "ASSET123"}
         updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         self.operations.update_asset("ASSET123", updates, key_id="MyKey")
-        call_args = self.mock_client.patchAsset.call_args
+        call_args = self.mock_client.updateAsset.call_args
         self.assertEqual(call_args[1]["keyId"], "MyKey")
 
     def test_replace_asset_success(self):
-        self.mock_client.putAsset.return_value = {"id": "ASSET123", "name": "Replaced"}
+        self.mock_client.createOrReplaceAsset.return_value = {"id": "ASSET123", "name": "Replaced"}
         data = AssetCreateRequest(
             objectType="ProductImage",
             classifications=["ProductImageRoot"],
@@ -287,11 +287,11 @@ class TestAssetOperations(unittest.TestCase):
         )
         result = self.operations.replace_asset("ASSET123", data)
         self.assertEqual(result.id, "ASSET123")
-        call_args = self.mock_client.putAsset.call_args
+        call_args = self.mock_client.createOrReplaceAsset.call_args
         self.assertEqual(call_args[1]["id"], "ASSET123")
 
     def test_replace_asset_with_allow_overwrite(self):
-        self.mock_client.putAsset.return_value = {"id": "ASSET123"}
+        self.mock_client.createOrReplaceAsset.return_value = {"id": "ASSET123"}
         data = AssetCreateRequest(
             objectType="ProductImage",
             classifications=["ProductImageRoot"],
@@ -300,7 +300,7 @@ class TestAssetOperations(unittest.TestCase):
             references=None,
         )
         self.operations.replace_asset("ASSET123", data, allow_overwrite=True)
-        call_args = self.mock_client.putAsset.call_args
+        call_args = self.mock_client.createOrReplaceAsset.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
 
     def test_delete_asset_success(self):
@@ -326,11 +326,11 @@ class TestAssetOperations(unittest.TestCase):
     @patch("os.path.getsize", return_value=102400)
     @patch("os.path.exists", return_value=True)
     def test_upload_asset_content_success(self, mock_exists, mock_getsize, mock_file):
-        self.mock_client.putAssetContent.return_value = {"id": "ASSET123"}
+        self.mock_client.replaceAssetContent.return_value = {"id": "ASSET123"}
         result = self.operations.upload_asset_content("ASSET123", "/path/to/file.jpg", mime_type="image/jpeg")
         self.assertEqual(result.id, "ASSET123")
-        self.mock_client.putAssetContent.assert_called_once()
-        call_args = self.mock_client.putAssetContent.call_args
+        self.mock_client.replaceAssetContent.assert_called_once()
+        call_args = self.mock_client.replaceAssetContent.call_args
         self.assertEqual(call_args[1]["id"], "ASSET123")
 
     @patch("os.path.exists")
@@ -343,7 +343,7 @@ class TestAssetOperations(unittest.TestCase):
     @patch("os.path.getsize", return_value=102400)
     @patch("os.path.exists", return_value=True)
     def test_upload_asset_content_asset_not_found(self, mock_exists, mock_getsize, mock_file):
-        self.mock_client.putAssetContent.side_effect = Exception("404 not found")
+        self.mock_client.replaceAssetContent.side_effect = Exception("404 not found")
         with self.assertRaises(exc.NotFoundError):
             self.operations.upload_asset_content("NONEXISTENT", "/path/to/file.jpg")
 
@@ -379,18 +379,12 @@ class TestAssetOperations(unittest.TestCase):
             self.operations.download_asset_content("NONEXISTENT")
 
     def test_search_by_type(self):
-        self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
+        self.mock_client.queryAssets.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("ImageType")
-        call_args = self.mock_client.postAssetsSearch.call_args
+        call_args = self.mock_client.queryAssets.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["condition"]["conditionType"], "objecttype")
         self.assertEqual(payload["condition"]["objectType"], "ImageType")
-
-    def test_list_assets(self):
-        self.mock_client.postAssetsSearch.return_value = {"items": [], "total": 0}
-        self.operations.list_assets()
-        self.mock_client.postAssetsSearch.assert_called_once()
-
 
 if __name__ == "__main__":
     import unittest

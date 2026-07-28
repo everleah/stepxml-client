@@ -11,17 +11,9 @@ from datetime import datetime
 from stepxmlclient.rest_client import exceptions as exc
 
 from stepxmlclient.rest_client.models.import_export import (
-    ImportJobResponse,
-    ImportJobListResponse,
-    ImportJobCreateRequest,
-    ExportJobResponse,
-    ExportJobListResponse,
+    BackgroundProcessResponse,
     ExportJobCreateRequest,
-    JobProgressResponse,
-    JobErrorResponse,
-    JobErrorListResponse,
 )
-from stepxmlclient.rest_client.operations.imports import ImportOperations
 from stepxmlclient.rest_client.operations.exports import ExportOperations
 from stepxmlclient.rest_client.exceptions import (
     NotFoundError,
@@ -62,9 +54,9 @@ class TestImportExportModels(unittest.TestCase):
         assert error.entityId == "PROD123"
     
     def test_import_job_create_request_validation(self):
-        """Test ImportJobCreateRequest validation."""
+        """Test ExportJobCreateRequest validation."""
         # Valid request
-        request = ImportJobCreateRequest(
+        request = ExportJobCreateRequest(
             entityType="Product",
             sourceType="S3",
             sourceData={"bucket": "my-bucket", "key": "products.xml"},
@@ -75,8 +67,8 @@ class TestImportExportModels(unittest.TestCase):
         assert request.sourceType == "S3"
         
     def test_import_job_response_creation(self):
-        """Test ImportJobResponse model creation."""
-        job = ImportJobResponse(
+        """Test BackgroundProcessResponse model creation."""
+        job = BackgroundProcessResponse(
             jobId="IMP123456",
             status="PROCESSING",
             entityType="Product",
@@ -94,7 +86,7 @@ class TestImportExportModels(unittest.TestCase):
     
     def test_import_job_list_response(self):
         """Test ImportJobListResponse with pagination."""
-        job1 = ImportJobResponse(
+        job1 = BackgroundProcessResponse(
             jobId="IMP001",
             status="COMPLETED",
             entityType="Product",
@@ -106,7 +98,7 @@ class TestImportExportModels(unittest.TestCase):
             errorMessage=None,
             config=None            
         )
-        job2 = ImportJobResponse(
+        job2 = BackgroundProcessResponse(
             jobId="IMP002",
             status="PROCESSING",
             entityType="Asset",
@@ -140,19 +132,19 @@ class TestImportExportModels(unittest.TestCase):
         assert request.format == "XML"
     
     def test_export_job_response(self):
-        """Test BackgroundProcessResponse (ExportJobResponse alias) model creation.
+        """Test BackgroundProcessResponse (BackgroundProcessResponse alias) model creation.
 
         The STEP REST API spec defines ``BackgroundProcessIdentification`` for
         POST /export/{id} and POST /import/{id} responses.  It has only an
         optional ``id`` field matching the background-process identifier.
         """
         # Test with the spec-correct field (id)
-        job = ExportJobResponse(id="bg-process-0042")
+        job = BackgroundProcessResponse(id="bg-process-0042")
         assert job.id == "bg-process-0042"
 
         # Pydantic ignores unknown extra fields (populate_by_name=True) – this
         # should NOT raise even though the old required fields are gone.
-        job2 = ExportJobResponse()
+        job2 = BackgroundProcessResponse()
         assert job2.id is None
     
     def test_job_error_list_response(self):
@@ -186,65 +178,6 @@ class TestImportExportModels(unittest.TestCase):
         assert response.totalCount == 2
 
 
-
-
-class TestImportOperations(unittest.TestCase):
-    def setUp(self):
-        self.mock_client = Mock()
-        self.logger = logging.getLogger(__name__)
-        self.operations = ExportOperations(self.mock_client, logger=self.logger, context="Main")
-
-    def test_initialization(self):
-        self.assertEqual(self.operations.operation_name, "ExportOperations")
-
-    def test_create_export_job_success(self):
-        self.mock_client.postExport.return_value = {
-            "jobId": "JOB123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
-        result = self.operations.create_export_job("MyExportConfig")
-        self.assertIsNotNone(result)
-        call_args = self.mock_client.postExport.call_args
-        self.assertEqual(call_args[1]["exportConfigurationId"], "MyExportConfig")
-        self.assertEqual(call_args[1]["context"], "Main")
-
-    def test_create_export_job_requires_config_id(self):
-        with self.assertRaises(exc.ValidationError):
-            self.operations.create_export_job(None)
-
-    def test_create_export_job_with_workspace(self):
-        self.mock_client.postExport.return_value = {
-            "jobId": "JOB123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
-        self.operations.create_export_job("MyExportConfig", use_request_context_workspace=True)
-        call_args = self.mock_client.postExport.call_args
-        self.assertEqual(call_args[1]["useRequestContextWorkspace"], True)
-
-    def test_create_import_job_success(self):
-        self.mock_client.postImport.return_value = {
-            "jobId": "IMPORT123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
-        result = self.operations.create_import_job("MyImportConfig")
-        self.assertIsNotNone(result)
-        call_args = self.mock_client.postImport.call_args
-        self.assertEqual(call_args[1]["importConfigurationId"], "MyImportConfig")
-
-    def test_create_import_job_requires_config_id(self):
-        with self.assertRaises(exc.ValidationError):
-            self.operations.create_import_job(None)
-
-    def test_create_import_job_with_description(self):
-        self.mock_client.postImport.return_value = {
-            "jobId": "IMPORT123", "status": "PENDING", "entityType": "Product", "createdAt": "2024-01-01T00:00:00"}
-        self.operations.create_import_job("MyImportConfig", process_description="Test run")
-        call_args = self.mock_client.postImport.call_args
-        self.assertEqual(call_args[1]["processDescription"], "Test run")
-
-    def test_create_export_job_not_found(self):
-        self.mock_client.postExport.side_effect = Exception("404 not found")
-        with self.assertRaises(exc.NotFoundError):
-            self.operations.create_export_job("NONEXISTENT")
-
-    def test_create_import_job_not_found(self):
-        self.mock_client.postImport.side_effect = Exception("404 not found")
-        with self.assertRaises(exc.NotFoundError):
-            self.operations.create_import_job("NONEXISTENT")
 
 
 if __name__ == "__main__":

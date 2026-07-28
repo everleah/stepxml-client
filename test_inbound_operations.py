@@ -193,27 +193,27 @@ class TestInboundOperations(unittest.TestCase):
         """Test enable_endpoint."""
         endpoint_id = "test_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointEnable.return_value = {
+        self.mock_client.enableInboundIntegrationEndpoint.return_value = {
             "success": True
         }
         
         result = self.inbound.enable_endpoint(endpoint_id)
         
         self.assertTrue(result["success"])
-        self.mock_client.postInboundIntegrationEndpointEnable.assert_called_once()
+        self.mock_client.enableInboundIntegrationEndpoint.assert_called_once()
 
     def test_disable_endpoint(self):
         """Test disable_endpoint."""
         endpoint_id = "test_endpoint"
         
-        self.mock_client.postInboundIntegrationEndpointDisable.return_value = {
+        self.mock_client.disableInboundIntegrationEndpoint.return_value = {
             "success": True
         }
         
         result = self.inbound.disable_endpoint(endpoint_id)
         
         self.assertTrue(result["success"])
-        self.mock_client.postInboundIntegrationEndpointDisable.assert_called_once()
+        self.mock_client.disableInboundIntegrationEndpoint.assert_called_once()
 
     def test_get_execution_report(self):
         """Test get_execution_report."""
@@ -263,8 +263,8 @@ class TestInboundOperations(unittest.TestCase):
         
         # Mock all operations
         self.mock_client.getInboundIntegrationEndpointStatus.return_value = {}
-        self.mock_client.postInboundIntegrationEndpointEnable.return_value = {}
-        self.mock_client.postInboundIntegrationEndpointDisable.return_value = {}
+        self.mock_client.enableInboundIntegrationEndpoint.return_value = {}
+        self.mock_client.disableInboundIntegrationEndpoint.return_value = {}
         self.mock_client.getInboundIntegrationEndpointExecutionReport.return_value = []
         self.mock_client.getInboundIntegrationEndpointStatistics.return_value = {}
         self.mock_client.getInboundIntegrationEndpointWorkerProcesses.return_value = []

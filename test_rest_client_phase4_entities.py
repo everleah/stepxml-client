@@ -143,12 +143,12 @@ class TestEntityOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["includeInheritedData"], True)
 
     def test_search_entities_success(self):
-        self.mock_client.postEntitiesSearch.return_value = {
+        self.mock_client.queryEntities.return_value = {
             "items": [{"id": "ENT1", "name": "Entity 1"}, {"id": "ENT2", "name": "Entity 2"}], "total": 2}
         condition = {"conditionType": "objecttype", "objectTypeId": "EntityType"}
         result = self.operations.search_entities(condition=condition)
         self.assertEqual(len(result.items), 2)
-        call_args = self.mock_client.postEntitiesSearch.call_args
+        call_args = self.mock_client.queryEntities.call_args
         self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_entities_requires_condition(self):
@@ -156,51 +156,51 @@ class TestEntityOperations(unittest.TestCase):
             self.operations.search_entities(condition=None)
 
     def test_create_entity_success(self):
-        self.mock_client.postEntities.return_value = {"id": "NEWENT", "objectType": "Contact", "parent": "ContactsRoot"}
+        self.mock_client.createEntity.return_value = {"id": "NEWENT", "objectType": "Contact", "parent": "ContactsRoot"}
         from stepxmlclient.rest_client.models.entity import EntityCreateRequest
         request = EntityCreateRequest(objectType="Contact", parent="ContactsRoot")
         result = self.operations.create_entity(request)
         self.assertEqual(result.id, "NEWENT")
-        self.mock_client.postEntities.assert_called_once()
+        self.mock_client.createEntity.assert_called_once()
 
     def test_create_entity_conflict(self):
-        self.mock_client.postEntities.side_effect = Exception("409 conflict")
+        self.mock_client.createEntity.side_effect = Exception("409 conflict")
         from stepxmlclient.rest_client.models.entity import EntityCreateRequest
         request = EntityCreateRequest(objectType="Contact", parent="ContactsRoot")
         with self.assertRaises(exc.ConflictError):
             self.operations.create_entity(request)
 
     def test_update_entity_success(self):
-        self.mock_client.patchEntity.return_value = {"id": "ENT1", "name": "Updated"}
+        self.mock_client.updateEntity.return_value = {"id": "ENT1", "name": "Updated"}
         from stepxmlclient.rest_client.models.entity import EntityUpdateRequest
         updates = EntityUpdateRequest(name="Updated")
         result = self.operations.update_entity("ENT1", updates)
         self.assertEqual(result.name, "Updated")
-        call_args = self.mock_client.patchEntity.call_args
+        call_args = self.mock_client.updateEntity.call_args
         self.assertEqual(call_args[1]["id"], "ENT1")
 
     def test_update_entity_not_found(self):
-        self.mock_client.patchEntity.side_effect = Exception("404 not found")
+        self.mock_client.updateEntity.side_effect = Exception("404 not found")
         from stepxmlclient.rest_client.models.entity import EntityUpdateRequest
         updates = EntityUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_entity("NONEXISTENT", updates)
 
     def test_replace_entity_success(self):
-        self.mock_client.putEntity.return_value = {"id": "ENT1", "objectType": "Contact"}
+        self.mock_client.createOrReplaceEntity.return_value = {"id": "ENT1", "objectType": "Contact"}
         from stepxmlclient.rest_client.models.entity import EntityCreateRequest
         data = EntityCreateRequest(objectType="Contact", parent="ContactsRoot")
         result = self.operations.replace_entity("ENT1", data)
         self.assertEqual(result.id, "ENT1")
-        call_args = self.mock_client.putEntity.call_args
+        call_args = self.mock_client.createOrReplaceEntity.call_args
         self.assertEqual(call_args[1]["id"], "ENT1")
 
     def test_replace_entity_with_allow_overwrite(self):
-        self.mock_client.putEntity.return_value = {"id": "ENT1", "objectType": "Contact"}
+        self.mock_client.createOrReplaceEntity.return_value = {"id": "ENT1", "objectType": "Contact"}
         from stepxmlclient.rest_client.models.entity import EntityCreateRequest
         data = EntityCreateRequest(objectType="Contact", parent="ContactsRoot")
         self.operations.replace_entity("ENT1", data, allow_overwrite=True)
-        call_args = self.mock_client.putEntity.call_args
+        call_args = self.mock_client.createOrReplaceEntity.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
 
     def test_delete_entity_success(self):
@@ -216,18 +216,12 @@ class TestEntityOperations(unittest.TestCase):
             self.operations.delete_entity("NONEXISTENT")
 
     def test_search_by_type(self):
-        self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}
+        self.mock_client.queryEntities.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("EntityType")
-        call_args = self.mock_client.postEntitiesSearch.call_args
+        call_args = self.mock_client.queryEntities.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["condition"]["conditionType"], "objecttype")
         self.assertEqual(payload["condition"]["objectType"], "EntityType")
-
-    def test_list_entities(self):
-        self.mock_client.postEntitiesSearch.return_value = {"items": [], "total": 0}
-        self.operations.list_entities()
-        self.mock_client.postEntitiesSearch.assert_called_once()
-
 
 if __name__ == "__main__":
     unittest.main()

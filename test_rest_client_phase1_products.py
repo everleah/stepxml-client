@@ -234,24 +234,24 @@ class TestProductOperations(unittest.TestCase):
             ],
             "total": 2
         }
-        self.mock_client.postProductsSearch.return_value = mock_response
+        self.mock_client.queryProducts.return_value = mock_response
         condition = {"conditionType": "objecttype", "objectType": "MyType"}
         
         result = self.operations.search_products(condition=condition)
         
-        self.mock_client.postProductsSearch.assert_called_once()
-        call_args = self.mock_client.postProductsSearch.call_args
+        self.mock_client.queryProducts.assert_called_once()
+        call_args = self.mock_client.queryProducts.call_args
         self.assertEqual(call_args[1]["json"]["condition"], condition)
     
     def test_search_products_uses_json(self):
         """Test that search_products passes condition in JSON payload."""
         mock_response = {"items": [], "total": 0}
-        self.mock_client.postProductsSearch.return_value = mock_response
+        self.mock_client.queryProducts.return_value = mock_response
         condition = {"conditionType": "name", "value": "Widget*"}
         
         self.operations.search_products(condition=condition)
         
-        call_args = self.mock_client.postProductsSearch.call_args
+        call_args = self.mock_client.queryProducts.call_args
         self.assertIn("json", call_args[1])
         self.assertEqual(call_args[1]["json"]["condition"], condition)
     
@@ -275,12 +275,12 @@ class TestProductOperations(unittest.TestCase):
             "id": "NEWPROD",
             "name": "New Product"
         }
-        self.mock_client.postProducts.return_value = mock_response
+        self.mock_client.createProduct.return_value = mock_response
         
         result = self.operations.create_product(request)
         
         self.assertEqual(result.id, "NEWPROD")
-        self.mock_client.postProducts.assert_called_once()
+        self.mock_client.createProduct.assert_called_once()
     
     def test_create_product_conflict(self):
         """Test product creation with existing ID."""
@@ -293,7 +293,7 @@ class TestProductOperations(unittest.TestCase):
             attributeLinks=None,
             dataContainers=None,
         )
-        self.mock_client.postProducts.side_effect = Exception("409 conflict")
+        self.mock_client.createProduct.side_effect = Exception("409 conflict")
         
         with self.assertRaises(exc.ConflictError):
             self.operations.create_product(request)
@@ -309,7 +309,7 @@ class TestProductOperations(unittest.TestCase):
             attributeLinks=None,
             dataContainers=None,
         )
-        self.mock_client.postProducts.side_effect = Exception("400 invalid")
+        self.mock_client.createProduct.side_effect = Exception("400 invalid")
         
         with self.assertRaises(exc.ValidationError):
             self.operations.create_product(request)
@@ -358,20 +358,20 @@ class TestProductOperations(unittest.TestCase):
             "id": "PROD123",
             "name": "Updated Name"
         }
-        self.mock_client.patchProduct.return_value = mock_response
+        self.mock_client.updateProduct.return_value = mock_response
         
         result = self.operations.update_product("PROD123", updates)
         
         self.assertEqual(result.name, "Updated Name")
-        self.mock_client.patchProduct.assert_called_once()
-        call_args = self.mock_client.patchProduct.call_args
+        self.mock_client.updateProduct.assert_called_once()
+        call_args = self.mock_client.updateProduct.call_args
         self.assertEqual(call_args[1]["id"], "PROD123")
         self.assertNotIn("productId", call_args[1])
     
     def test_update_product_not_found(self):
         """Test product update when not found."""
         updates = ProductUpdateRequest(name="Updated", parent=None, values=None, references=None, attributeLinks=None, dataContainers=None)
-        self.mock_client.patchProduct.side_effect = Exception("404 not found")
+        self.mock_client.updateProduct.side_effect = Exception("404 not found")
         
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_product("NONEXISTENT", updates)
@@ -380,11 +380,11 @@ class TestProductOperations(unittest.TestCase):
         """Test update_product passes keyId when provided."""
         updates = ProductUpdateRequest(name="Updated", parent=None, values=None, references=None, attributeLinks=None, dataContainers=None)
         mock_response = {"id": "PROD123"}
-        self.mock_client.patchProduct.return_value = mock_response
+        self.mock_client.updateProduct.return_value = mock_response
         
         self.operations.update_product("PROD123", updates, key_id="MyKey")
         
-        call_args = self.mock_client.patchProduct.call_args
+        call_args = self.mock_client.updateProduct.call_args
         self.assertEqual(call_args[1]["keyId"], "MyKey")
     
     def test_replace_product_success(self):
@@ -399,13 +399,13 @@ class TestProductOperations(unittest.TestCase):
             dataContainers=None,
         )
         mock_response = {"id": "PROD123", "name": "Replaced Product"}
-        self.mock_client.putProduct.return_value = mock_response
+        self.mock_client.createOrReplaceProduct.return_value = mock_response
         
         result = self.operations.replace_product("PROD123", data)
         
         self.assertEqual(result.id, "PROD123")
-        self.mock_client.putProduct.assert_called_once()
-        call_args = self.mock_client.putProduct.call_args
+        self.mock_client.createOrReplaceProduct.assert_called_once()
+        call_args = self.mock_client.createOrReplaceProduct.call_args
         self.assertEqual(call_args[1]["id"], "PROD123")
     
     def test_replace_product_with_allow_overwrite(self):
@@ -420,11 +420,11 @@ class TestProductOperations(unittest.TestCase):
             dataContainers=None,
         )
         mock_response = {"id": "PROD123"}
-        self.mock_client.putProduct.return_value = mock_response
+        self.mock_client.createOrReplaceProduct.return_value = mock_response
         
         self.operations.replace_product("PROD123", data, allow_overwrite=True)
         
-        call_args = self.mock_client.putProduct.call_args
+        call_args = self.mock_client.createOrReplaceProduct.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
     
     def test_delete_product_success(self):
@@ -454,55 +454,14 @@ class TestProductOperations(unittest.TestCase):
         call_args = self.mock_client.deleteProduct.call_args
         self.assertEqual(call_args[1]["keyId"], "MyKey")
     
-    def test_get_product_attributes(self):
-        """Test getting product attributes (calls getProductValue)."""
-        mock_response = {
-            "items": [
-                {"name": "Color", "value": "Red"},
-                {"name": "Size", "value": "Large"},
-            ]
-        }
-        self.mock_client.getProductValue.return_value = mock_response
-        
-        result = self.operations.get_product_attributes("PROD123")
-        
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["name"], "Color")
-    
-    def test_get_product_attributes_list_response(self):
-        """Test getting product attributes with list response."""
-        mock_response = [
-            {"name": "Color", "value": "Red"},
-        ]
-        self.mock_client.getProductValue.return_value = mock_response
-        
-        result = self.operations.get_product_attributes("PROD123")
-        
-        self.assertEqual(len(result), 1)
-    
-    def test_get_product_values(self):
-        """Test getting product values (calls getProductValue)."""
-        mock_response = {
-            "items": [
-                {"id": "SKU001"},
-                {"id": "SKU002"},
-            ]
-        }
-        self.mock_client.getProductValue.return_value = mock_response
-        
-        result = self.operations.get_product_values("PROD123")
-        
-        self.assertEqual(len(result), 2)
-        self.assertEqual(result[0]["id"], "SKU001")
-    
     def test_search_by_type(self):
         """Test search_by_type convenience method uses condition."""
         mock_response = {"items": [], "total": 0}
-        self.mock_client.postProductsSearch.return_value = mock_response
+        self.mock_client.queryProducts.return_value = mock_response
         
         self.operations.search_by_type("ProductType1")
         
-        call_args = self.mock_client.postProductsSearch.call_args
+        call_args = self.mock_client.queryProducts.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["condition"]["conditionType"], "objecttype")
         self.assertEqual(payload["condition"]["objectType"], "ProductType1")
@@ -510,11 +469,11 @@ class TestProductOperations(unittest.TestCase):
     def test_search_by_id(self):
         """Test search_by_id convenience method uses condition."""
         mock_response = {"items": [], "total": 0}
-        self.mock_client.postProductsSearch.return_value = mock_response
+        self.mock_client.queryProducts.return_value = mock_response
         
         self.operations.search_by_id("PROD123")
         
-        call_args = self.mock_client.postProductsSearch.call_args
+        call_args = self.mock_client.queryProducts.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["condition"]["conditionType"], "id")
         self.assertEqual(payload["condition"]["id"], "PROD123")

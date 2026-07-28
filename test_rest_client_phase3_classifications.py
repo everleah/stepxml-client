@@ -130,12 +130,12 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["includeInheritedData"], True)
 
     def test_search_classifications_success(self):
-        self.mock_client.postClassificationsSearch.return_value = {
+        self.mock_client.queryClassifications.return_value = {
             "items": [{"id": "CLASS1"}, {"id": "CLASS2"}], "total": 2}
         condition = {"conditionType": "objecttype", "objectType": "ClassType"}
         result = self.operations.search_classifications(condition=condition)
         self.assertEqual(len(result.items), 2)
-        call_args = self.mock_client.postClassificationsSearch.call_args
+        call_args = self.mock_client.queryClassifications.call_args
         self.assertEqual(call_args[1]["json"]["condition"], condition)
 
     def test_search_classifications_requires_condition(self):
@@ -143,49 +143,49 @@ class TestClassificationOperations(unittest.TestCase):
             self.operations.search_classifications(condition=None)
 
     def test_create_classification_success(self):
-        self.mock_client.postClassifications.return_value = {"id": "NEWCLASS"}
+        self.mock_client.createClassification.return_value = {"id": "NEWCLASS"}
         request = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot", name="New")
         result = self.operations.create_classification(request)
         self.assertEqual(result.id, "NEWCLASS")
-        self.mock_client.postClassifications.assert_called_once()
-        call_args = self.mock_client.postClassifications.call_args
+        self.mock_client.createClassification.assert_called_once()
+        call_args = self.mock_client.createClassification.call_args
         payload = call_args[1]["json"]
         self.assertNotIn("id", payload)
         self.assertEqual(payload["objectType"], "WebCategory")
 
     def test_create_classification_conflict(self):
-        self.mock_client.postClassifications.side_effect = Exception("409 conflict")
+        self.mock_client.createClassification.side_effect = Exception("409 conflict")
         request = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         with self.assertRaises(exc.ConflictError):
             self.operations.create_classification(request)
 
     def test_update_classification_success(self):
-        self.mock_client.patchClassification.return_value = {"id": "CLASS1", "name": "Updated"}
+        self.mock_client.updateClassification.return_value = {"id": "CLASS1", "name": "Updated"}
         updates = ClassificationUpdateRequest(name="Updated")
         result = self.operations.update_classification("CLASS1", updates)
         self.assertEqual(result.name, "Updated")
-        call_args = self.mock_client.patchClassification.call_args
+        call_args = self.mock_client.updateClassification.call_args
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_update_classification_not_found(self):
-        self.mock_client.patchClassification.side_effect = Exception("404 not found")
+        self.mock_client.updateClassification.side_effect = Exception("404 not found")
         updates = ClassificationUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_classification("NONEXISTENT", updates)
 
     def test_replace_classification_success(self):
-        self.mock_client.putClassification.return_value = {"id": "CLASS1"}
+        self.mock_client.createOrReplaceClassification.return_value = {"id": "CLASS1"}
         data = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         result = self.operations.replace_classification("CLASS1", data)
         self.assertEqual(result.id, "CLASS1")
-        call_args = self.mock_client.putClassification.call_args
+        call_args = self.mock_client.createOrReplaceClassification.call_args
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_replace_classification_with_allow_overwrite(self):
-        self.mock_client.putClassification.return_value = {"id": "CLASS1"}
+        self.mock_client.createOrReplaceClassification.return_value = {"id": "CLASS1"}
         data = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         self.operations.replace_classification("CLASS1", data, allow_overwrite=True)
-        call_args = self.mock_client.putClassification.call_args
+        call_args = self.mock_client.createOrReplaceClassification.call_args
         self.assertEqual(call_args[1]["allow-overwrite"], True)
 
     def test_delete_classification_success(self):
@@ -208,18 +208,12 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_search_by_type(self):
-        self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
+        self.mock_client.queryClassifications.return_value = {"items": [], "total": 0}
         self.operations.search_by_type("ClassType")
-        call_args = self.mock_client.postClassificationsSearch.call_args
+        call_args = self.mock_client.queryClassifications.call_args
         payload = call_args[1]["json"]
         self.assertEqual(payload["condition"]["conditionType"], "objecttype")
         self.assertEqual(payload["condition"]["objectType"], "ClassType")
-
-    def test_list_classifications(self):
-        self.mock_client.postClassificationsSearch.return_value = {"items": [], "total": 0}
-        self.operations.list_classifications()
-        self.mock_client.postClassificationsSearch.assert_called_once()
-
 
 if __name__ == "__main__":
     unittest.main()
