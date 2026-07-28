@@ -33,7 +33,7 @@ from ..models.relations import (
 # Supported entity types for reference operations
 EntityType = Literal["products", "assets", "classifications", "entities"]
 
-# Map entity type to operation-ID prefix (singular capitalised)
+# Map entity type to operation-ID prefix (v1.4.0 operationIds)
 _OP_PREFIX = {
     "products": "Product",
     "assets": "Asset",
@@ -41,13 +41,12 @@ _OP_PREFIX = {
     "entities": "Entity",
 }
 
-# Map entity type to plural capitalised form used in list-reference operation IDs
-# e.g. getProducts{id}References, getEntities{id}References
-_OP_PLURAL = {
-    "products": "Products",
-    "assets": "Assets",
-    "classifications": "Classifications",
-    "entities": "Entities",
+# Map entity type to the noun used in list-reference operation IDs
+_OP_LIST_REF = {
+    "products": "ProductReference",
+    "assets": "AssetReferences",
+    "classifications": "ClassificationReferences",
+    "entities": "EntityReferences",
 }
 
 
@@ -99,11 +98,11 @@ class RelationOperations(BaseOperation):
             ["entity_id", "reference_type_id"]
         )
 
-        plural = _OP_PLURAL.get(entity_type)
-        if not plural:
-            raise ValidationError(f"Invalid entity_type: {entity_type!r}. Must be one of {list(_OP_PLURAL)}")
-        # Spec operationId uses literal braces: e.g. getProducts{id}References
-        op_id = "get" + plural + "{id}References"
+        list_ref = _OP_LIST_REF.get(entity_type)
+        if not list_ref:
+            raise ValidationError(f"Invalid entity_type: {entity_type!r}. Must be one of {list(_OP_LIST_REF)}")
+        # Spec operationId uses literal braces: e.g. getProductReferenceEntryByReferenceTypeIdAndTargetIdByReferenceTypeId
+        op_id = "get" + list_ref + "ByReferenceTypeId"
 
         query_params = self._build_context_params()
         if key_id:
@@ -153,7 +152,7 @@ class RelationOperations(BaseOperation):
         )
 
         prefix = _OP_PREFIX.get(entity_type, "Product")
-        op_id = f"get{prefix}Reference"
+        op_id = f"get{prefix}ReferenceEntryByReferenceTypeIdAndTargetId"
 
         query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
@@ -208,7 +207,7 @@ class RelationOperations(BaseOperation):
         )
 
         prefix = _OP_PREFIX.get(entity_type, "Product")
-        op_id = f"put{prefix}Reference"
+        op_id = f"replace{prefix}ReferenceEntryByReferenceTypeIdAndTargetId"
 
         query_params: Dict[str, Any] = self._build_context_params()
         if key_id:
@@ -264,7 +263,7 @@ class RelationOperations(BaseOperation):
         )
 
         prefix = _OP_PREFIX.get(entity_type, "Product")
-        op_id = f"delete{prefix}Reference"
+        op_id = f"delete{prefix}ReferenceEntryByReferenceTypeIdAndTargetId"
 
         query_params = self._build_context_params()
         if key_id:
@@ -306,7 +305,7 @@ class RelationOperations(BaseOperation):
         )
 
         prefix = _OP_PREFIX.get(entity_type, "Product")
-        op_id = f"get{prefix}IncomingReference"
+        op_id = f"get{prefix}IncomingReferences"
 
         query_params = self._build_context_params()
         if key_id:

@@ -101,7 +101,7 @@ class InboundOperations(BaseOperation):
             params["fileName"] = file_name
         params.update(self._build_context_params())
 
-        self._log_operation("postInboundIntegrationEndpointUploadAndInvoke", {
+        self._log_operation("uploadFileToAndInvokeInboundRestEndpoint", {
             "endpointId": endpoint_id,
             "fileSize": len(xml_data),
             "fileName": file_name or "(not specified)"
@@ -110,7 +110,7 @@ class InboundOperations(BaseOperation):
         try:
             # Use requests_openapi client method which handles path parameter substitution
             # The 'id' parameter is a path parameter and is passed separately from query params
-            response = self.client.postInboundIntegrationEndpointUploadAndInvoke(
+            response = self.client.uploadFileToAndInvokeInboundRestEndpoint(
                 id=endpoint_id,
                 data=xml_data,
                 **params
@@ -234,12 +234,12 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        self._log_operation("postInboundIntegrationEndpointEnable", {
+        self._log_operation("enableInboundIntegrationEndpoint", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.postInboundIntegrationEndpointEnable(
+            response = self.client.enableInboundIntegrationEndpoint(
                 id=endpoint_id,
                 **self._build_context_params()
             )
@@ -277,12 +277,12 @@ class InboundOperations(BaseOperation):
             ["endpoint_id"]
         )
 
-        self._log_operation("postInboundIntegrationEndpointDisable", {
+        self._log_operation("disableInboundIntegrationEndpoint", {
             "endpointId": endpoint_id
         })
 
         try:
-            response = self.client.postInboundIntegrationEndpointDisable(
+            response = self.client.disableInboundIntegrationEndpoint(
                 id=endpoint_id,
                 **self._build_context_params()
             )

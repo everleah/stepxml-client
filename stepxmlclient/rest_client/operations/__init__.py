@@ -5,36 +5,50 @@ Operation groups for different STEP entity types.
 
 from .assets import AssetOperations
 from .attributes import AttributeOperations
-from .bulk import (
-    AdvancedSearchOperations,
-    BulkOperations,
-    CacheOperations,
-    StreamingOperations,
-    WorkflowOperations,
-)
+from .background_processes import BackgroundProcessOperations
+from .batch import BatchOperations
 from .classifications import ClassificationOperations
+from .collection_groups import CollectionGroupOperations
+from .collections import CollectionOperations
+from .contexts import ContextOperations
+from .data_type_groups import DataTypeGroupOperations
 from .entities import EntityOperations
+from .event_processors import EventProcessorOperations
 from .exports import ExportOperations
-from .imports import ImportOperations
+from .gateway import GatewayOperations
 from .inbound import InboundOperations
-from .metadata import MetadataOperations
+from .outbound import OutboundOperations
 from .products import ProductOperations
 from .relations import RelationOperations
+from .reports import ReportOperations
+from .system_information import SystemInformationOperations
+from .user_groups import UserGroupOperations
+from .users import UserOperations
+from .workflow_tasks import WorkflowTaskOperations
+from .workflows import WorkflowOperations
 
 __all__ = [
-    'AdvancedSearchOperations',
     'AssetOperations',
     'AttributeOperations',
-    'BulkOperations',
-    'CacheOperations',
+    'BackgroundProcessOperations',
+    'BatchOperations',
     'ClassificationOperations',
+    'CollectionGroupOperations',
+    'CollectionOperations',
+    'ContextOperations',
+    'DataTypeGroupOperations',
     'EntityOperations',
+    'EventProcessorOperations',
     'ExportOperations',
-    'ImportOperations',
+    'GatewayOperations',
     'InboundOperations',
-    'MetadataOperations',
+    'OutboundOperations',
     'ProductOperations',
     'RelationOperations',
-    'StreamingOperations',
+    'ReportOperations',
+    'SystemInformationOperations',
+    'UserGroupOperations',
+    'UserOperations',
     'WorkflowOperations',
+    'WorkflowTaskOperations',
 ]

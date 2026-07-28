@@ -14,18 +14,24 @@ from .operations.assets import AssetOperations
 from .operations.classifications import ClassificationOperations
 from .operations.entities import EntityOperations
 from .operations.attributes import AttributeOperations
-from .operations.metadata import MetadataOperations
-from .operations.imports import ImportOperations
 from .operations.exports import ExportOperations
 from .operations.relations import RelationOperations
 from .operations.inbound import InboundOperations
-from .operations.bulk import (
-    BulkOperations,
-    WorkflowOperations,
-    AdvancedSearchOperations,
-    CacheOperations,
-    StreamingOperations,
-)
+from .operations.contexts import ContextOperations
+from .operations.system_information import SystemInformationOperations
+from .operations.users import UserOperations
+from .operations.user_groups import UserGroupOperations
+from .operations.collections import CollectionOperations
+from .operations.collection_groups import CollectionGroupOperations
+from .operations.batch import BatchOperations
+from .operations.data_type_groups import DataTypeGroupOperations
+from .operations.background_processes import BackgroundProcessOperations
+from .operations.event_processors import EventProcessorOperations
+from .operations.outbound import OutboundOperations
+from .operations.gateway import GatewayOperations
+from .operations.workflows import WorkflowOperations
+from .operations.workflow_tasks import WorkflowTaskOperations
+from .operations.reports import ReportOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -40,16 +46,9 @@ class StepRestClient(StiboStepRestClient):
         classifications: ClassificationOperations instance
         entities: EntityOperations instance
         attributes: AttributeOperations instance
-        metadata: MetadataOperations instance
-        imports: ImportOperations instance
         exports: ExportOperations instance
         relations: RelationOperations instance
         inbound: InboundOperations instance (for IIEP uploads)
-        bulk: BulkOperations instance
-        workflows: WorkflowOperations instance
-        search: AdvancedSearchOperations instance
-        cache: CacheOperations instance
-        streaming: StreamingOperations instance
     """
     
     def __init__(self, location_base, authorisation,
@@ -96,17 +95,23 @@ class StepRestClient(StiboStepRestClient):
         self.entities = EntityOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.attributes = AttributeOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.relations = RelationOperations(self.client, logger=op_logger, context=context, workspace=workspace)
-        # Inbound operations for uploading STEP-XML to IIEP
         self.inbound = InboundOperations(self.client, logger=op_logger, context=context, workspace=workspace)
-        # Metadata, imports, exports, bulk and streaming operate on system/job level - no per-call context
-        self.metadata = MetadataOperations(self.client, logger=op_logger)
-        self.imports = ImportOperations(self.client, logger=op_logger)
         self.exports = ExportOperations(self.client, logger=op_logger, context=context, workspace=workspace)
-        self.bulk = BulkOperations(self.client, logger=op_logger)
-        self.workflows = WorkflowOperations(self.client, logger=op_logger)
-        self.search = AdvancedSearchOperations(self.client, logger=op_logger)
-        self.cache = CacheOperations(self.client, logger=op_logger)
-        self.streaming = StreamingOperations(self.client, logger=op_logger)
+        self.contexts = ContextOperations(self.client, logger=op_logger)
+        self.system_information = SystemInformationOperations(self.client, logger=op_logger)
+        self.users = UserOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.user_groups = UserGroupOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.collections = CollectionOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.collection_groups = CollectionGroupOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.batch = BatchOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.data_type_groups = DataTypeGroupOperations(self.client, logger=op_logger)
+        self.background_processes = BackgroundProcessOperations(self.client, logger=op_logger)
+        self.event_processors = EventProcessorOperations(self.client, logger=op_logger)
+        self.outbound = OutboundOperations(self.client, logger=op_logger)
+        self.gateway = GatewayOperations(self.client, logger=op_logger)
+        self.workflows = WorkflowOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.workflow_tasks = WorkflowTaskOperations(self.client, logger=op_logger, context=context, workspace=workspace)
+        self.reports = ReportOperations(self.client, logger=op_logger, context=context, workspace=workspace)
     
     def get_operation_group(self, group_name: str) -> Optional[BaseOperation]:
         """Get an operation group by name.

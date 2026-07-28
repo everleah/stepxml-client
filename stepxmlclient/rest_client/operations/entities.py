@@ -91,225 +91,14 @@ class EntityOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("postEntitiesSearch", {"condition": condition})
+        self._log_operation("createEntitySearch", {"condition": condition})
         
-        response = self.client.postEntitiesSearch(json=body, **self._build_context_params())
+        response = self.client.createEntitySearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return EntityListResponse(**response)
         return response
     
-    def list_entities(self) -> EntityListResponse:
-        """List all entities (convenience method).
-        
-        Returns:
-            EntityListResponse with entities
-        """
-        return self.search_entities(
-            condition={"conditionType": "name", "value": "*"}
-        )
-    
-    @handle_rest_errors
-    def create_entity(self, data: EntityCreateRequest) -> EntityResponse:
-        """Create a new entity.
-        
-        Args:
-            data: EntityCreateRequest with entity data
-            
-        Returns:
-            EntityResponse with created entity
-            
-        Raises:
-            ValidationError: If data invalid
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"objectType": data.objectType, "parent": data.parent},
-            ["objectType", "parent"]
-        )
-        create_data = data.model_dump(exclude_none=True)
-        self._log_operation("postEntities", {"objectType": data.objectType})
-        
-        try:
-            response = self.client.postEntities(json=create_data, **self._build_context_params())
-        except Exception as e:
-            if "409" in str(e):
-                raise ConflictError(409, str(e))
-            raise
-        
-        if isinstance(response, dict):
-            return EntityResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def update_entity(self, entity_id: str,
-                     updates: EntityUpdateRequest,
-                     key_id: Optional[str] = None) -> EntityResponse:
-        """Partially update an existing entity (PATCH).
-        
-        Args:
-            entity_id: The entity ID (or alternate key value if key_id is set)
-            updates: EntityUpdateRequest with fields to update
-            key_id: Alternate key ID to use for lookup (optional)
-            
-        Returns:
-            EntityResponse with updated entity
-            
-        Raises:
-            ValidationError: If entity_id or data invalid
-            NotFoundError: If entity not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"entity_id": entity_id},
-            ["entity_id"]
-        )
-        
-        update_data = updates.model_dump(exclude_none=True)
-        query_params = self._build_context_params()
-        if key_id:
-            query_params["keyId"] = key_id
-        self._log_operation("patchEntity", {"entity_id": entity_id})
-        
-        try:
-            response = self.client.patchEntity(
-                id=entity_id,
-                json=update_data,
-                **query_params
-            )
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, "Entity")
-            if "400" in str(e):
-                raise ValidationError(f"Update failed: {e!s}")
-            raise
-        
-        if isinstance(response, dict):
-            return EntityResponse(**response)
-        return response
-
-    @handle_rest_errors
-    def replace_entity(self, entity_id: str,
-                       data: EntityCreateRequest,
-                       key_id: Optional[str] = None,
-                       allow_overwrite: bool = False) -> EntityResponse:
-        """Fully replace an entity (PUT). Creates it if it does not exist.
-        
-        Args:
-            entity_id: The entity ID (or alternate key value if key_id is set)
-            data: Complete entity data
-            key_id: Alternate key ID to use for lookup (optional)
-            allow_overwrite: Whether to allow overwriting an existing entity
-            
-        Returns:
-            EntityResponse with replaced entity
-        """
-        self._validate_required_params(
-            {"entity_id": entity_id},
-            ["entity_id"]
-        )
-        
-        create_data = data.model_dump(exclude_none=True)
-        query_params: dict[str, Any] = self._build_context_params()
-        if key_id:
-            query_params["keyId"] = key_id
-        if allow_overwrite:
-            query_params["allow-overwrite"] = allow_overwrite
-        self._log_operation("putEntity", {"entity_id": entity_id})
-        
-        try:
-            response = self.client.putEntity(
-                id=entity_id,
-                json=create_data,
-                **query_params
-            )
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, "Entity")
-            if "400" in str(e) or "409" in str(e):
-                raise ValidationError(str(e))
-            raise
-        
-        if isinstance(response, dict):
-            return EntityResponse(**response)
-        return response
-    
-    @handle_rest_errors
-    def delete_entity(self, entity_id: str,
-                      key_id: Optional[str] = None) -> bool:
-        """Delete an entity.
-        
-        Args:
-            entity_id: The entity ID (or alternate key value if key_id is set)
-            key_id: Alternate key ID to use for lookup (optional)
-            
-        Returns:
-            True if deletion was successful
-            
-        Raises:
-            ValidationError: If entity_id missing
-            NotFoundError: If entity not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"entity_id": entity_id},
-            ["entity_id"]
-        )
-        
-        query_params = self._build_context_params()
-        if key_id:
-            query_params["keyId"] = key_id
-        self._log_operation("deleteEntity", {"entity_id": entity_id})
-        
-        try:
-            self.client.deleteEntity(id=entity_id, **query_params)
-            return True
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, "Entity")
-            raise
-    
-    @handle_rest_errors
-    def get_entity_relationships(self, entity_id: str,
-                                 reference_type_id: str,
-                                 key_id: Optional[str] = None) -> EntityRelationshipResponse:
-        """Get outgoing references for an entity by reference type (GET /entities/{id}/references/{referenceTypeId}).
-        
-        Args:
-            entity_id: The entity ID (or alternate key value if key_id is set)
-            reference_type_id: The reference type ID to retrieve
-            key_id: Alternate key ID to use for lookup (optional)
-            
-        Returns:
-            EntityRelationshipResponse with entity references
-            
-        Raises:
-            ValidationError: If entity_id or reference_type_id missing
-            NotFoundError: If entity not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"entity_id": entity_id, "reference_type_id": reference_type_id},
-            ["entity_id", "reference_type_id"]
-        )
-        
-        query_params = self._build_context_params()
-        if key_id:
-            query_params["keyId"] = key_id
-        self._log_operation("getEntities{id}References", {"entity_id": entity_id, "reference_type_id": reference_type_id})
-        
-        try:
-            response = self.client.getEntities_id_References(id=entity_id, referenceTypeId=reference_type_id, **query_params)
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, "Entity")
-            raise
-        
-        if isinstance(response, dict):
-            return EntityRelationshipResponse(**response)
-        return response
-    
-    @handle_rest_errors
     def search_by_type(self, entity_type: str,
                        limit: int = 20, offset: int = 0) -> EntityListResponse:
         """Convenience method to search entities by type.
@@ -326,4 +115,184 @@ class EntityOperations(BaseOperation):
             condition={"conditionType": "objecttype", "objectType": entity_type}
         )
     
+
+    @handle_rest_errors
+    def find_similar_entities(self, entity_id: str,
+                              key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("findSimilarEntities", {"id": entity_id})
+        try:
+            r = self.client.findSimilarEntities(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def entity_match_and_merge(self, data: dict[str, Any]) -> dict[str, Any]:
+        self._validate_required_params({"data": data}, ["data"])
+        self._log_operation("entityMatchAndMerge", data)
+        try:
+            r = self.client.entityMatchAndMerge(json=data, **self._build_context_params())
+        except Exception as e:
+            if "400" in str(e): raise ValidationError(str(e))
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_entity_approval_status(self, entity_id: str,
+                                   key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getEntityApprovalStatus", {"id": entity_id})
+        try:
+            r = self.client.getEntityApprovalStatus(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_entity(self, entity_id: str,
+                       key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveEntity", {"id": entity_id})
+        try:
+            r = self.client.approveEntity(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_entity_deletion(self, entity_id: str,
+                                key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveEntityDeletion", {"id": entity_id})
+        try:
+            r = self.client.approveEntityDeletion(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def purge_entity(self, entity_id: str,
+                     key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("purgeEntity", {"id": entity_id})
+        try:
+            r = self.client.purgeEntity(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_entity_children(self, entity_id: str,
+                            key_id: Optional[str] = None) -> list[str]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getEntityChildren", {"id": entity_id})
+        try:
+            r = self.client.getEntityChildren(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, list) else []
+
+    @handle_rest_errors
+    def get_entity_data_containers(self, entity_id: str,
+                                   key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getEntityDataContainers", {"id": entity_id})
+        try:
+            r = self.client.getEntityDataContainers(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_entity_incoming_references(self, entity_id: str,
+                                       key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getEntityIncomingReferences", {"id": entity_id})
+        try:
+            r = self.client.getEntityIncomingReferences(id=entity_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_entity_value(self, entity_id: str, attribute_id: str,
+                         key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"entity_id": entity_id, "attribute_id": attribute_id},
+            ["entity_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getEntityValueByAttributeId",
+                           {"id": entity_id, "attributeId": attribute_id})
+        try:
+            r = self.client.getEntityValueByAttributeId(
+                id=entity_id, attributeId=attribute_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def replace_entity_value(self, entity_id: str, attribute_id: str,
+                             value: dict[str, Any],
+                             key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"entity_id": entity_id, "attribute_id": attribute_id},
+            ["entity_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("replaceEntityValueByAttributeId",
+                           {"id": entity_id, "attributeId": attribute_id})
+        try:
+            r = self.client.replaceEntityValueByAttributeId(
+                id=entity_id, attributeId=attribute_id, json=value, **qp)
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            if "400" in str(e): raise ValidationError(str(e))
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def delete_entity_value(self, entity_id: str, attribute_id: str,
+                            key_id: Optional[str] = None) -> bool:
+        self._validate_required_params(
+            {"entity_id": entity_id, "attribute_id": attribute_id},
+            ["entity_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("deleteEntityValueByAttributeId",
+                           {"id": entity_id, "attributeId": attribute_id})
+        try:
+            self.client.deleteEntityValueByAttributeId(
+                id=entity_id, attributeId=attribute_id, **qp)
+            return True
+        except Exception as e:
+            if "404" in str(e): raise NotFoundError(entity_id, "Entity")
+            raise
+
 

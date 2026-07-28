@@ -103,10 +103,10 @@ class AssetOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("postAssetsSearch", {"condition": condition})
+        self._log_operation("createAssetSearch", {"condition": condition})
         
         params = self._build_context_params()
-        response = self.client.postAssetsSearch(json=body, **params)
+        response = self.client.createAssetSearch(json=body, **params)
         
         if isinstance(response, dict):
             items = response.get("items", [])
@@ -155,10 +155,10 @@ class AssetOperations(BaseOperation):
         
         # Convert request to dict for API call
         asset_dict = asset_data.model_dump(exclude_none=True)
-        self._log_operation("postAssets", {"objectType": asset_data.objectType})
+        self._log_operation("createAsset", {"objectType": asset_data.objectType})
         
         try:
-            response = self.client.postAssets(json=asset_dict, **self._build_context_params())
+            response = self.client.createAsset(json=asset_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, "Asset conflict while creating asset")
@@ -199,10 +199,10 @@ class AssetOperations(BaseOperation):
         query_params = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
-        self._log_operation("patchAsset", {"asset_id": asset_id})
+        self._log_operation("updateAsset", {"asset_id": asset_id})
         
         try:
-            response = self.client.patchAsset(
+            response = self.client.updateAsset(
                 id=asset_id,
                 json=updates_dict,
                 **query_params
@@ -250,10 +250,10 @@ class AssetOperations(BaseOperation):
             query_params["keyId"] = key_id
         if allow_overwrite:
             query_params["allow-overwrite"] = allow_overwrite
-        self._log_operation("putAsset", {"asset_id": asset_id})
+        self._log_operation("createOrReplaceAsset", {"asset_id": asset_id})
         
         try:
-            response = self.client.putAsset(
+            response = self.client.createOrReplaceAsset(
                 id=asset_id,
                 json=asset_dict,
                 **query_params
@@ -352,7 +352,7 @@ class AssetOperations(BaseOperation):
         if key_id:
             query_params["keyId"] = key_id
         
-        self._log_operation("putAssetContent", {
+        self._log_operation("createOrReplaceAssetContent", {
             "asset_id": asset_id,
             "file_path": file_path,
             "size": file_size,
@@ -362,7 +362,7 @@ class AssetOperations(BaseOperation):
         try:
             # Open file in binary mode and upload
             with open(file_path, 'rb') as f:
-                response = self.client.putAssetContent(
+                response = self.client.createOrReplaceAssetContent(
                     id=asset_id,
                     data=f.read(),
                     **query_params
@@ -486,22 +486,6 @@ class AssetOperations(BaseOperation):
         self._log_operation("getAssetContentUrl", {"url": content_url})
         return content_url
     
-    def list_assets(self, limit: int = 20, offset: int = 0,
-                   include_metadata: bool = True) -> AssetListResponse:
-        """List all assets (convenience method).
-        
-        Args:
-            limit: Max results per page
-            offset: Result offset
-            include_metadata: Whether to include metadata
-            
-        Returns:
-            AssetListResponse with paginated results
-        """
-        return self.search_assets(
-            condition={"conditionType": "name", "value": "*"}
-        )
-    
     def search_by_type(self, user_type_id: str,
                       limit: int = 20,
                       offset: int = 0) -> AssetListResponse:
@@ -535,3 +519,134 @@ class AssetOperations(BaseOperation):
         return self.search_assets(
             condition={"conditionType": "name", "value": "*"}
         )
+
+
+    # ------------------------------------------------------------------
+    # Approval & lifecycle (v1.4.0)
+    # ------------------------------------------------------------------
+
+    @handle_rest_errors
+    def get_asset_approval_status(self, asset_id: str,
+                                  key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getAssetApprovalStatus", {"id": asset_id})
+        try:
+            r = self.client.getAssetApprovalStatus(id=asset_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_asset(self, asset_id: str,
+                      key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveAsset", {"id": asset_id})
+        try:
+            r = self.client.approveAsset(id=asset_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_asset_deletion(self, asset_id: str,
+                               key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveAssetDeletion", {"id": asset_id})
+        try:
+            r = self.client.approveAssetDeletion(id=asset_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def purge_asset(self, asset_id: str,
+                    key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("purgeAsset", {"id": asset_id})
+        try:
+            r = self.client.purgeAsset(id=asset_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_asset_value(self, asset_id: str, attribute_id: str,
+                        key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"asset_id": asset_id, "attribute_id": attribute_id},
+            ["asset_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getAssetValueByAttributeId",
+                           {"id": asset_id, "attributeId": attribute_id})
+        try:
+            r = self.client.getAssetValueByAttributeId(
+                id=asset_id, attributeId=attribute_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def replace_asset_value(self, asset_id: str, attribute_id: str,
+                            value: dict[str, Any],
+                            key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"asset_id": asset_id, "attribute_id": attribute_id},
+            ["asset_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("replaceAssetValueByAttributeId",
+                           {"id": asset_id, "attributeId": attribute_id})
+        try:
+            r = self.client.replaceAssetValueByAttributeId(
+                id=asset_id, attributeId=attribute_id, json=value, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            if "400" in str(e): raise exc.ValidationError(str(e))
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def delete_asset_value(self, asset_id: str, attribute_id: str,
+                           key_id: Optional[str] = None) -> bool:
+        self._validate_required_params(
+            {"asset_id": asset_id, "attribute_id": attribute_id},
+            ["asset_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("deleteAssetValueByAttributeId",
+                           {"id": asset_id, "attributeId": attribute_id})
+        try:
+            self.client.deleteAssetValueByAttributeId(
+                id=asset_id, attributeId=attribute_id, **qp)
+            return True
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+
+    @handle_rest_errors
+    def get_asset_incoming_references(self, asset_id: str,
+                                      key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getAssetIncomingReferences", {"id": asset_id})
+        try:
+            r = self.client.getAssetIncomingReferences(id=asset_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
+            raise
+        return r if isinstance(r, dict) else r

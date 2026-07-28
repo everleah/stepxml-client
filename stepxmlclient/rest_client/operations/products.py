@@ -105,9 +105,9 @@ class ProductOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("postProductsSearch", {"condition": condition})
+        self._log_operation("createProductSearch", {"condition": condition})
         
-        response = self.client.postProductsSearch(json=body, **self._build_context_params())
+        response = self.client.createProductSearch(json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             items = response.get("items", [])
@@ -155,10 +155,10 @@ class ProductOperations(BaseOperation):
         
         # Convert request to dict for API call
         product_dict = product_data.model_dump(exclude_none=True)
-        self._log_operation("postProducts", {"objectType": product_data.objectType, "parent": product_data.parent})
+        self._log_operation("createProduct", {"objectType": product_data.objectType, "parent": product_data.parent})
         
         try:
-            response = self.client.postProducts(json=product_dict, **self._build_context_params())
+            response = self.client.createProduct(json=product_dict, **self._build_context_params())
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, "Product conflict while creating product")
@@ -199,10 +199,10 @@ class ProductOperations(BaseOperation):
         query_params = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
-        self._log_operation("patchProduct", {"product_id": product_id})
+        self._log_operation("updateProduct", {"product_id": product_id})
         
         try:
-            response = self.client.patchProduct(
+            response = self.client.updateProduct(
                 id=product_id,
                 json=updates_dict,
                 **query_params
@@ -250,10 +250,10 @@ class ProductOperations(BaseOperation):
             query_params["keyId"] = key_id
         if allow_overwrite:
             query_params["allow-overwrite"] = allow_overwrite
-        self._log_operation("putProduct", {"product_id": product_id})
+        self._log_operation("createOrReplaceProduct", {"product_id": product_id})
         
         try:
-            response = self.client.putProduct(
+            response = self.client.createOrReplaceProduct(
                 id=product_id,
                 json=product_dict,
                 **query_params
@@ -303,83 +303,6 @@ class ProductOperations(BaseOperation):
                 raise exc.NotFoundError(product_id, "Product")
             raise
     
-    @handle_rest_errors
-    def get_product_attributes(self, product_id: str) -> list[dict[str, Any]]:
-        """Get all attributes for a product.
-        
-        Args:
-            product_id: The product ID
-            
-        Returns:
-            List of attribute dictionaries
-            
-        Raises:
-            NotFoundError: If product not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"product_id": product_id},
-            ["product_id"]
-        )
-        
-        # NOTE: There is no bulk 'get all attributes' operation in the STEP REST API spec.
-        # Use get_product() and inspect the returned values, or use get_product_value()
-        # for a specific attribute (getProductValue: GET /products/{id}/values/{attributeId}).
-        self._log_operation("getProductValue", {"id": product_id})
-        
-        try:
-            response = self.client.getProductValue(id=product_id, **self._build_context_params())
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(product_id, "Product")
-            raise
-        
-        # Handle response
-        if isinstance(response, dict):
-            return response.get("items", [])
-        elif isinstance(response, list):
-            return response
-        else:
-            return getattr(response, "items", [])
-    
-    @handle_rest_errors
-    def get_product_values(self, product_id: str) -> list[dict[str, Any]]:
-        """Get all values (variants/SKUs) for a product.
-        
-        Args:
-            product_id: The product ID
-            
-        Returns:
-            List of value/variant dictionaries
-            
-        Raises:
-            NotFoundError: If product not found
-            RestApiError: For API errors
-        """
-        self._validate_required_params(
-            {"product_id": product_id},
-            ["product_id"]
-        )
-        
-        # NOTE: There is no bulk 'get all values' operation in the STEP REST API spec.
-        # Use get_product() for the full product object including values.
-        self._log_operation("getProductValue", {"id": product_id})
-        
-        try:
-            response = self.client.getProductValue(id=product_id, **self._build_context_params())
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(product_id, "Product")
-            raise
-        
-        # Handle response
-        if isinstance(response, dict):
-            return response.get("items", [])
-        elif isinstance(response, list):
-            return response
-        else:
-            return getattr(response, "items", [])
-    
     def search_by_type(self, user_type_id: str) -> ProductListResponse:
         """Search products by object type (convenience method).
         
@@ -405,3 +328,375 @@ class ProductOperations(BaseOperation):
         return self.search_products(
             condition={"conditionType": "id", "id": product_id}
         )
+
+    # ------------------------------------------------------------------
+    # Approval & lifecycle (v1.4.0)
+    # ------------------------------------------------------------------
+
+    @handle_rest_errors
+    def get_product_approval_status(self, product_id: str,
+                                    key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getProductApprovalStatus", {"id": product_id})
+        try:
+            r = self.client.getProductApprovalStatus(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_product(self, product_id: str,
+                        key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveProduct", {"id": product_id})
+        try:
+            r = self.client.approveProduct(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def approve_product_deletion(self, product_id: str,
+                                 key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("approveProductDeletion", {"id": product_id})
+        try:
+            r = self.client.approveProductDeletion(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def purge_product(self, product_id: str,
+                      key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("purgeProduct", {"id": product_id})
+        try:
+            r = self.client.purgeProduct(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_product_children(self, product_id: str,
+                             key_id: Optional[str] = None) -> list[str]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getProductChildren", {"id": product_id})
+        try:
+            r = self.client.getProductChildren(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, list) else []
+
+    @handle_rest_errors
+    def get_product_data_containers(self, product_id: str,
+                                    key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getProductDataContainers", {"id": product_id})
+        try:
+            r = self.client.getProductDataContainers(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_product_incoming_references(self, product_id: str,
+                                        key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getProductIncomingReferences", {"id": product_id})
+        try:
+            r = self.client.getProductIncomingReferences(id=product_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def get_product_value(self, product_id: str, attribute_id: str,
+                          key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("getProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            r = self.client.getProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def replace_product_value(self, product_id: str, attribute_id: str,
+                              value: dict[str, Any],
+                              key_id: Optional[str] = None) -> dict[str, Any]:
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("replaceProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            r = self.client.replaceProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id, json=value, **qp)
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            if "400" in str(e): raise exc.ValidationError(str(e))
+            raise
+        return r if isinstance(r, dict) else r
+
+    @handle_rest_errors
+    def delete_product_value(self, product_id: str, attribute_id: str,
+                             key_id: Optional[str] = None) -> bool:
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        qp = self._build_context_params()
+        if key_id: qp["keyId"] = key_id
+        self._log_operation("deleteProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            self.client.deleteProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id, **qp)
+            return True
+        except Exception as e:
+            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
+            raise
+
+
+    # ------------------------------------------------------------------
+    # Approval & lifecycle (v1.4.0)
+    # ------------------------------------------------------------------
+
+    @handle_rest_errors
+    def get_product_approval_status(self, product_id: str,
+                                    key_id: Optional[str] = None) -> dict[str, Any]:
+        """Get approval status for a product.
+
+        Calls: GET /products/{id}/approval-status -> getProductApprovalStatus
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("getProductApprovalStatus", {"id": product_id})
+        try:
+            response = self.client.getProductApprovalStatus(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    @handle_rest_errors
+    def approve_product(self, product_id: str,
+                        key_id: Optional[str] = None) -> dict[str, Any]:
+        """Approve a product.
+
+        Calls: POST /products/{id}/approve -> approveProduct
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("approveProduct", {"id": product_id})
+        try:
+            response = self.client.approveProduct(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    @handle_rest_errors
+    def approve_product_deletion(self, product_id: str,
+                                 key_id: Optional[str] = None) -> dict[str, Any]:
+        """Approve deletion of a product.
+
+        Calls: POST /products/{id}/approve-deletion -> approveProductDeletion
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("approveProductDeletion", {"id": product_id})
+        try:
+            response = self.client.approveProductDeletion(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    @handle_rest_errors
+    def purge_product(self, product_id: str,
+                      key_id: Optional[str] = None) -> dict[str, Any]:
+        """Purge a product from the recycle bin.
+
+        Calls: POST /products/{id}/purge -> purgeProduct
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("purgeProduct", {"id": product_id})
+        try:
+            response = self.client.purgeProduct(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    # ------------------------------------------------------------------
+    # Children
+    # ------------------------------------------------------------------
+
+    @handle_rest_errors
+    def get_product_children(self, product_id: str,
+                             key_id: Optional[str] = None) -> list[str]:
+        """Get immediate children IDs of a product.
+
+        Calls: GET /products/{id}/children -> getProductChildren
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("getProductChildren", {"id": product_id})
+        try:
+            response = self.client.getProductChildren(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        if isinstance(response, list):
+            return response
+        return []
+
+    @handle_rest_errors
+    def get_product_data_containers(self, product_id: str,
+                                    key_id: Optional[str] = None) -> dict[str, Any]:
+        """Get data containers for a product.
+
+        Calls: GET /products/{id}/data-containers -> getProductDataContainers
+
+        Note: v1.4.0 consolidated data container access into a single endpoint
+        without a dataContainerTypeId path parameter.
+        """
+        self._validate_required_params({"product_id": product_id}, ["product_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("getProductDataContainers", {"id": product_id})
+        try:
+            response = self.client.getProductDataContainers(id=product_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    # ------------------------------------------------------------------
+    # Values (attribute values on the product)
+    # ------------------------------------------------------------------
+
+    @handle_rest_errors
+    def get_product_value(self, product_id: str, attribute_id: str,
+                          key_id: Optional[str] = None) -> dict[str, Any]:
+        """Get a specific attribute value for a product.
+
+        Calls: GET /products/{id}/values/{attributeId} -> getProductValueByAttributeId
+        """
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("getProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            response = self.client.getProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise
+        return response if isinstance(response, dict) else response
+
+    @handle_rest_errors
+    def replace_product_value(self, product_id: str, attribute_id: str,
+                              value: dict[str, Any],
+                              key_id: Optional[str] = None) -> dict[str, Any]:
+        """Replace an attribute value for a product.
+
+        Calls: PUT /products/{id}/values/{attributeId} -> replaceProductValueByAttributeId
+        """
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("replaceProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            response = self.client.replaceProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id,
+                json=value, **query_params)
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            if "400" in str(e):
+                raise exc.ValidationError(str(e))
+            raise
+        return response if isinstance(response, dict) else response
+
+    @handle_rest_errors
+    def delete_product_value(self, product_id: str, attribute_id: str,
+                             key_id: Optional[str] = None) -> bool:
+        """Delete an attribute value from a product.
+
+        Calls: DELETE /products/{id}/values/{attributeId} -> deleteProductValueByAttributeId
+        """
+        self._validate_required_params(
+            {"product_id": product_id, "attribute_id": attribute_id},
+            ["product_id", "attribute_id"])
+        query_params = self._build_context_params()
+        if key_id:
+            query_params["keyId"] = key_id
+        self._log_operation("deleteProductValueByAttributeId",
+                           {"id": product_id, "attributeId": attribute_id})
+        try:
+            self.client.deleteProductValueByAttributeId(
+                id=product_id, attributeId=attribute_id, **query_params)
+            return True
+        except Exception as e:
+            if "404" in str(e):
+                raise exc.NotFoundError(product_id, "Product")
+            raise

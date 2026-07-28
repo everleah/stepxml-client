@@ -4,92 +4,6 @@ from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, ConfigDict
 
 
-class BulkOperationRequest(BaseModel):
-    """Request for bulk operations."""
-    
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "operationType": "CREATE",
-            "entities": [
-                {"entityId": "PROD_001", "name": "Product 1"},
-                {"entityId": "PROD_002", "name": "Product 2"}
-            ],
-            "continueOnError": True
-        }
-    })
-    
-    operationType: str = Field(..., description="Operation type: CREATE, UPDATE, DELETE")
-    entities: List[Dict[str, Any]] = Field(..., description="List of entities to process")
-    continueOnError: Optional[bool] = Field(True, description="Continue processing on error")
-    timeout: Optional[int] = Field(None, description="Operation timeout in seconds")
-
-
-class BulkOperationResponse(BaseModel):
-    """Response from bulk operation."""
-    
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "bulkOperationId": "BULK_001",
-            "operationType": "CREATE",
-            "status": "COMPLETED",
-            "totalCount": 2,
-            "successCount": 2,
-            "failureCount": 0,
-            "startTime": "2025-01-01T00:00:00Z",
-            "endTime": "2025-01-01T00:00:05Z"
-        }
-    })
-    
-    bulkOperationId: str = Field(..., description="Unique bulk operation ID")
-    operationType: str = Field(..., description="Type of operation performed")
-    status: str = Field(..., description="Operation status: PENDING, RUNNING, COMPLETED, FAILED")
-    totalCount: int = Field(..., description="Total entities processed")
-    successCount: int = Field(..., description="Successfully processed entities")
-    failureCount: int = Field(..., description="Failed entities")
-    startTime: Optional[str] = Field(None, description="Operation start time")
-    endTime: Optional[str] = Field(None, description="Operation end time")
-    duration: Optional[float] = Field(None, description="Duration in seconds")
-
-
-class BulkOperationResult(BaseModel):
-    """Individual result from bulk operation."""
-    
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "entityId": "PROD_001",
-            "status": "SUCCESS",
-            "message": "Entity created successfully",
-            "resultId": "RES_001"
-        }
-    })
-    
-    entityId: str = Field(..., description="Entity identifier")
-    status: str = Field(..., description="Result status: SUCCESS, FAILURE, SKIPPED")
-    message: Optional[str] = Field(None, description="Status message")
-    resultId: Optional[str] = Field(None, description="Result identifier")
-    error: Optional[Dict[str, Any]] = Field(None, description="Error details if failed")
-
-
-class BulkOperationResultResponse(BaseModel):
-    """Paginated list of bulk operation results."""
-    
-    model_config = ConfigDict(json_schema_extra={
-        "example": {
-            "results": [
-                {"entityId": "PROD_001", "status": "SUCCESS", "resultId": "RES_001"}
-            ],
-            "totalCount": 100,
-            "limit": 20,
-            "offset": 0
-        }
-    })
-    
-    results: List[BulkOperationResult] = Field(..., description="List of operation results")
-    totalCount: int = Field(..., description="Total results")
-    limit: int = Field(..., description="Result limit")
-    offset: int = Field(..., description="Result offset")
-
-
 class WorkflowDefinition(BaseModel):
     """Workflow definition."""
     
@@ -154,7 +68,6 @@ class WorkflowTransitionRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = Field(None, description="Transition metadata")
 
 
-class AdvancedSearchRequest(BaseModel):
     """Advanced search request with complex queries."""
     
     model_config = ConfigDict(json_schema_extra={
