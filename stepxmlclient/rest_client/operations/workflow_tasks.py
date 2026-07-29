@@ -1,9 +1,10 @@
 """Workflow task operations for STEP REST API v2."""
-import logging
-from typing import Any, Optional
+from typing import Any
+
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError
 from ..models.workflow import WorkflowTaskResponse
+
 
 class WorkflowTaskOperations(BaseOperation):
     def __init__(self, client, logger=None, context=None, workspace=None):

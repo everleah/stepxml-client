@@ -15,7 +15,7 @@ class ExportOperations(BaseOperation):
     """Operations for STEP data exports and imports."""
 
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize export operations.
 
         Args:
@@ -84,7 +84,7 @@ class ExportOperations(BaseOperation):
     @handle_rest_errors
     def create_import_job(self, import_configuration_id: str,
                           data: Optional[object] = None,
-                          process_description: Optional[str] = None) -> BackgroundProcessResponse:
+                          process_description: str | None = None) -> BackgroundProcessResponse:
         """Trigger an import using a pre-configured import configuration (POST /import/{importConfigurationId}).
 
         Args:

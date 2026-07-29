@@ -4,20 +4,15 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import ConflictError, NotFoundError, ValidationError
-from ..models.classification import (
-    ClassificationCreateRequest,
-    ClassificationListResponse,
-    ClassificationResponse,
-    ClassificationUpdateRequest,
-)
+from ..exceptions import NotFoundError, ValidationError
+from ..models.classification import ClassificationListResponse, ClassificationResponse
 
 
 class ClassificationOperations(BaseOperation):
     """Operations for STEP Classifications."""
     
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize classification operations.
         
         Args:
@@ -31,7 +26,7 @@ class ClassificationOperations(BaseOperation):
     
     @handle_rest_errors
     def get_classification(self, classification_id: str,
-                          key_id: Optional[str] = None,
+                          key_id: str | None = None,
                           include_inherited_data: bool = False) -> ClassificationResponse:
         """Get a single classification by ID.
         
@@ -114,7 +109,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def get_classification_approval_status(self, classification_id: str,
-                                           key_id: Optional[str] = None) -> dict[str, Any]:
+                                           key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -128,7 +123,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_classification(self, classification_id: str,
-                               key_id: Optional[str] = None) -> dict[str, Any]:
+                               key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -142,7 +137,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_classification_deletion(self, classification_id: str,
-                                        key_id: Optional[str] = None) -> dict[str, Any]:
+                                        key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -156,7 +151,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def purge_classification(self, classification_id: str,
-                             key_id: Optional[str] = None) -> dict[str, Any]:
+                             key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -170,7 +165,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def get_classification_assets(self, classification_id: str,
-                                  key_id: Optional[str] = None) -> list[dict[str, Any]]:
+                                  key_id: str | None = None) -> list[dict[str, Any]]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -184,7 +179,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def get_classification_incoming_references(self, classification_id: str,
-                                               key_id: Optional[str] = None) -> dict[str, Any]:
+                                               key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -198,7 +193,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def get_classification_value(self, classification_id: str, attribute_id: str,
-                                 key_id: Optional[str] = None) -> dict[str, Any]:
+                                 key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"classification_id": classification_id, "attribute_id": attribute_id},
             ["classification_id", "attribute_id"])
@@ -217,7 +212,7 @@ class ClassificationOperations(BaseOperation):
     @handle_rest_errors
     def replace_classification_value(self, classification_id: str, attribute_id: str,
                                      value: dict[str, Any],
-                                     key_id: Optional[str] = None) -> dict[str, Any]:
+                                     key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"classification_id": classification_id, "attribute_id": attribute_id},
             ["classification_id", "attribute_id"])
@@ -236,7 +231,7 @@ class ClassificationOperations(BaseOperation):
 
     @handle_rest_errors
     def delete_classification_value(self, classification_id: str, attribute_id: str,
-                                    key_id: Optional[str] = None) -> bool:
+                                    key_id: str | None = None) -> bool:
         self._validate_required_params(
             {"classification_id": classification_id, "attribute_id": attribute_id},
             ["classification_id", "attribute_id"])

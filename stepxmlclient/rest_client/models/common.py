@@ -4,8 +4,9 @@ Provides shared Pydantic models for pagination, error responses, and generic
 API response envelopes used across all REST operations.
 """
 
-from typing import TypeVar, Generic, Optional, Any, List, Dict
-from pydantic import BaseModel, Field, computed_field, ConfigDict
+from typing import Any, Dict, Generic, List, Optional, TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 T = TypeVar('T')
 
@@ -84,7 +85,7 @@ class ErrorDetail(BaseModel):
     
     code: str = Field(..., description="Machine-readable error code")
     message: str = Field(..., description="Human-readable error message")
-    field: Optional[str] = Field(None, description="Field name if field-specific")
+    field: str | None = Field(None, description="Field name if field-specific")
     details: Optional[Dict[str, Any]] = Field(None, description="Additional details")
 
 
@@ -122,8 +123,8 @@ class ErrorResponse(BaseModel):
     error_code: str = Field(..., description="Primary error code")
     error_message: str = Field(..., description="Primary error message")
     status: int = Field(..., ge=400, le=599, description="HTTP status code")
-    timestamp: Optional[str] = Field(None, description="ISO 8601 timestamp")
-    request_id: Optional[str] = Field(None, description="Unique request identifier")
+    timestamp: str | None = Field(None, description="ISO 8601 timestamp")
+    request_id: str | None = Field(None, description="Unique request identifier")
     error_details: Optional[List[ErrorDetail]] = Field(None, description="Detailed error info")
 
 
@@ -151,7 +152,7 @@ class ApiResponse(BaseModel, Generic[T]):
     data: Optional[T] = Field(None, description="Response data")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
     success: bool = Field(True, description="Operation success flag")
-    timestamp: Optional[str] = Field(None, description="ISO 8601 timestamp")
+    timestamp: str | None = Field(None, description="ISO 8601 timestamp")
 
 
 class SearchFilter(BaseModel):
@@ -179,11 +180,11 @@ class SearchRequest(BaseModel):
         sort: Sort specification (field:asc|desc)
     """
     
-    query: Optional[str] = Field(None, description="Free-text search query")
+    query: str | None = Field(None, description="Free-text search query")
     filters: Optional[List[SearchFilter]] = Field(None, description="Search filters")
     limit: int = Field(20, ge=1, le=1000, description="Maximum results")
     offset: int = Field(0, ge=0, description="Result offset")
-    sort: Optional[str] = Field(None, description="Sort specification")
+    sort: str | None = Field(None, description="Sort specification")
 
 
 # Type aliases for common response types

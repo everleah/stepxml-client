@@ -3,8 +3,9 @@
 Provides Pydantic models aligned with STEP REST API v2 product schemas.
 """
 
-from typing import Optional, Any, List, Dict
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProductResponse(BaseModel):
@@ -46,9 +47,9 @@ class ProductResponse(BaseModel):
     )
 
     id: str = Field(..., description="Product ID")
-    name: Optional[str] = Field(None, description="Product name/description")
-    objectType: Optional[str] = Field(None, description="Object type ID")
-    parent: Optional[str] = Field(None, description="Parent product ID")
+    name: str | None = Field(None, description="Product name/description")
+    objectType: str | None = Field(None, description="Object type ID")
+    parent: str | None = Field(None, description="Parent product ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Product values keyed by attribute ID")
     references: Optional[Dict[str, Any]] = Field(None, description="References keyed by reference type ID")
     attributeLinks: Optional[List[Dict[str, Any]]] = Field(None, description="Attribute links")
@@ -112,8 +113,8 @@ class ProductSearchRequest(BaseModel):
     )
 
     query: str = Field("*", description="Free-text search query (default: all)")
-    object_type: Optional[str] = Field(None, description="Filter by object type")
-    modified_since: Optional[str] = Field(None, description="ISO 8601 timestamp filter")
+    object_type: str | None = Field(None, description="Filter by object type")
+    modified_since: str | None = Field(None, description="ISO 8601 timestamp filter")
     limit: int = Field(20, ge=1, le=1000, description="Max results")
     offset: int = Field(0, ge=0, description="Result offset")
     include_values: bool = Field(True, description="Include product values")
@@ -155,7 +156,7 @@ class ProductCreateRequest(BaseModel):
 
     objectType: str = Field(..., description="Object type ID")
     parent: str = Field(..., description="Parent product ID")
-    name: Optional[str] = Field(None, description="Product name/description")
+    name: str | None = Field(None, description="Product name/description")
     values: Optional[Dict[str, Any]] = Field(None, description="Product values")
     references: Optional[Dict[str, Any]] = Field(None, description="Product references")
     attributeLinks: Optional[List[Dict[str, Any]]] = Field(None, description="Product attribute links")
@@ -191,8 +192,8 @@ class ProductUpdateRequest(BaseModel):
         }
     )
 
-    name: Optional[str] = Field(None, description="Updated product name")
-    parent: Optional[str] = Field(None, description="Updated parent product ID")
+    name: str | None = Field(None, description="Updated product name")
+    parent: str | None = Field(None, description="Updated parent product ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Values to update")
     references: Optional[Dict[str, Any]] = Field(None, description="References to update")
     attributeLinks: Optional[List[Dict[str, Any]]] = Field(None, description="Attribute links to update")

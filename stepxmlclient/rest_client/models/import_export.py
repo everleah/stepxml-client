@@ -1,7 +1,8 @@
 """Import/Export model classes for STEP REST API v2."""
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExportJobCreateRequest(BaseModel):
@@ -17,7 +18,7 @@ class ExportJobCreateRequest(BaseModel):
     })
     
     entityType: str = Field(..., description="Entity type to export (Product, Asset, Classification, Entity)")
-    format: Optional[str] = Field("XML", description="Export format (XML, JSON, CSV)")
+    format: str | None = Field("XML", description="Export format (XML, JSON, CSV)")
     filters: Optional[Dict[str, Any]] = Field(None, description="Export filters")
     config: Optional[Dict[str, Any]] = Field(None, description="Export configuration")
 
@@ -34,7 +35,7 @@ class BackgroundProcessResponse(BaseModel):
         "example": {"id": "bg-process-0042"}
     })
 
-    id: Optional[str] = Field(None, description="Background process ID")
+    id: str | None = Field(None, description="Background process ID")
 
 
 # Backward-compatible alias so existing imports don't break immediately.

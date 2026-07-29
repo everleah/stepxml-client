@@ -1,6 +1,7 @@
 """Collection and collection group models for STEP REST API v2."""
 
 from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,8 +10,8 @@ class CollectionResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     id: str
-    name: Optional[str] = None
-    parent: Optional[str] = None
+    name: str | None = None
+    parent: str | None = None
     values: Optional[dict[str, Any]] = None
     content: Optional[list[dict[str, Any]]] = None
 
@@ -20,6 +21,6 @@ class CollectionGroupResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     id: str
-    name: Optional[str] = None
-    parent: Optional[str] = None
+    name: str | None = None
+    parent: str | None = None
     values: Optional[dict[str, Any]] = None

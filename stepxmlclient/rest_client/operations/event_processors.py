@@ -1,9 +1,11 @@
 """Event processor operations for STEP REST API v2."""
-import logging
-from typing import Any, Optional
+
+from typing import Any
+
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError
 from ..models.event_processor import EventProcessorResponse
+
 
 class EventProcessorOperations(BaseOperation):
     def __init__(self, client, logger=None, context=None, workspace=None):
@@ -63,7 +65,7 @@ class EventProcessorOperations(BaseOperation):
         return EventProcessorResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
-    def invoke_event_processor(self, ep_id: str, data: Optional[dict[str, Any]] = None) -> EventProcessorResponse:
+    def invoke_event_processor(self, ep_id: str, data: dict[str, Any] | None = None) -> EventProcessorResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("invokeEventProcessor", {"id": ep_id})
         kwargs = {"id": ep_id, **self._build_context_params()}

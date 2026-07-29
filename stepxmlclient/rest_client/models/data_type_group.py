@@ -1,6 +1,7 @@
 """Data type group model for STEP REST API v2."""
 
-from typing import Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,6 +10,6 @@ class DataTypeGroupResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     id: str
-    name: Optional[str] = None
-    parent: Optional[str] = None
-    values: Optional[dict[str, Any]] = None
+    name: str | None = None
+    parent: str | None = None
+    values: dict[str, Any] | None = None

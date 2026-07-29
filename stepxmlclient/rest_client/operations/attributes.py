@@ -8,7 +8,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError
 from ..models.attribute import (
     AttributeResponse,
     ListOfValueResponse,
@@ -24,7 +24,7 @@ class AttributeOperations(BaseOperation):
     """
 
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         super().__init__(client, operation_name="AttributeOperations", logger=logger,
                          context=context, workspace=workspace)
 

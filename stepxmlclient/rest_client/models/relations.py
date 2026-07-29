@@ -1,7 +1,8 @@
 """Relationship and relation model classes for STEP REST API v2."""
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class RelationshipTypeResponse(BaseModel):
@@ -21,18 +22,18 @@ class RelationshipTypeResponse(BaseModel):
     })
 
     # Primary spec field — the STEP API returns 'id', not 'relationshipTypeId'.
-    id: Optional[str] = Field(None, description="Reference type ID (spec field)")
+    id: str | None = Field(None, description="Reference type ID (spec field)")
     # Backward-compatible alias so callers that used the old field name still work.
-    relationshipTypeId: Optional[str] = Field(None, description="Alias for id (legacy field name)")
-    name: Optional[str] = Field(None, description="Display name")
+    relationshipTypeId: str | None = Field(None, description="Alias for id (legacy field name)")
+    name: str | None = Field(None, description="Display name")
     productClassificationLinkType: Optional[bool] = Field(None, description="Whether this is a classification link type")
     multivalued: Optional[bool] = Field(None, description="Whether multiple targets are allowed")
     validSourceObjectTypes: Optional[List[str]] = Field(None, description="Valid source object types")
     validTargetObjectTypes: Optional[List[str]] = Field(None, description="Valid target object types")
     # Legacy optional fields kept for backward compatibility
-    description: Optional[str] = Field(None, description="Type description")
+    description: str | None = Field(None, description="Type description")
     isDirectional: Optional[bool] = Field(None, description="Whether relationship is directional")
-    bidirectionalName: Optional[str] = Field(None, description="Reverse relationship name")
+    bidirectionalName: str | None = Field(None, description="Reverse relationship name")
 
 
 class RelationshipResponse(BaseModel):
@@ -56,20 +57,20 @@ class RelationshipResponse(BaseModel):
     # Spec-defined fields (ReferenceEntry)
     contextLocal: Optional[bool] = Field(None, description="Whether the reference is context-local")
     inherited: Optional[bool] = Field(None, description="Whether the reference is inherited")
-    target: Optional[str] = Field(None, description="Target entity ID")
-    targetType: Optional[str] = Field(None, description="Target entity type")
+    target: str | None = Field(None, description="Target entity ID")
+    targetType: str | None = Field(None, description="Target entity type")
     values: Optional[Dict[str, Any]] = Field(None, description="Reference attribute values")
     entity: Optional[Dict[str, Any]] = Field(None, description="Embedded target entity")
     # Legacy fields kept for backward compatibility
-    relationshipId: Optional[str] = Field(None, description="Relationship ID (legacy)")
-    relationshipType: Optional[str] = Field(None, description="Relationship type (legacy)")
-    sourceId: Optional[str] = Field(None, description="Source entity ID (legacy)")
-    targetId: Optional[str] = Field(None, description="Target entity ID (legacy alias for target)")
-    sourceType: Optional[str] = Field(None, description="Source entity type (legacy)")
-    createdAt: Optional[str] = Field(None, description="Creation timestamp")
-    modifiedAt: Optional[str] = Field(None, description="Last modification timestamp")
+    relationshipId: str | None = Field(None, description="Relationship ID (legacy)")
+    relationshipType: str | None = Field(None, description="Relationship type (legacy)")
+    sourceId: str | None = Field(None, description="Source entity ID (legacy)")
+    targetId: str | None = Field(None, description="Target entity ID (legacy alias for target)")
+    sourceType: str | None = Field(None, description="Source entity type (legacy)")
+    createdAt: str | None = Field(None, description="Creation timestamp")
+    modifiedAt: str | None = Field(None, description="Last modification timestamp")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Reference metadata")
-    status: Optional[str] = Field(None, description="Reference status")
+    status: str | None = Field(None, description="Reference status")
 
 
 class RelationshipListResponse(BaseModel):
@@ -113,9 +114,9 @@ class CrossReferenceResponse(BaseModel):
     sourceEntityId: str = Field(..., description="Source entity ID")
     targetEntityId: str = Field(..., description="Target entity ID")
     referenceType: str = Field(..., description="Type of cross-reference")
-    description: Optional[str] = Field(None, description="Reference description")
+    description: str | None = Field(None, description="Reference description")
     sequence: Optional[int] = Field(None, description="Display sequence")
-    createdAt: Optional[str] = Field(None, description="Creation timestamp")
+    createdAt: str | None = Field(None, description="Creation timestamp")
 
 
 class CrossReferenceListResponse(BaseModel):
@@ -154,7 +155,7 @@ class RelationshipCreateRequest(BaseModel):
     sourceId: str = Field(..., description="Source entity ID")
     targetId: str = Field(..., description="Target entity ID")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Relationship metadata")
-    status: Optional[str] = Field("ACTIVE", description="Initial status")
+    status: str | None = Field("ACTIVE", description="Initial status")
 
 
 class RelationshipUpdateRequest(BaseModel):
@@ -168,7 +169,7 @@ class RelationshipUpdateRequest(BaseModel):
     })
     
     metadata: Optional[Dict[str, Any]] = Field(None, description="Updated metadata")
-    status: Optional[str] = Field(None, description="Updated status")
+    status: str | None = Field(None, description="Updated status")
 
 
 class CrossReferenceCreateRequest(BaseModel):
@@ -187,7 +188,7 @@ class CrossReferenceCreateRequest(BaseModel):
     sourceEntityId: str = Field(..., description="Source entity ID")
     targetEntityId: str = Field(..., description="Target entity ID")
     referenceType: str = Field(..., description="Type of cross-reference")
-    description: Optional[str] = Field(None, description="Reference description")
+    description: str | None = Field(None, description="Reference description")
     sequence: Optional[int] = Field(None, description="Display sequence")
 
 
@@ -237,7 +238,7 @@ class LinkResponse(BaseModel):
     linkType: str = Field(..., description="Type of link (PRODUCT_IMAGE, PRODUCT_DOCUMENT, etc.)")
     sequence: Optional[int] = Field(None, description="Display sequence")
     metadata: Optional[Dict[str, Any]] = Field(None, description="Link metadata")
-    createdAt: Optional[str] = Field(None, description="Creation timestamp")
+    createdAt: str | None = Field(None, description="Creation timestamp")
 
 
 class LinkListResponse(BaseModel):

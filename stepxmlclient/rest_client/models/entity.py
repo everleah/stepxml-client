@@ -1,16 +1,17 @@
 """Entity model classes for STEP REST API v2."""
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class EntityResponse(BaseModel):
     """Response from entity GET/POST operation."""
 
     id: str = Field(..., description="Entity ID")
-    objectType: Optional[str] = Field(None, description="Entity object type ID")
-    name: Optional[str] = Field(None, description="Entity name")
-    parent: Optional[str] = Field(None, description="Parent entity ID")
+    objectType: str | None = Field(None, description="Entity object type ID")
+    name: str | None = Field(None, description="Entity name")
+    parent: str | None = Field(None, description="Parent entity ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
@@ -36,7 +37,7 @@ class EntityCreateRequest(BaseModel):
 
     objectType: str = Field(..., description="Entity object type ID (required)")
     parent: str = Field(..., description="Parent entity ID (required)")
-    name: Optional[str] = Field(None, description="Entity name")
+    name: str | None = Field(None, description="Entity name")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
@@ -46,8 +47,8 @@ class EntityCreateRequest(BaseModel):
 class EntityUpdateRequest(BaseModel):
     """Request model for entity updates (PATCH /entities/{id})."""
 
-    name: Optional[str] = Field(None, description="Updated entity name")
-    parent: Optional[str] = Field(None, description="Updated parent entity ID")
+    name: str | None = Field(None, description="Updated entity name")
+    parent: str | None = Field(None, description="Updated parent entity ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Updated attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="Updated references")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Updated attribute links")
@@ -57,6 +58,6 @@ class EntityUpdateRequest(BaseModel):
 class EntityRelationshipResponse(BaseModel):
     """Response from entity references operations."""
 
-    id: Optional[str] = Field(None, description="Entity ID")
+    id: str | None = Field(None, description="Entity ID")
     references: Optional[Dict[str, Any]] = Field(None, description="References data")
     total: Optional[int] = Field(None, description="Total number of references")

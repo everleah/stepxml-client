@@ -4,13 +4,13 @@ Provides comprehensive, typed access to STEP REST API operations through
 organized operation groups with shared authentication.
 """
 
-from .client import StepRestClient
-from .base import BaseOperation, handle_rest_errors
 from . import exceptions
+from .base import BaseOperation, handle_rest_errors
+from .client import StepRestClient
 
 __all__ = [
-    'StepRestClient',
     'BaseOperation',
-    'handle_rest_errors',
+    'StepRestClient',
     'exceptions',
+    'handle_rest_errors',
 ]

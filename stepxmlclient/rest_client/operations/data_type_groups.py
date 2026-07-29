@@ -1,7 +1,6 @@
 """Data type group operations for STEP REST API v2."""
 
-import logging
-from typing import Any, Optional
+from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError

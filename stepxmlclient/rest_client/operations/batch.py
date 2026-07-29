@@ -1,11 +1,10 @@
 """Batch operations for STEP REST API v2."""
 
-import logging
-from typing import Any, Optional
+from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import ValidationError
-from ..models.batch import BatchRequest, BatchResponse
+from ..models.batch import BatchResponse
 
 
 class BatchOperations(BaseOperation):

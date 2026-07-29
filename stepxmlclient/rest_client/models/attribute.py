@@ -16,8 +16,8 @@ class AttributeValue(BaseModel):
     })
     
     value: Any = Field(..., description="The attribute value")
-    context: Optional[str] = Field(None, description="Context for this value")
-    language: Optional[str] = Field(None, description="Language code")
+    context: str | None = Field(None, description="Context for this value")
+    language: str | None = Field(None, description="Language code")
 
 
 class ListOfValueItem(BaseModel):
@@ -34,7 +34,7 @@ class ListOfValueItem(BaseModel):
     
     id: str = Field(..., description="LOV item ID")
     name: str = Field(..., description="LOV item name")
-    description: Optional[str] = Field(None, description="LOV item description")
+    description: str | None = Field(None, description="LOV item description")
     sequence: Optional[int] = Field(None, description="Display sequence")
 
 
@@ -57,8 +57,8 @@ class ListOfValueResponse(BaseModel):
         }
     })
 
-    id: Optional[str] = Field(None, description="LOV ID")
-    name: Optional[str] = Field(None, description="LOV name")
+    id: str | None = Field(None, description="LOV ID")
+    name: str | None = Field(None, description="LOV name")
     extendable: Optional[bool] = Field(None, description="Whether users can extend the LOV")
     usesValueIds: Optional[bool] = Field(None, description="Whether values have explicit IDs")
     values: Optional[List[ListOfValueItem]] = Field(None, description="List of values (spec field name)")
@@ -83,8 +83,8 @@ class AttributeMetadata(BaseModel):
     type: str = Field(..., description="Attribute data type (Text, Number, Boolean, etc.)")
     required: Optional[bool] = Field(None, description="Whether attribute is required")
     multiValued: Optional[bool] = Field(None, description="Whether attribute supports multiple values")
-    createdAt: Optional[str] = Field(None, description="Creation timestamp")
-    modifiedAt: Optional[str] = Field(None, description="Last modification timestamp")
+    createdAt: str | None = Field(None, description="Creation timestamp")
+    modifiedAt: str | None = Field(None, description="Last modification timestamp")
 
 
 class AttributeResponse(BaseModel):
@@ -103,9 +103,9 @@ class AttributeResponse(BaseModel):
     
     id: str = Field(..., description="Attribute ID")
     name: str = Field(..., description="Attribute name")
-    description: Optional[str] = Field(None, description="Attribute description")
+    description: str | None = Field(None, description="Attribute description")
     type: str = Field(..., description="Attribute data type")
-    lovId: Optional[str] = Field(None, description="Associated List of Values ID")
+    lovId: str | None = Field(None, description="Associated List of Values ID")
     required: Optional[bool] = Field(None, description="Is required")
     multiValued: Optional[bool] = Field(None, description="Supports multiple values")
     metadata: Optional[AttributeMetadata] = Field(None, description="Attribute metadata")

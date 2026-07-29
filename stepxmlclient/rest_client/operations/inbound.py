@@ -47,7 +47,7 @@ class InboundOperations(BaseOperation):
     """
     
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize inbound operations.
         
         Args:
@@ -61,7 +61,7 @@ class InboundOperations(BaseOperation):
 
     @handle_rest_errors
     def upload_and_invoke(self, endpoint_id: str, xml_data: Union[bytes, str],
-                          file_name: Optional[str] = None) -> dict[str, Any]:
+                          file_name: str | None = None) -> dict[str, Any]:
         """Upload STEP-XML to an inbound endpoint and trigger processing.
         
         Posts STEP-XML content to a configured Inbound Integration Endpoint
@@ -385,7 +385,7 @@ class InboundOperations(BaseOperation):
 
     @handle_rest_errors
     def get_worker_processes(self, endpoint_id: str,
-                             status_filter: Optional[str] = None) -> list[str]:
+                             status_filter: str | None = None) -> list[str]:
         """Get background process IDs started by this endpoint.
         
         Args:

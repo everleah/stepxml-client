@@ -3,8 +3,9 @@
 Provides Pydantic models aligned with STEP REST API v2 asset schemas.
 """
 
-from typing import Optional, Any, List, Dict
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AssetMetadata(BaseModel):
@@ -19,12 +20,12 @@ class AssetMetadata(BaseModel):
         checksum: File checksum for integrity verification
     """
     
-    filename: Optional[str] = Field(None, description="Original filename")
-    mime_type: Optional[str] = Field(None, description="MIME type")
+    filename: str | None = Field(None, description="Original filename")
+    mime_type: str | None = Field(None, description="MIME type")
     size: Optional[int] = Field(None, ge=0, description="File size in bytes")
-    creation_date: Optional[str] = Field(None, description="Creation timestamp")
-    modification_date: Optional[str] = Field(None, description="Modification timestamp")
-    checksum: Optional[str] = Field(None, description="File checksum")
+    creation_date: str | None = Field(None, description="Creation timestamp")
+    modification_date: str | None = Field(None, description="Modification timestamp")
+    checksum: str | None = Field(None, description="File checksum")
 
 
 class AssetResponse(BaseModel):
@@ -61,8 +62,8 @@ class AssetResponse(BaseModel):
     )
 
     id: str = Field(..., description="Asset ID")
-    objectType: Optional[str] = Field(None, description="Object type ID")
-    name: Optional[str] = Field(None, description="Asset name/description")
+    objectType: str | None = Field(None, description="Object type ID")
+    name: str | None = Field(None, description="Asset name/description")
     classifications: Optional[List[str]] = Field(default_factory=list, description="Linked classification IDs")
     values: Optional[Dict[str, Any]] = Field(None, description="Asset values keyed by attribute ID")
     references: Optional[Dict[str, Any]] = Field(None, description="Asset references keyed by reference type ID")
@@ -125,8 +126,8 @@ class AssetSearchRequest(BaseModel):
     )
     
     query: str = Field("*", description="Free-text search query")
-    object_type: Optional[str] = Field(None, description="Filter by object type")
-    modified_since: Optional[str] = Field(None, description="ISO 8601 timestamp filter")
+    object_type: str | None = Field(None, description="Filter by object type")
+    modified_since: str | None = Field(None, description="ISO 8601 timestamp filter")
     limit: int = Field(20, ge=1, le=1000, description="Max results")
     offset: int = Field(0, ge=0, description="Result offset")
     include_metadata: bool = Field(True, description="Include metadata")
@@ -161,7 +162,7 @@ class AssetCreateRequest(BaseModel):
 
     objectType: str = Field(..., description="Object type ID")
     classifications: List[str] = Field(..., min_length=1, description="Parent classification IDs")
-    name: Optional[str] = Field(None, description="Asset name/description")
+    name: str | None = Field(None, description="Asset name/description")
     values: Optional[Dict[str, Any]] = Field(None, description="Asset values")
     references: Optional[Dict[str, Any]] = Field(None, description="Asset references")
 
@@ -190,7 +191,7 @@ class AssetUpdateRequest(BaseModel):
         }
     )
 
-    name: Optional[str] = Field(None, description="Updated asset name")
+    name: str | None = Field(None, description="Updated asset name")
     classifications: Optional[List[str]] = Field(None, description="Classifications to add")
     values: Optional[Dict[str, Any]] = Field(None, description="Values to update")
     references: Optional[Dict[str, Any]] = Field(None, description="References to update")
@@ -218,7 +219,7 @@ class AssetUploadRequest(BaseModel):
     
     filename: str = Field(..., description="Filename for uploaded content")
     mime_type: str = Field(..., description="MIME type")
-    description: Optional[str] = Field(None, description="Upload description")
+    description: str | None = Field(None, description="Upload description")
 
 
 class AssetDownloadResponse(BaseModel):
@@ -245,8 +246,8 @@ class AssetDownloadResponse(BaseModel):
     )
     
     asset_id: str = Field(..., description="Asset ID")
-    filename: Optional[str] = Field(None, description="Downloaded filename")
+    filename: str | None = Field(None, description="Downloaded filename")
     size: Optional[int] = Field(None, ge=0, description="File size in bytes")
-    mime_type: Optional[str] = Field(None, description="MIME type")
-    content_url: Optional[str] = Field(None, description="Download URL")
-    expires_at: Optional[str] = Field(None, description="URL expiration time")
+    mime_type: str | None = Field(None, description="MIME type")
+    content_url: str | None = Field(None, description="Download URL")
+    expires_at: str | None = Field(None, description="URL expiration time")

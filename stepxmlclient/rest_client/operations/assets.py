@@ -34,7 +34,7 @@ class AssetOperations(BaseOperation):
     """
     
     def __init__(self, client: roa.Client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize AssetOperations.
         
         Args:
@@ -48,7 +48,7 @@ class AssetOperations(BaseOperation):
     
     @handle_rest_errors
     def get_asset(self, asset_id: str,
-                 key_id: Optional[str] = None) -> AssetResponse:
+                 key_id: str | None = None) -> AssetResponse:
         """Retrieve a single asset by ID.
         
         Args:
@@ -174,7 +174,7 @@ class AssetOperations(BaseOperation):
     @handle_rest_errors
     def update_asset(self, asset_id: str,
                     updates: AssetUpdateRequest,
-                    key_id: Optional[str] = None) -> AssetResponse:
+                    key_id: str | None = None) -> AssetResponse:
         """Partially update an existing asset (PATCH).
         
         Args:
@@ -221,7 +221,7 @@ class AssetOperations(BaseOperation):
     @handle_rest_errors
     def replace_asset(self, asset_id: str,
                       asset_data: AssetCreateRequest,
-                      key_id: Optional[str] = None,
+                      key_id: str | None = None,
                       allow_overwrite: bool = False) -> AssetResponse:
         """Fully replace an asset (PUT). Creates it if it does not exist.
         
@@ -271,7 +271,7 @@ class AssetOperations(BaseOperation):
     
     @handle_rest_errors
     def delete_asset(self, asset_id: str,
-                     key_id: Optional[str] = None) -> bool:
+                     key_id: str | None = None) -> bool:
         """Delete an asset.
         
         Args:
@@ -306,8 +306,8 @@ class AssetOperations(BaseOperation):
     @handle_rest_errors
     def upload_asset_content(self, asset_id: str,
                            file_path: str,
-                           mime_type: Optional[str] = None,
-                           key_id: Optional[str] = None) -> AssetResponse:
+                           mime_type: str | None = None,
+                           key_id: str | None = None) -> AssetResponse:
         """Upload binary content for an asset (PUT /assets/{id}/content).
         
         Args:
@@ -375,7 +375,7 @@ class AssetOperations(BaseOperation):
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
             if "400" in str(e) or "413" in str(e):  # 413 = Payload Too Large
-                raise exc.ValidationError(f"Upload failed: {str(e)}")
+                raise exc.ValidationError(f"Upload failed: {e!s}")
             raise
         
         # Convert response to AssetResponse
@@ -385,9 +385,9 @@ class AssetOperations(BaseOperation):
         
     @handle_rest_errors
     def download_asset_content(self, asset_id: str,
-                              output_path: Optional[str] = None,
-                              key_id: Optional[str] = None,
-                              conversion_configuration_id: Optional[str] = None) -> AssetDownloadResponse:
+                              output_path: str | None = None,
+                              key_id: str | None = None,
+                              conversion_configuration_id: str | None = None) -> AssetDownloadResponse:
         """Download binary content for an asset (GET /assets/{id}/content).
         
         Args:
@@ -527,7 +527,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def get_asset_approval_status(self, asset_id: str,
-                                  key_id: Optional[str] = None) -> dict[str, Any]:
+                                  key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -541,7 +541,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_asset(self, asset_id: str,
-                      key_id: Optional[str] = None) -> dict[str, Any]:
+                      key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -555,7 +555,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_asset_deletion(self, asset_id: str,
-                               key_id: Optional[str] = None) -> dict[str, Any]:
+                               key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -569,7 +569,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def purge_asset(self, asset_id: str,
-                    key_id: Optional[str] = None) -> dict[str, Any]:
+                    key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -583,7 +583,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def get_asset_value(self, asset_id: str, attribute_id: str,
-                        key_id: Optional[str] = None) -> dict[str, Any]:
+                        key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"asset_id": asset_id, "attribute_id": attribute_id},
             ["asset_id", "attribute_id"])
@@ -602,7 +602,7 @@ class AssetOperations(BaseOperation):
     @handle_rest_errors
     def replace_asset_value(self, asset_id: str, attribute_id: str,
                             value: dict[str, Any],
-                            key_id: Optional[str] = None) -> dict[str, Any]:
+                            key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"asset_id": asset_id, "attribute_id": attribute_id},
             ["asset_id", "attribute_id"])
@@ -621,7 +621,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def delete_asset_value(self, asset_id: str, attribute_id: str,
-                           key_id: Optional[str] = None) -> bool:
+                           key_id: str | None = None) -> bool:
         self._validate_required_params(
             {"asset_id": asset_id, "attribute_id": attribute_id},
             ["asset_id", "attribute_id"])
@@ -639,7 +639,7 @@ class AssetOperations(BaseOperation):
 
     @handle_rest_errors
     def get_asset_incoming_references(self, asset_id: str,
-                                      key_id: Optional[str] = None) -> dict[str, Any]:
+                                      key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"asset_id": asset_id}, ["asset_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id

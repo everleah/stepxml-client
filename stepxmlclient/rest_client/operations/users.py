@@ -4,7 +4,7 @@ Covers the /users endpoints introduced in v1.4.0.
 """
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, ValidationError
@@ -14,8 +14,8 @@ from ..models.user import UserResponse
 class UserOperations(BaseOperation):
     """Operations for STEP Users."""
 
-    def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+    def __init__(self, client, logger: logging.Logger | None = None,
+                 context: str | None = None, workspace: str | None = None):
         super().__init__(client, operation_name="UserOperations", logger=logger,
                          context=context, workspace=workspace)
 

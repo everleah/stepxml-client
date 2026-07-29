@@ -11,23 +11,14 @@ There is no standalone "relationship" or "cross-reference" resource in the spec.
 """
 
 import logging
-from typing import Optional, Dict, Any, Literal
+from typing import Any, Literal, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError, RestApiError
+from ..exceptions import NotFoundError, ValidationError
 from ..models.relations import (
-    RelationshipResponse,
     RelationshipListResponse,
-    RelationshipCreateRequest,
-    RelationshipUpdateRequest,
-    RelationshipGraphResponse,
+    RelationshipResponse,
     RelationshipTypeResponse,
-    CrossReferenceResponse,
-    CrossReferenceListResponse,
-    CrossReferenceCreateRequest,
-    LinkResponse,
-    LinkListResponse,
-    LinkCreateRequest,
 )
 
 # Supported entity types for reference operations
@@ -59,7 +50,7 @@ class RelationOperations(BaseOperation):
     """
 
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize relation operations.
         
         Args:
@@ -79,7 +70,7 @@ class RelationOperations(BaseOperation):
     def list_references(self, entity_type: EntityType,
                         entity_id: str,
                         reference_type_id: str,
-                        key_id: Optional[str] = None) -> RelationshipListResponse:
+                        key_id: str | None = None) -> RelationshipListResponse:
         """List all outgoing references of a given type for a source entity.
 
         Calls: GET /{entity_type}/{id}/references/{referenceTypeId}
@@ -127,8 +118,8 @@ class RelationOperations(BaseOperation):
                       entity_id: str,
                       reference_type_id: str,
                       target_id: str,
-                      key_id: Optional[str] = None,
-                      target_key_id: Optional[str] = None,
+                      key_id: str | None = None,
+                      target_key_id: str | None = None,
                       include_inherited_data: bool = False) -> RelationshipResponse:
         """Get a single outgoing reference.
 
@@ -154,7 +145,7 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"get{prefix}ReferenceEntryByReferenceTypeIdAndTargetId"
 
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if target_key_id:
@@ -180,9 +171,9 @@ class RelationOperations(BaseOperation):
                       entity_id: str,
                       reference_type_id: str,
                       target_id: str,
-                      data: Optional[Dict[str, Any]] = None,
-                      key_id: Optional[str] = None,
-                      target_key_id: Optional[str] = None,
+                      data: Optional[dict[str, Any]] = None,
+                      key_id: str | None = None,
+                      target_key_id: str | None = None,
                       allow_overwrite: bool = False) -> RelationshipResponse:
         """Create or replace an outgoing reference (PUT).
 
@@ -209,7 +200,7 @@ class RelationOperations(BaseOperation):
         prefix = _OP_PREFIX.get(entity_type, "Product")
         op_id = f"replace{prefix}ReferenceEntryByReferenceTypeIdAndTargetId"
 
-        query_params: Dict[str, Any] = self._build_context_params()
+        query_params: dict[str, Any] = self._build_context_params()
         if key_id:
             query_params["keyId"] = key_id
         if target_key_id:
@@ -240,8 +231,8 @@ class RelationOperations(BaseOperation):
                          entity_id: str,
                          reference_type_id: str,
                          target_id: str,
-                         key_id: Optional[str] = None,
-                         target_key_id: Optional[str] = None) -> bool:
+                         key_id: str | None = None,
+                         target_key_id: str | None = None) -> bool:
         """Delete an outgoing reference.
 
         Calls: DELETE /{entity_type}/{id}/references/{referenceTypeId}/{targetId}
@@ -285,7 +276,7 @@ class RelationOperations(BaseOperation):
     def get_incoming_references(self, entity_type: EntityType,
                                 entity_id: str,
                                 reference_type_id: str,
-                                key_id: Optional[str] = None) -> RelationshipListResponse:
+                                key_id: str | None = None) -> RelationshipListResponse:
         """List incoming references of a given type for a target entity.
 
         Calls: GET /{entity_type}/{id}/incoming-references/{referenceTypeId}

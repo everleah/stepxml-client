@@ -6,8 +6,7 @@ Provides REST-specific exception classes for error handling in rest_client opera
 
 class RestClientError(Exception):
     """Base exception for REST API client errors."""
-    
-    pass
+    pass  # noqa: PIE790
 
 
 class RestApiError(RestClientError):
@@ -34,20 +33,20 @@ class RestApiError(RestClientError):
 class AuthenticationError(RestClientError):
     """Exception raised for authentication failures."""
     
-    pass
+    pass  # noqa: PIE790
 
 
 class AuthorizationError(RestClientError):
     """Exception raised for authorization failures (insufficient permissions)."""
     
-    pass
+    pass  # noqa: PIE790  # noqa: PIE790
 
 
 class NotFoundError(RestApiError):
     """Exception raised when a requested resource is not found (HTTP 404)."""
     
     def __init__(self, resource_id, resource_type=None, details=None):
-        message = f"Resource not found"
+        message = "Resource not found"
         if resource_type:
             message += f": {resource_type}"
         if resource_id:
@@ -69,7 +68,7 @@ class ValidationError(RestClientError):
 class ConflictError(RestApiError):
     """Exception raised for resource conflicts (HTTP 409)."""
     
-    pass
+    pass  # noqa: PIE790
 
 
 class RateLimitError(RestApiError):
@@ -83,16 +82,16 @@ class RateLimitError(RestApiError):
 class ServerError(RestApiError):
     """Exception raised for server errors (HTTP 5xx)."""
     
-    pass
+    pass  # noqa: PIE790
 
 
 class TimeoutError(RestClientError):
     """Exception raised when request times out."""
     
-    pass
+    pass  # noqa: PIE790
 
 
 class OperationError(RestClientError):
     """Exception raised for operation-specific errors."""
     
-    pass
+    pass  # noqa: PIE790

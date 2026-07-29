@@ -4,13 +4,10 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import ConflictError, NotFoundError, ValidationError
+from ..exceptions import NotFoundError, ValidationError
 from ..models.entity import (
-    EntityCreateRequest,
     EntityListResponse,
-    EntityRelationshipResponse,
     EntityResponse,
-    EntityUpdateRequest,
 )
 
 
@@ -18,7 +15,7 @@ class EntityOperations(BaseOperation):
     """Operations for STEP Entities."""
     
     def __init__(self, client, logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize entity operations.
         
         Args:
@@ -32,7 +29,7 @@ class EntityOperations(BaseOperation):
     
     @handle_rest_errors
     def get_entity(self, entity_id: str,
-                   key_id: Optional[str] = None,
+                   key_id: str | None = None,
                    include_inherited_data: bool = False) -> EntityResponse:
         """Get a single entity by ID.
         
@@ -118,7 +115,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def find_similar_entities(self, entity_id: str,
-                              key_id: Optional[str] = None) -> dict[str, Any]:
+                              key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -143,7 +140,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def get_entity_approval_status(self, entity_id: str,
-                                   key_id: Optional[str] = None) -> dict[str, Any]:
+                                   key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -157,7 +154,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_entity(self, entity_id: str,
-                       key_id: Optional[str] = None) -> dict[str, Any]:
+                       key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -171,7 +168,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def approve_entity_deletion(self, entity_id: str,
-                                key_id: Optional[str] = None) -> dict[str, Any]:
+                                key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -185,7 +182,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def purge_entity(self, entity_id: str,
-                     key_id: Optional[str] = None) -> dict[str, Any]:
+                     key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -199,7 +196,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def get_entity_children(self, entity_id: str,
-                            key_id: Optional[str] = None) -> list[str]:
+                            key_id: str | None = None) -> list[str]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -213,7 +210,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def get_entity_data_containers(self, entity_id: str,
-                                   key_id: Optional[str] = None) -> dict[str, Any]:
+                                   key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -227,7 +224,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def get_entity_incoming_references(self, entity_id: str,
-                                       key_id: Optional[str] = None) -> dict[str, Any]:
+                                       key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
@@ -241,7 +238,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def get_entity_value(self, entity_id: str, attribute_id: str,
-                         key_id: Optional[str] = None) -> dict[str, Any]:
+                         key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"entity_id": entity_id, "attribute_id": attribute_id},
             ["entity_id", "attribute_id"])
@@ -260,7 +257,7 @@ class EntityOperations(BaseOperation):
     @handle_rest_errors
     def replace_entity_value(self, entity_id: str, attribute_id: str,
                              value: dict[str, Any],
-                             key_id: Optional[str] = None) -> dict[str, Any]:
+                             key_id: str | None = None) -> dict[str, Any]:
         self._validate_required_params(
             {"entity_id": entity_id, "attribute_id": attribute_id},
             ["entity_id", "attribute_id"])
@@ -279,7 +276,7 @@ class EntityOperations(BaseOperation):
 
     @handle_rest_errors
     def delete_entity_value(self, entity_id: str, attribute_id: str,
-                            key_id: Optional[str] = None) -> bool:
+                            key_id: str | None = None) -> bool:
         self._validate_required_params(
             {"entity_id": entity_id, "attribute_id": attribute_id},
             ["entity_id", "attribute_id"])

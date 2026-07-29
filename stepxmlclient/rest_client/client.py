@@ -9,29 +9,29 @@ from typing import Optional
 
 from ..client import StiboStepRestClient
 from .base import BaseOperation
-from .operations.products import ProductOperations
 from .operations.assets import AssetOperations
-from .operations.classifications import ClassificationOperations
-from .operations.entities import EntityOperations
 from .operations.attributes import AttributeOperations
-from .operations.exports import ExportOperations
-from .operations.relations import RelationOperations
-from .operations.inbound import InboundOperations
-from .operations.contexts import ContextOperations
-from .operations.system_information import SystemInformationOperations
-from .operations.users import UserOperations
-from .operations.user_groups import UserGroupOperations
-from .operations.collections import CollectionOperations
-from .operations.collection_groups import CollectionGroupOperations
-from .operations.batch import BatchOperations
-from .operations.data_type_groups import DataTypeGroupOperations
 from .operations.background_processes import BackgroundProcessOperations
+from .operations.batch import BatchOperations
+from .operations.classifications import ClassificationOperations
+from .operations.collection_groups import CollectionGroupOperations
+from .operations.collections import CollectionOperations
+from .operations.contexts import ContextOperations
+from .operations.data_type_groups import DataTypeGroupOperations
+from .operations.entities import EntityOperations
 from .operations.event_processors import EventProcessorOperations
-from .operations.outbound import OutboundOperations
+from .operations.exports import ExportOperations
 from .operations.gateway import GatewayOperations
-from .operations.workflows import WorkflowOperations
-from .operations.workflow_tasks import WorkflowTaskOperations
+from .operations.inbound import InboundOperations
+from .operations.outbound import OutboundOperations
+from .operations.products import ProductOperations
+from .operations.relations import RelationOperations
 from .operations.reports import ReportOperations
+from .operations.system_information import SystemInformationOperations
+from .operations.user_groups import UserGroupOperations
+from .operations.users import UserOperations
+from .operations.workflow_tasks import WorkflowTaskOperations
+from .operations.workflows import WorkflowOperations
 
 
 class StepRestClient(StiboStepRestClient):
@@ -55,7 +55,7 @@ class StepRestClient(StiboStepRestClient):
                  openapi_file=None, logger=None,
                  proxies=None, ssl_version=None,
                  cache_openapi=False, nocert=False,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize StepRestClient with operation groups.
         
         Args:
@@ -113,7 +113,7 @@ class StepRestClient(StiboStepRestClient):
         self.workflow_tasks = WorkflowTaskOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.reports = ReportOperations(self.client, logger=op_logger, context=context, workspace=workspace)
     
-    def get_operation_group(self, group_name: str) -> Optional[BaseOperation]:
+    def get_operation_group(self, group_name: str) -> BaseOperation | None:
         """Get an operation group by name.
         
         Useful for dynamic access to operation groups.

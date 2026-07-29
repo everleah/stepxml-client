@@ -1,6 +1,7 @@
 """Workflow and workflow task models for STEP REST API v2."""
 
 from typing import Any, Optional
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -9,7 +10,7 @@ class WorkflowResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     id: str
-    name: Optional[str] = None
+    name: str | None = None
     valid_object_types: Optional[list[str]] = None
 
 
@@ -19,11 +20,11 @@ class WorkflowTaskResponse(BaseModel):
 
     id: str
     node: Optional[dict[str, Any]] = None
-    workflow: Optional[str] = None
-    state: Optional[str] = None
-    user_assignee: Optional[str] = None
-    group_assignee: Optional[str] = None
-    deadline: Optional[str] = None
+    workflow: str | None = None
+    state: str | None = None
+    user_assignee: str | None = None
+    group_assignee: str | None = None
+    deadline: str | None = None
     status_flag: Optional[dict[str, Any]] = None
-    task_creation_time: Optional[str] = None
-    instance: Optional[str] = None
+    task_creation_time: str | None = None
+    instance: str | None = None

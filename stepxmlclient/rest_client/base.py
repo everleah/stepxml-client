@@ -5,8 +5,8 @@ pagination, logging, and request/response processing.
 """
 
 import logging
-from typing import Any, Optional, Dict, Callable, TypeVar, Generic
 from functools import wraps
+from typing import Any, Callable, Dict, Optional, TypeVar
 
 import requests
 import requests_openapi as roa
@@ -81,13 +81,13 @@ def handle_rest_errors(func: Callable) -> Callable:
                     raise exc.RestApiError(status, error_msg, error_code=error_code)
             else:
                 raise exc.RestClientError(f"Request failed: {str(e)}")
-        except (FileNotFoundError, OSError, IOError) as e:
+        except (FileNotFoundError, OSError):
             # Let file system errors pass through unchanged
             raise
         except Exception as e:
             if isinstance(e, exc.RestClientError):
                 raise
-            raise exc.RestClientError(f"Unexpected error: {str(e)}")
+            raise exc.RestClientError(f"Unexpected error: {e!s}")
     
     return wrapper
 
@@ -109,9 +109,9 @@ class BaseOperation:
         workspace: STEP workspace ID passed to every API call (defaults to "Main" server-side)
     """
     
-    def __init__(self, client: roa.Client, operation_name: Optional[str] = None, 
+    def __init__(self, client: roa.Client, operation_name: str | None = None, 
                  logger: Optional[logging.Logger] = None,
-                 context: Optional[str] = None, workspace: Optional[str] = None):
+                 context: str | None = None, workspace: str | None = None):
         """Initialize base operation.
         
         Args:
@@ -144,8 +144,8 @@ class BaseOperation:
             params['workspace'] = self.workspace
         return params
 
-    def _check_for_api_error(self, response: Any, resource_id: Optional[str] = None,
-                              resource_type: Optional[str] = None) -> None:
+    def _check_for_api_error(self, response: Any, resource_id: str | None = None,
+                              resource_type: str | None = None) -> None:
         """Detect STEP error responses returned as dicts instead of raised exceptions.
 
         The STEP REST API may return an error body like
@@ -180,8 +180,8 @@ class BaseOperation:
         elif 400 <= status < 600:
             raise exc.RestApiError(status, message)
 
-    def _check_response_status(self, response: Any, resource_id: Optional[str] = None,
-                                resource_type: Optional[str] = None) -> None:
+    def _check_response_status(self, response: Any, resource_id: str | None = None,
+                                resource_type: str | None = None) -> None:
         """Check response for HTTP error status codes returned without raising an exception.
         
         Some STEP endpoints (e.g. binary content) return an HTTP error response body

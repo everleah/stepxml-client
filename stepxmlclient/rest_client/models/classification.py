@@ -1,16 +1,17 @@
 """Classification-related data models for STEP REST API v2."""
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
 
 
 class ClassificationResponse(BaseModel):
     """Response from classification GET/POST operation."""
 
     id: str = Field(..., description="Classification ID")
-    objectType: Optional[str] = Field(None, description="Classification object type ID")
-    name: Optional[str] = Field(None, description="Classification name")
-    parent: Optional[str] = Field(None, description="Parent classification ID")
+    objectType: str | None = Field(None, description="Classification object type ID")
+    name: str | None = Field(None, description="Classification name")
+    parent: str | None = Field(None, description="Parent classification ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
@@ -36,7 +37,7 @@ class ClassificationCreateRequest(BaseModel):
 
     objectType: str = Field(..., description="Classification object type ID (required)")
     parent: str = Field(..., description="Parent classification ID (required)")
-    name: Optional[str] = Field(None, description="Classification name")
+    name: str | None = Field(None, description="Classification name")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
@@ -46,8 +47,8 @@ class ClassificationCreateRequest(BaseModel):
 class ClassificationUpdateRequest(BaseModel):
     """Request model for classification updates (PATCH /classifications/{id})."""
 
-    name: Optional[str] = Field(None, description="Updated classification name")
-    parent: Optional[str] = Field(None, description="Updated parent classification ID")
+    name: str | None = Field(None, description="Updated classification name")
+    parent: str | None = Field(None, description="Updated parent classification ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Updated attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="Updated references")
     attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Updated attribute links")
