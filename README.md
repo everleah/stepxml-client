@@ -12,10 +12,12 @@ This library enables seamless integration with STEP systems via:
 ## Current Features
 
 
-**REST API v2 Client: All Phases Complete**
-- ✅ 8 operation groups, 318/318 tests passing, 100% coverage
-- ✅ All models and endpoints implemented (Products, Assets, Classifications, Entities, Attributes, Metadata, Import/Export, Relations, Advanced)
-- ✅ Unified authentication, error handling, and OpenAPI caching
+**REST API v2 Client: OpenAPI v1.4.0 — spec-compliant**
+- 22 operation groups covering all 200 operationIds
+- Full CRUD, approval, values, children, data containers, purge for Products/Assets/Classifications/Entities
+- Contexts, Users, User Groups, Collections, Workflows, Background Processes, Event Processors
+- Inbound/Outbound/Gateway integration endpoints
+- Type-safe Pydantic models, unified authentication, OpenAPI caching
 - ✅ See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for full usage guide
 
 **Comprehensive STEP-XML support** with extensive parsing (~80% schema coverage) and growing generation capabilities (~10% schema coverage).
@@ -293,42 +295,39 @@ xml_string = creator.to_string()
 ```
 stepxmlclient/
 ├── __init__.py              # Namespace definitions (STEPXML_NS)
-├── client.py                # REST API client wrapper (requests-openapi)
-├── parser.py                # STEP-XML parsing engine (~2800 lines, ~80% coverage)
+├── client.py                # StiboStepRestClient (Base client)
+├── parser.py                # STEP-XML parsing engine (~2800 lines)
 ├── creator.py               # STEP-XML document generator  
 ├── upload.py                # Asset binary upload/download via REST API
-└── model/                   # BaseObject model classes
-    ├── __init__.py          # BaseObject base class
-    ├── product.py           # Product and ProductReplacementRule
-    ├── asset.py             # Asset model
-    ├── attribute.py         # Attribute and AttributeGroup
-    ├── classification.py     # Classification model
-    ├── entity.py            # Entity model
-    ├── business.py          # BusinessRule model
-    ├── deletion.py          # Deletion specification models
-    ├── metadata.py          # MetaData model
-    ├── organization.py      # Organization and Context models
-    ├── relations.py         # Cross-reference models
-    └── replacement.py       # Product replacement models
+├── openapi.json             # Bundled OpenAPI v1.4.0 spec
+├── rest_client/             # REST API v2 typed wrapper layer
+│   ├── __init__.py
+│   ├── client.py            # StepRestClient (grouped operation wrappers)
+│   ├── base.py              # BaseOperation, handle_rest_errors
+│   ├── exceptions.py
+│   ├── models/              # Pydantic models (20 files)
+│   └── operations/          # Operation groups (22 files)
+└── model/                   # STEP-XML object models (BaseObject)
 
 docs/
-├── PARSER_STATUS.md         # Parser feature status (Phase 14 complete)
-├── CREATOR_STATUS.md        # Creator feature status (Phase 1 complete)
-├── PARSER_USAGE.md          # Parser implementation guide
-└── CREATOR_USAGE.md         # Creator implementation guide
+├── AGENTS.md
+├── REST_API_STATE.md, REST_API_USAGE.md
+├── PARSER_STATUS.md, PARSER_USAGE.md
+├── CREATOR_STATUS.md, CREATOR_USAGE.md
+└── INBOUND_OPERATIONS_SUMMARY.md
 
 examples/
-├── step_products_only.xml   # Product export sample
-├── step_assets_only.xml     # Asset export sample
-├── step_products_assets_refs.xml
-└── step_asset_pixxio.xml    # Asset with metadata sample
+├── step_products_only.xml, step_assets_only.xml
+├── step_products_assets_refs.xml, step_asset_pixxio.xml
 
 tests/
-├── test.py                  # Core integration tests
-├── test_parser_phaseX_*.py  # Phase-specific parser tests (2-14)
-├── test_creator_*.py        # Creator functionality tests
-└── validate_xml_xsd.py      # XSD schema validation utility
-```
+├── __init__.py
+├── test.py                  # Manual connectivity script
+├── test_parser_phaseX_*.py  # Parser phase tests
+├── test_rest_client_phaseX_*.py  # REST client tests
+├── test_creator_*.py        # Creator tests
+├── test_inbound_*.py        # Inbound endpoint tests
+└── validate_xml_xsd.py      # XSD validation
 
 ## Development
 
@@ -418,19 +417,19 @@ def _parse_my_entity(element: ET.Element) -> dict:
 
 ### Testing Strategy
 
-The project uses a phased testing approach:
-- **Primary coverage**: phase suites (`test_parser_phaseX_*.py`, `test_rest_client_phaseX_*.py`) plus focused `test_*.py` modules
-- **Utility script**: `test.py` is a simple manual connectivity/example script
-- **Phase tests**: `test_parser_phaseX_*.py` target specific entity types
-- **Validation**: `validate_xml_xsd.py` ensures generated XML matches STEP.xsd
-- **Roundtrip tests**: `test_creator_roundtrip.py` parses generated XML
+The project uses a phased testing approach with all test modules under `tests/`:
+- **Primary coverage**: phase suites (`tests/test_parser_phaseX_*.py`, `tests/test_rest_client_phaseX_*.py`) plus focused `tests/test_*.py` modules
+- **Utility script**: `tests/test.py` is a simple manual connectivity/example script
+- **Phase tests**: `tests/test_parser_phaseX_*.py` target specific entity types
+- **Validation**: `tests/validate_xml_xsd.py` ensures generated XML matches STEP.xsd
+- **Roundtrip tests**: `tests/test_creator_roundtrip.py` parses generated XML
 
 When adding new functionality:
-1. Extend existing phase test or create new `test_parser_phaseX_*.py`
+1. Extend existing phase test or create new `tests/test_parser_phaseX_*.py`
 2. Add corresponding model class in `stepxmlclient/model/`
 3. Add parser function in `stepxmlclient/parser.py`
 4. Optionally add creator support in `stepxmlclient/creator.py`
-5. Validate with `validate_xml_xsd.py`
+5. Validate with `tests/validate_xml_xsd.py`
 
 ## Configuration
 
@@ -505,22 +504,10 @@ xml_bytes = creator.to_bytes(encoding='utf-8')
 ## Roadmap
 
 
-### ✅ REST API v2 Client - All Phases Complete (8 operation groups, 318 tests)
+### ✅ REST API v2 Client — OpenAPI v1.4.0 (200 operationIds, 22 groups)
 
-**Completed Phases:**
-- **Phase 0**: Foundation Infrastructure ✅ (37 tests)
-- **Phase 1**: Product Operations ✅ (36 tests)
-- **Phase 2**: Asset Operations ✅ (40 tests)
-- **Phase 3**: Classification Operations ✅ (33 tests)
-- **Phase 4**: Entity Operations ✅ (37 tests)
-- **Phase 5**: Attribute & Metadata Operations ✅ (33 tests)
-- **Phase 6**: Import/Export Operations ✅ (29 tests)
-- **Phase 7**: Relations Operations ✅ (39 tests)
-- **Phase 8**: Advanced Features ✅ (34 tests)
-
-**Total:** 318/318 tests passing, 100% success rate
-
-See [docs/REST_API_STATE.md](docs/REST_API_STATE.md) for a full implementation status matrix.
+All 200 operationIds from the OpenAPI v1.4.0 specification are covered by typed wrappers.
+See [docs/REST_API_STATE.md](docs/REST_API_STATE.md) for the full coverage matrix.
 
 ### ✅ Parser - Complete (Phase 14, ~80% coverage)
 

@@ -1,137 +1,91 @@
 # STEP XML Client - REST API State
 
-This document summarizes the current implementation state of the `rest_client` subpackage, based on the REST API Development Plan and the actual status of the package.
+This document summarizes the current implementation state of the `rest_client` subpackage
+based on the **OpenAPI v1.4.0** specification (200 operationIds across 22 tag groups).
 
 ---
 
 ## Overview
 
-The `rest_client` subpackage provides comprehensive, type-safe, and fully tested coverage of STEP REST API v2. All planned phases and features have been implemented and validated with 100% test coverage.
+The `rest_client` subpackage provides typed, spec-compliant coverage of the STEP REST API v2.
+All operation wrappers map 1:1 to OpenAPI operationIds; no phantom or invented endpoints exist.
 
 ---
 
-## Completion Matrix
+## Coverage Matrix (OpenAPI v1.4.0)
 
-| Phase | Domain                | Status      | Tests | Key Models/Operations Implemented |
-|-------|-----------------------|-------------|-------|-----------------------------------|
-| 0     | Foundation            | ✅ Complete | 37    | PagedResponse, ErrorResponse, ApiResponse, BaseOperation, Exception Hierarchy |
-| 1     | Products              | ✅ Complete | 36    | Product CRUD, Search, Attributes, Values |
-| 2     | Assets                | ✅ Complete | 37    | Asset CRUD, Search, Binary Upload/Download |
-| 3     | Classifications       | ✅ Complete | 26    | Classification CRUD, Hierarchy (children list), Search by type |
-| 4     | Entities              | ✅ Complete | 27    | Entity CRUD, Search, Attributes, Relationships |
-| 5     | Attributes/Metadata   | ✅ Complete | 29    | Attribute CRUD, LOV, Contexts, System Metadata |
-| 6     | Import/Export         | ✅ Complete | 17    | Import/Export Jobs, Progress, Data Download |
-| 7     | Relations             | ✅ Complete | 14    | Relationship CRUD, Types, Graph, Cross-References, Links |
-| 8     | Advanced              | ✅ Complete | 34    | Bulk Ops, Workflows, Advanced Search, Cache, Streaming |
+| Group | Tag(s) | File | Key Operations |
+|-------|--------|------|----------------|
+| Assets | Assets | `operations/assets.py` | Full CRUD, search, content, approval, values, purge |
+| Products | Products | `operations/products.py` | Full CRUD, search, children, data containers, approval, values, purge |
+| Classifications | Classifications | `operations/classifications.py` | Full CRUD, search, children, assets, approval, values, purge |
+| Entities | Entities | `operations/entities.py` | Full CRUD, search, find-similar, match-merge, children, data containers, approval, values, purge |
+| Attributes | Attributes, Lists Of Values, Data Container Types, Object Types, Reference Types, Units, Unique Keys | `operations/attributes.py` | GET-only: attribute, LOV, LOV entries, DC type, object type (with children), reference type, unit, unique key |
+| Data Type Groups | Data Type Groups | `operations/data_type_groups.py` | GET: group, children, attributes, DC types, reference types |
+| Background Processes | Background Processes, Background Process Types | `operations/background_processes.py` | GET: process, execution report, attachments, types, type processes |
+| Event Processors | Event Processors | `operations/event_processors.py` | GET, enable/disable, invoke, status, statistics, queue |
+| Export / Import | Export, Import | `operations/exports.py` | startExport, startImport |
+| Inbound | Inbound Integration Endpoints | `operations/inbound.py` | Upload, invoke, status, enable/disable, statistics, execution report |
+| Outbound | Outbound Integration Endpoints | `operations/outbound.py` | GET, enable/disable, status, statistics, execution report |
+| Gateway | Gateway Integration Endpoints | `operations/gateway.py` | GET, enable/disable, status |
+| Relations | Products/Assets/Classifications/Entities references | `operations/relations.py` | List, get, put, delete references + incoming references + reference types |
+| Workflows | Workflows, Workflow Tasks | `operations/workflows.py`, `operations/workflow_tasks.py` | GET workflow IDs/definition, create/delete instance, search/claim/release tasks |
+| Reporting | Reporting | `operations/reports.py` | Historic changes report |
+| Contexts | Contexts | `operations/contexts.py` | GET /contexts, GET /contexts/{id} |
+| System | System Information | `operations/system_information.py` | GET /system-information |
+| Users | Users | `operations/users.py` | CRUD, randomize password, add/remove from group |
+| User Groups | User groups | `operations/user_groups.py` | CRUD, users, children |
+| Collections | Collections | `operations/collections.py` | CRUD, content |
+| Collection Groups | Collection Groups | `operations/collection_groups.py` | GET, children, collections |
+| Batch | Batch Operations | `operations/batch.py` | executeBatchOperation |
 
-**Total:** 257/257 tests passing (100%)
+**Total: 22 operation files covering all 200 operationIds from OpenAPI v1.4.0.**
 
 ---
 
-## Directory Structure (as implemented)
+## Directory Structure
 
 ```
-stepxmlclient/
-└── rest_client/
-    ├── __init__.py
-    ├── client.py
-    ├── base.py
-    ├── models/
-    │   ├── __init__.py
-    │   ├── common.py
-    │   ├── product.py
-    │   ├── asset.py
-    │   ├── classification.py
-    │   ├── entity.py
-    │   ├── import_export.py
-    │   ├── metadata.py
-    │   ├── attribute.py
-    │   └── relations.py
-    ├── operations/
-    │   ├── __init__.py
-    │   ├── products.py
-    │   ├── assets.py
-    │   ├── classifications.py
-    │   ├── entities.py
-    │   ├── attributes.py
-    │   ├── imports.py
-    │   ├── exports.py
-    │   ├── metadata.py
-    │   └── relations.py
-    └── exceptions.py
+stepxmlclient/rest_client/
+    __init__.py
+    client.py          # StepRestClient (grouped wrappers)
+    base.py            # BaseOperation, handle_rest_errors
+    exceptions.py
+    models/
+        __init__.py
+        common.py, product.py, asset.py, classification.py, entity.py
+        attribute.py, relations.py, import_export.py
+        batch.py, collection.py, context.py, data_type_group.py
+        background_process.py, event_processor.py, integration_endpoint.py
+        system_information.py, user.py, workflow.py
+    operations/
+        __init__.py
+        products.py, assets.py, classifications.py, entities.py
+        attributes.py, relations.py, exports.py, inbound.py
+        contexts.py, system_information.py, users.py, user_groups.py
+        collections.py, collection_groups.py, batch.py
+        data_type_groups.py, background_processes.py, event_processors.py
+        outbound.py, gateway.py, workflows.py, workflow_tasks.py, reports.py
 ```
 
 ---
 
-## Feature Status by Phase
+## Key Design Principles
 
-### Phase 0: Foundation & Infrastructure
-- All core models, error handling, and base operation patterns implemented.
-- Shared authentication and type hints in place.
-
-### Phase 1: Product Operations
-- Full CRUD, search, attribute/value retrieval.
-- All models and endpoints covered.
-
-### Phase 2: Asset Operations
-- Full CRUD, search, binary upload/download.
-- Integrated with asset upload module.
-
-### Phase 3: Classification Operations
-- CRUD, search by type, and hierarchy (direct children list via `get_classification_children()`).
-- `objectType` + `parent` required on create; no `id` in POST body.
-- Removed: `get_classification_values()`, `search_modified_since()`, `ClassificationHierarchyResponse`, `ClassificationValue`.
-
-### Phase 4: Entity Operations
-- CRUD, advanced search, attribute/relationship management.
-- `objectType` + `parent` required on create; no `id` in POST body.
-- Removed: bulk create/update, `search_modified_since()`, `EntityBulkRequest/Response`, `EntityAttribute`, `EntityMetadata`.
-
-### Phase 5: Attribute & Metadata Operations
-- Attribute CRUD, LOV/context/qualifier/dimension retrieval, system metadata.
-
-### Phase 6: Import/Export Operations
-- Import/export job management, progress tracking, data download.
-
-### Phase 7: Relations Operations
-- Relationship CRUD, type discovery, graph traversal, cross-reference and link management.
-
-### Phase 8: Advanced Features
-- Bulk operations, workflow management, advanced search, cache, streaming.
-
----
-
-## Test Coverage
-
-All phases have dedicated test scripts (e.g., `test_rest_client_phase1_products.py`).
-- **Total tests:** 257
-- **Pass rate:** 100%
-- **Coverage:** All planned models and operations are implemented and tested.
+- **1:1 mapping**: Every method maps directly to an OpenAPI operationId from v1.4.0.
+- **No phantom operations**: Methods that don't exist in the spec were removed.
+- **Pydantic models**: Response types use Pydantic with `ConfigDict(extra="allow")` for STEP's dynamic schemas.
+- **Convenience wrappers**: `search_by_type()` wraps `query{Type}()` with an `objecttype` condition.
 
 ---
 
 ## Integration Points
-- Unified authentication with XML client
-- Data flow between REST and XML modules is fully supported
-- Asset upload/download integrated with existing modules
+- Unified authentication via `StiboStepRestClient` / `BasicAuthorisation`
+- Asset upload/download integrated via `upload.py`
+- OIEP download via `StiboStepRestClient.download_oiep_result()`
 
 ---
 
 ## Dependencies
-- `pydantic>=2.0` (for models/validation)
-- `requests-openapi` (for REST client)
-
----
-
-## Success Criteria (All Met)
-- All phases complete
-- 100% test pass rate
-- Type hints and Pydantic models throughout
-- Error handling and exception hierarchy in place
-- Integration with XML client and upload modules
-
----
-
-## Summary
-
-The STEP XML Client REST API subpackage is **feature-complete** and fully tested. All planned phases and features from the development plan have been implemented. The package is ready for production use and further extension as needed.
+- `pydantic>=2.0`
+- `requests-openapi`

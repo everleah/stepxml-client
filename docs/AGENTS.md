@@ -6,6 +6,7 @@ Local contract for durable documentation artifacts under `docs/`.
 ## Ownership
 - `CREATOR_STATUS.md`
 - `CREATOR_USAGE.md`
+- `INBOUND_OPERATIONS_SUMMARY.md`
 - `PARSER_STATUS.md`
 - `PARSER_USAGE.md`
 - `REST_API_STATE.md`

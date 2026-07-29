@@ -903,7 +903,7 @@ client = StiboStepRestClient(
 
 # 3. Send to Inbound Endpoint
 try:
-    response = client.client.postInboundIntegrationEndpointUploadAndInvoke(
+    response = client.client.uploadFileToAndInvokeInboundRestEndpoint(
         id="my_inbound_endpoint_id",  # ID from STEP System Setup
         context="Context1",           # Required
         workspace="Main",             # Optional

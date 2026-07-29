@@ -103,18 +103,17 @@ Much cleaner! ✨
 
 Run tests with:
 ```bash
-python -m pytest test_inbound_operations.py -v
-# Result: 17 passed ✅
+python -m unittest tests/test_inbound_operations.py -v
 ```
 
 ## Files Modified/Created
 
-- ✅ Created: `stepxmlclient/rest_client/operations/inbound.py`
-- ✅ Updated: `stepxmlclient/rest_client/client.py`
-- ✅ Updated: `stepxmlclient/rest_client/operations/__init__.py`
-- ✅ Updated: `docs/CREATOR_USAGE.md`
-- ✅ Updated: `docs/REST_API_USAGE.md`
-- ✅ Created: `test_inbound_operations.py`
+- Created: `stepxmlclient/rest_client/operations/inbound.py`
+- Updated: `stepxmlclient/rest_client/client.py`
+- Updated: `stepxmlclient/rest_client/operations/__init__.py`
+- Updated: `docs/CREATOR_USAGE.md`
+- Updated: `docs/REST_API_USAGE.md`
+- Created: `tests/test_inbound_operations.py`
 
 ## Next Steps
 

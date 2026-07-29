@@ -12,12 +12,14 @@ This document provides comprehensive usage instructions for the REST API client 
   - [Product](#product)
   - [Asset](#asset)
   - [Classification](#classification)
-  - [Attribute](#attribute)
-  - [Business Rule](#business-rule)
-  - [Organization](#organization)
   - [Entity](#entity)
-  - [Replacement](#replacement)
+  - [Attribute & Type Definitions](#attribute--type-definitions)
   - [Relations](#relations)
+  - [Contexts](#contexts)
+  - [Users & User Groups](#users--user-groups)
+  - [Collections](#collections)
+  - [Workflows & Tasks](#workflows--tasks)
+  - [Background Processes](#background-processes)
   - [Inbound Integration Endpoints](#inbound-integration-endpoints)
 - [Asset Uploads](#asset-uploads)
 - [Error Handling](#error-handling)
@@ -144,7 +146,6 @@ retrieved = ops_client.assets.get_asset(created.id)
 
 **Common Operations:**
 - `get_classification(classification_id)`
-- `list_classifications()`
 - `search_classifications(condition)`
 - `search_by_type(classification_type)`
 - `create_classification(data: ClassificationCreateRequest)`
@@ -152,6 +153,13 @@ retrieved = ops_client.assets.get_asset(created.id)
 - `replace_classification(classification_id, data: ClassificationCreateRequest)`
 - `delete_classification(classification_id)`
 - `get_classification_children(classification_id)` → `List[str]`
+- `get_classification_value(classification_id, attribute_id)`
+- `replace_classification_value(classification_id, attribute_id, value)`
+- `delete_classification_value(classification_id, attribute_id)`
+- `approve_classification(classification_id)`
+- `purge_classification(classification_id)`
+
+Note: `list_classifications()` was removed. Use `search_classifications` with an objecttype condition instead.
 
 **Example:**
 ```python
@@ -174,57 +182,30 @@ children = ops_client.classifications.get_classification_children("CLASS1")  # r
 
 ---
 
-### Attribute
+### Attribute & Type Definitions
 
-**Model:** `AttributeCreateRequest`, `AttributeUpdateRequest`, `AttributeResponse`
+**Model:** `AttributeResponse`, `ListOfValueResponse`
+
+The STEP REST API v2 only provides **read-only** GET access for attribute and type-definition
+resources. There is no create, update, or delete for attributes via the REST API.
 
 **Common Operations:**
 - `get_attribute(attribute_id)`
-- `list_attributes()`
-- `create_attribute(data: AttributeCreateRequest)`
+- `get_list_of_values(lov_id)`
+- `get_list_of_values_entries(lov_id)`
+- `get_data_container_type(type_id)`
+- `get_data_type_group(group_id)`
+- `get_object_type(type_id)`
+- `get_object_type_children(type_id)`
+- `get_reference_type(reference_type_id)`
+- `get_unit(unit_id)`
+- `get_unique_key(key_id)`
 
 **Example:**
 ```python
-from stepxmlclient.rest_client.models.attribute import AttributeCreateRequest
-
-created = ops_client.attributes.create_attribute(
-    AttributeCreateRequest(
-        objectType="Description",
-        name="Color"
-    )
-)
-```
-
----
-
-### Business Rule
-
-Business-rule endpoints are accessible through raw OpenAPI operation IDs on `raw_client.client`.
-
-Use this style when no dedicated wrapper operation group is available:
-
-**Example:**
-```python
-# Operation names follow OpenAPI operationId values
-rule = raw_client.client.someBusinessRuleOperationId(...)
-```
-
----
-
-### Organization
-
-Organization-related metadata is exposed via the `metadata` wrapper group.
-
-**Common Operations:**
-- `list_contexts(limit=100, offset=0)`
-- `get_context(context_id)`
-- `list_workspaces(limit=100, offset=0)`
-- `get_workspace(workspace_id)`
-
-**Example:**
-```python
-contexts = ops_client.metadata.list_contexts(limit=50)
-first_context = contexts.items[0] if contexts.items else None
+attr = ops_client.attributes.get_attribute("ATTR001")
+lov = ops_client.attributes.get_list_of_values("LOV_Colors")
+entries = ops_client.attributes.get_list_of_values_entries("LOV_Colors")
 ```
 
 ---
@@ -235,14 +216,21 @@ first_context = contexts.items[0] if contexts.items else None
 
 **Common Operations:**
 - `get_entity(entity_id)`
-- `list_entities()`
 - `search_entities(condition)`
 - `search_by_type(entity_type)`
 - `create_entity(data: EntityCreateRequest)`
 - `update_entity(entity_id, updates: EntityUpdateRequest)`
 - `replace_entity(entity_id, data: EntityCreateRequest)`
 - `delete_entity(entity_id)`
-- `get_entity_relationships(entity_id)`
+- `get_entity_relationships(entity_id, reference_type_id)`
+- `get_entity_value(entity_id, attribute_id)`
+- `replace_entity_value(entity_id, attribute_id, value)`
+- `delete_entity_value(entity_id, attribute_id)`
+- `find_similar_entities(entity_id)`
+- `approve_entity(entity_id)`
+- `purge_entity(entity_id)`
+
+Note: `list_entities()` was removed. Use `search_entities` with an objecttype condition instead.
 
 **Example:**
 ```python
@@ -261,18 +249,70 @@ created = ops_client.entities.create_entity(request)
 ops_client.entities.update_entity("E001", EntityUpdateRequest(name="Updated Name"))
 ```
 
+### Contexts
+
+**Operations Group:** `contexts`
+
+**Common Operations:**
+- `get_contexts()` → list of contexts
+- `get_context(context_id)` → single context
+
+**Example:**
+```python
+all_contexts = ops_client.contexts.get_contexts()
+ctx = ops_client.contexts.get_context("Context1")
+```
+
 ---
 
-### Replacement
+### Users & User Groups
 
-Replacement endpoints are available through raw OpenAPI operation IDs on `raw_client.client`.
+**Operations Groups:** `users`, `user_groups`
 
-Use this style when no dedicated wrapper operation group exists for a specific endpoint:
+**Common Operations:**
+- `get_user(user_id)`, `create_or_replace_user(user_id, data)`, `update_user(user_id, data)`, `delete_user(user_id)`
+- `randomize_password(user_id)`
+- `add_user_to_group(user_id, group_data)`, `remove_user_from_group(user_id, group_data)`
+- `get_user_group(group_id)`, `create_or_replace_user_group(...)`, `update_user_group(...)`, `delete_user_group(...)`
+- `get_user_group_users(group_id)`, `get_user_group_children(group_id)`
 
-```python
-# Operation names follow OpenAPI operationId values
-data = raw_client.client.someReplacementOperationId(...)
-```
+---
+
+### Collections
+
+**Operations Groups:** `collections`, `collection_groups`
+
+**Common Operations:**
+- `create_collection(data)`, `get_collection(id)`, `create_or_replace_collection(id, data)`, `delete_collection(id)`
+- `get_collection_content(id)`
+- `get_collection_group(id)`, `get_collection_group_children(id)`, `get_collection_group_collections(id)`
+
+---
+
+### Workflows & Tasks
+
+**Operations Groups:** `workflows`, `workflow_tasks`
+
+**Common Operations:**
+- `get_workflow_ids()` → list of workflow IDs
+- `get_workflow(workflow_id)`
+- `create_workflow_instance(workflow_id, data)`, `delete_workflow_instance(workflow_id, instance_id)`
+- `search_workflow_tasks(condition)`, `get_workflow_task(task_id)`
+- `claim_workflow_task(task_id)`, `release_workflow_task(task_id)`
+- `trigger_workflow_task_event(task_id, data)`
+
+---
+
+### Background Processes
+
+**Operations Group:** `background_processes`
+
+**Common Operations:**
+- `get_background_process(process_id)`
+- `get_execution_report(process_id)`
+- `get_attachments_metadata(process_id)`, `get_attachment_metadata(process_id, attachment_id)`
+- `get_attachment_content(process_id, attachment_id)`
+- `get_process_types()`, `get_processes_of_type(type_id)`
 
 ---
 
