@@ -222,6 +222,50 @@ class BaseOperation:
             f"Calling {self.operation_name}.{operation_id}",
             extra={"params": params}
         )
+
+    @staticmethod
+    def _coerce_list_payload(payload: Any) -> list[Any]:
+        """Normalize list-like API payloads from various response shapes.
+
+        Supports:
+        - native lists
+        - dicts with common wrapper keys such as items/results/data/values
+        - response-like objects exposing json() or text
+        - single-object payloads, which are returned as a one-item list
+        """
+        if payload is None:
+            return []
+
+        if isinstance(payload, list):
+            return payload
+
+        if isinstance(payload, dict):
+            for key in ("items", "results", "data", "values"):
+                value = payload.get(key)
+                if isinstance(value, list):
+                    return value
+            if payload:
+                return [payload]
+            return []
+
+        if hasattr(payload, "json"):
+            try:
+                parsed = payload.json()
+            except Exception:
+                parsed = None
+            if parsed is not None:
+                return BaseOperation._coerce_list_payload(parsed)
+
+        if hasattr(payload, "text"):
+            try:
+                import json
+                parsed = json.loads(payload.text)
+            except Exception:
+                parsed = None
+            if parsed is not None:
+                return BaseOperation._coerce_list_payload(parsed)
+
+        return []
     
     def _process_response(self, response: Any) -> Any:
         """Process API response (hook for subclasses).

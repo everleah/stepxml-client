@@ -131,11 +131,7 @@ class AttributeOperations(BaseOperation):
                 raise NotFoundError(lov_id, "ListOfValues")
             raise
 
-        if isinstance(response, list):
-            return response
-        if isinstance(response, dict):
-            return response.get("items", [])
-        return []
+        return self._coerce_list_payload(response)
 
     # ------------------------------------------------------------------
     # Type definitions (various tags — read-only single GET each)

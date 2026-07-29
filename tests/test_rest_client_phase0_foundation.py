@@ -17,6 +17,7 @@ from stepxmlclient.rest_client.models import (
     SearchRequest,
 )
 from stepxmlclient.rest_client.base import BaseOperation
+from stepxmlclient.rest_client.operations.contexts import ContextOperations
 import logging
 
 
@@ -196,6 +197,27 @@ class TestSearchRequest(unittest.TestCase):
         ]
         request = SearchRequest(query="test", filters=filters, limit=50, offset=0, sort=None)
         self.assertEqual(len(request.filters), 2) #type: ignore
+
+
+class TestContextOperations(unittest.TestCase):
+    """Regression tests for contexts response parsing."""
+
+    def test_coerce_context_items_from_response_object(self):
+        """Context list parsing should work when the client returns a response object."""
+
+        class FakeResponse:
+            def __init__(self, payload):
+                self._payload = payload
+
+            def json(self):
+                return self._payload
+
+        payload = [{"id": "RU-RU"}, {"id": "DE-DE"}]
+        items = ContextOperations._coerce_context_items(FakeResponse(payload))
+
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0].id, "RU-RU")
+        self.assertEqual(items[1].id, "DE-DE")
 
 
 class TestExceptions(unittest.TestCase):

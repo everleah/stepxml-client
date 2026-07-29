@@ -107,21 +107,71 @@ class InboundOperations(BaseOperation):
             "fileName": file_name or "(not specified)"
         })
 
+        requestor = getattr(self.client, "requestor", None)
+        server_url = None
+        server = getattr(self.client, "server", None)
+        if server is not None:
+            server_url = getattr(server, "url", None)
+        if not server_url:
+            server_url = getattr(self.client, "_server", None)
+            if server_url is not None:
+                server_url = getattr(server_url, "url", None)
+
         try:
-            # Use requests_openapi client method which handles path parameter substitution
-            # The 'id' parameter is a path parameter and is passed separately from query params
+            if requestor is not None and hasattr(requestor, "post") and server_url:
+                url = f"{server_url.rstrip('/')}/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
+                response = requestor.post(url, data=xml_data, params=params, timeout=120)
+                try:
+                    response.raise_for_status()
+                except Exception as exc:
+                    error_str = str(exc)
+                    if "404" in error_str:
+                        raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
+                    elif "400" in error_str:
+                        if "not enabled" in error_str.lower() or "disabled" in error_str.lower():
+                            raise ValidationError(
+                                f"Inbound endpoint '{endpoint_id}' is not enabled. "
+                                f"Enable it first using enable_endpoint()."
+                            )
+                        elif "REST receiver" in error_str:
+                            raise ValidationError(
+                                f"Inbound endpoint '{endpoint_id}' does not have a REST-enabled receiver plugin. "
+                                f"Configure a REST receiver in the endpoint settings."
+                            )
+                        raise ValidationError(f"Upload failed: {error_str}")
+                    elif "503" in error_str:
+                        raise RestApiError(503, "Endpoint temporarily unavailable", details=error_str)
+                    raise
+
+                if isinstance(response, dict):
+                    return response
+                if hasattr(response, "json"):
+                    try:
+                        payload = response.json()
+                    except Exception:
+                        payload = None
+                    if isinstance(payload, dict):
+                        return payload
+                return {"success": True, "endpoint": endpoint_id}
+
+            # Fallback to generated OpenAPI operation when a requestor is not available.
             response = self.client.uploadFileToAndInvokeInboundRestEndpoint(
                 id=endpoint_id,
                 data=xml_data,
                 **params
             )
-            
-            # Handle the response
-            # Return response (requests_openapi handles JSON parsing automatically)
+
             if isinstance(response, dict):
                 return response
+            if hasattr(response, "json"):
+                try:
+                    payload = response.json()
+                except Exception:  # noqa: BLE001
+                    payload = None
+                if isinstance(payload, dict):
+                    return payload
             return {"success": True, "endpoint": endpoint_id}
-                
+
         except Exception as e:
             error_str = str(e)
             if "404" in error_str:
@@ -162,14 +212,7 @@ class InboundOperations(BaseOperation):
         except Exception as e:
             raise RestApiError(0, f"Failed to list inbound endpoints: {str(e)}", details=str(e))
 
-        # Convert response to list
-        if isinstance(response, list):
-            return response
-        elif isinstance(response, dict):
-            # Handle paginated response
-            return response.get('results') or response.get('items') or []
-        else:
-            return []
+        return self._coerce_list_payload(response)
 
     @handle_rest_errors
     def get_status(self, endpoint_id: str) -> dict[str, Any]:
@@ -335,10 +378,10 @@ class InboundOperations(BaseOperation):
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
-        if isinstance(response, list):
-            return response
-        elif isinstance(response, dict):
-            return response.get('results') or response.get('items') or [response]
+        if isinstance(response, (list, dict)):
+            return self._coerce_list_payload(response)
+        if response is not None:
+            return [response]
         return []
 
     @handle_rest_errors
@@ -426,8 +469,4 @@ class InboundOperations(BaseOperation):
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
-        if isinstance(response, list):
-            return response
-        elif isinstance(response, dict):
-            return response.get('results') or response.get('items') or []
-        return []
+        return self._coerce_list_payload(response)
