@@ -11,6 +11,7 @@ Local contract for durable documentation artifacts under `docs/`.
 - `PARSER_USAGE.md`
 - `REST_API_STATE.md`
 - `REST_API_USAGE.md`
+- `restapi/` — per-endpoint REST API reference documentation
 
 ## Local Contracts
 - Keep status documents aligned with the current implementation, not with planned work.
@@ -27,4 +28,4 @@ Local contract for durable documentation artifacts under `docs/`.
 - Any affected parser, creator, or REST client tests when documentation reflects a behavior change.
 
 ## Child DOX Index
-- None.
+- [restapi/](restapi/) — detailed REST API v2 endpoint documentation with examples
