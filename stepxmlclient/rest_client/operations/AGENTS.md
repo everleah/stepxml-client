@@ -28,10 +28,10 @@ Local contract for grouped STEP REST API operations under `stepxmlclient/rest_cl
 - Prefer small wrapper adjustments over ad hoc request construction in call sites.
 
 ## Verification
-- Relevant REST client phase tests.
-- `test_inbound_available.py`
-- `test_inbound_operations.py`
-- `test_rest_client_oiep_download.py`
+- Relevant REST client phase tests under `tests/`.
+- `tests/test_inbound_available.py`
+- `tests/test_inbound_operations.py`
+- `tests/test_rest_client_oiep_download.py`
 
 ## Child DOX Index
 - None.

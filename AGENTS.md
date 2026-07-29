@@ -59,11 +59,11 @@ The `Parser` class maintains separate lists for each entity type (`self.products
 - **Install**: `pip install dist/stepxmlclient-x.x-py3-none-any.whl`.
 
 ### Testing Strategy
-The project follows a phased testing approach using `unittest`.
-- **Primary Coverage**: Phase-based test modules (`test_parser_phaseX_*.py`, `test_rest_client_phaseX_*.py`) and focused behavior tests in `test_*.py` files.
-- **Utility Script**: `test.py` is a simple manual connectivity/example script, not the canonical full test runner.
-- **Phase Tests**: `test_parser_phaseX_....py` target specific functionalities (e.g., `test_parser_phase5_attributes.py`).
-- **Validation**: `validate_xml_xsd.py` checks generated XML against `STEP.xsd`.
+The project follows a phased testing approach using `unittest`. All test modules live under `tests/`.
+- **Primary Coverage**: Phase-based test modules (`tests/test_parser_phaseX_*.py`, `tests/test_rest_client_phaseX_*.py`) and focused behaviour tests in `tests/test_*.py` files.
+- **Utility Script**: `tests/test.py` is a simple manual connectivity/example script, not the canonical full test runner.
+- **Phase Tests**: `tests/test_parser_phaseX_....py` target specific functionalities (e.g., `tests/test_parser_phase5_attributes.py`).
+- **Validation**: `tests/validate_xml_xsd.py` checks generated XML against `STEP.xsd`.
 - **Development**: When adding a feature, either extend an existing phase test or create a new phase file if it enters a new domain.
 
 ## Key Files for Context
@@ -161,4 +161,5 @@ When the user requests a durable behavior change, record it here or in the relev
         - [stepxmlclient/rest_client/models/AGENTS.md](stepxmlclient/rest_client/models/AGENTS.md) - REST payload and response shape alignment.
         - [stepxmlclient/rest_client/operations/AGENTS.md](stepxmlclient/rest_client/operations/AGENTS.md) - grouped REST operations and request handling.
 - [docs/AGENTS.md](docs/AGENTS.md) - project status and usage documentation.
-- Root-owned files remain under this contract, including `README.md`, `setup.py`, `requirements.txt`, `STEP.xsd`, `openapi.json`, test modules, and utility scripts.
+- [tests/AGENTS.md](tests/AGENTS.md) - test suite organisation and conventions.
+- Root-owned files remain under this contract, including `README.md`, `setup.py`, `requirements.txt`, `STEP.xsd`, and `openapi.json`.

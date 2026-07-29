@@ -22,15 +22,15 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - Keep wrapper names and group boundaries consistent with the current REST API organization.
 
 ## Verification
-- `test_rest_client_phase0_foundation.py`
-- `test_rest_client_phase1_products.py`
-- `test_rest_client_phase2_assets.py`
-- `test_rest_client_phase3_classifications.py`
-- `test_rest_client_phase4_entities.py`
-- `test_rest_client_phase5_attributes_metadata.py`
-- `test_rest_client_phase6_imports_exports.py`
-- `test_rest_client_phase7_relations.py`
-- `test_rest_client_phase8_bulk_workflows.py`
+- `tests/test_rest_client_phase0_foundation.py`
+- `tests/test_rest_client_phase1_products.py`
+- `tests/test_rest_client_phase2_assets.py`
+- `tests/test_rest_client_phase3_classifications.py`
+- `tests/test_rest_client_phase4_entities.py`
+- `tests/test_rest_client_phase5_attributes_metadata.py`
+- `tests/test_rest_client_phase6_imports_exports.py`
+- `tests/test_rest_client_phase7_relations.py`
+- `tests/test_rest_client_oiep_download.py`
 
 ## Child DOX Index
 - [models/AGENTS.md](models/AGENTS.md) - REST payload and response shape models.
