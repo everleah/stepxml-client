@@ -390,7 +390,7 @@ See [CREATOR_USAGE.md](CREATOR_USAGE.md) for usage examples.
 
 **Priority 5 - Polish & Testing:**
 1. Enhanced parser-creator roundtrip testing
-2. Schema validation against STEP.xsd
+2. Schema validation against an authorized STEP XSD obtained from Stibo Systems
 3. Performance optimization
 4. Documentation updates
 
@@ -560,7 +560,7 @@ Each new model tier adds:
 - Roundtrip equality (data in == data out)
 
 ### Schema Validation
-- Generated XML against STEP.xsd
+- Generated XML against an authorized STEP XSD obtained from Stibo Systems
 - Use xmllint or similar validator
 
 ---
@@ -597,7 +597,7 @@ Each new model tier adds:
 
 ## References
 
-- [STEP.xsd](../STEP.xsd) - Schema authority
+- The authoritative STEP XSD is provided by Stibo Systems and is not included in this repository.
 - [Parser Implementation](../stepxmlclient/parser.py) - Parser reference
 - [Current Creator](../stepxmlclient/creator.py) - Creator pattern
 - [Product Model](../stepxmlclient/model/product.py) - Implementation example

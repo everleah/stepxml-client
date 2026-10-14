@@ -1035,7 +1035,7 @@ creator.build()
 7. **Use meaningful Types** - "MainImage", "DetailImage", "Parent", "Related", etc.
 8. **Document QualifierID values** - E.g., "EN", "FR", "DE" for languages
 9. **Check return values** - `add_list()` returns items that weren't added
-10. **Test XML output** - Validate against STEP.xsd schema
+10. **Test XML output** - Validate against an authorized STEP.xsd obtained from Stibo Systems, if available
 
 ---
 

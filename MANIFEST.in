@@ -1,3 +1,2 @@
 include README.md
-include STEP.xsd
-recursive-include stepxmlclient *.json
+include LICENSE

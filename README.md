@@ -1,34 +1,34 @@
 # STEP XML Client
 
-Production-ready Python client library for Stibo Systems STEP MDM (Master Data Management), supporting both STEP-XML protocol and full REST API v2 coverage.
+Python client library for Stibo Systems STEP MDM (Master Data Management), supporting the STEP-XML protocol and STEP REST API v2.
 
 ## Overview
 
 This library enables seamless integration with STEP systems via:
 - **OIEP (Outbound Integration Endpoint)**: Retrieve data from STEP as STEP-XML
 - **IIEP (Inbound Integration Endpoint)**: Send data to STEP as STEP-XML
-- **REST API v2**: Full, type-safe access to all STEP HTTP API operations (all phases complete)
+- **REST API v2**: Grouped, typed client for STEP REST API v2
 
 ## Current Features
 
 
-**REST API v2 Client: OpenAPI v1.4.0 — spec-compliant**
-- 22 operation groups covering all 200 operationIds
+**REST API v2 Client**
+- 22 operation groups for STEP REST API v2
 - Full CRUD, approval, values, children, data containers, purge for Products/Assets/Classifications/Entities
 - Contexts, Users, User Groups, Collections, Workflows, Background Processes, Event Processors
 - Inbound/Outbound/Gateway integration endpoints
 - Type-safe Pydantic models, unified authentication, OpenAPI caching
 - ✅ See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for full usage guide
 
-**Comprehensive STEP-XML support** with extensive parsing (~80% schema coverage) and growing generation capabilities (~10% schema coverage).
+STEP-XML parsing for a broad set of STEP entities, with XML generation for core entities.
 
 ### Core Capabilities
 - ✅ **STEP-XML Parsing**: Parse 20+ STEP entity types including Products, Assets, Classifications, Entities, Attributes, and more
 - ✅ **STEP-XML Generation**: Create and serialize XML documents for core entities (Phase 1 complete)
 - ✅ **Relationship Management**: Full support for all cross-reference types (Asset, Product, Classification, Entity)
-- ✅ **REST API Integration**: Configured client for STEP REST API v2 authentication and operations
+- ✅ **REST API Integration**: Client for STEP REST API v2 authentication and operations
 - ✅ **Asset Binary Upload/Download**: Upload files (images, documents) and retrieve asset content via REST API
-- ✅ **Schema Validation**: Reference implementation against official `STEP.xsd` (8500+ line authoritative schema)
+- **Schema Validation**: XML can be validated against a STEP XSD obtained from Stibo Systems
 - ✅ **Deletion Operations**: Support for product and asset deletions, link severance
 - ✅ **Product Replacement Rules**: Create and manage product replacement configurations
 
@@ -71,7 +71,7 @@ pip install dist/stepxmlclient-x.x.x-py3-none-any.whl
 ```
 
 **Requirements**:
-- Python 3.7+
+- Python 3.9+
 - requests-openapi
 - requests
 - xml.etree.ElementTree (built-in)
@@ -125,8 +125,7 @@ from stepxmlclient.upload import AssetUploader
 auth = BasicAuthorisation('username', 'password')
 client = StiboStepRestClient(
     'https://your-step-server.com/restapiv2',
-    auth,
-    nocert=True
+    auth
 )
 
 # Initialize uploader
@@ -299,7 +298,6 @@ stepxmlclient/
 ├── parser.py                # STEP-XML parsing engine (~2800 lines)
 ├── creator.py               # STEP-XML document generator  
 ├── upload.py                # Asset binary upload/download via REST API
-├── openapi.json             # Bundled OpenAPI v1.4.0 spec
 ├── rest_client/             # REST API v2 typed wrapper layer
 │   ├── __init__.py
 │   ├── client.py            # StepRestClient (grouped operation wrappers)
@@ -342,18 +340,14 @@ pip install -r requirements.txt
 # or
 python setup.py bdist_wheel  # Cross-platform
 
-# Run all core tests
-python test.py
+# Run the unit test suite
+python -m unittest discover -s tests -p "test_*.py"
 
-# Run phase-specific parser tests
-python test_parser_phase2.py       # Products
-python test_parser_phase3_classification.py
-python test_parser_phase5_attributes.py
-# ... and so on up to phase14
-
-# Validate generated XML against schema
-python validate_xml_xsd.py
+# Optional: validate if STEP.xsd has been obtained from Stibo Systems
+python tests/validate_xml_xsd.py
 ```
+
+The distribution does not include Stibo Systems' OpenAPI specification or XML schema. The REST client fetches the OpenAPI specification from the configured STEP server by default; alternatively, supply a licensed specification using `openapi_file`. Obtain the STEP XSD separately from Stibo Systems if you want to run schema validation.
 
 ### Architecture Highlights
 
@@ -421,7 +415,7 @@ The project uses a phased testing approach with all test modules under `tests/`:
 - **Primary coverage**: phase suites (`tests/test_parser_phaseX_*.py`, `tests/test_rest_client_phaseX_*.py`) plus focused `tests/test_*.py` modules
 - **Utility script**: `tests/test.py` is a simple manual connectivity/example script
 - **Phase tests**: `tests/test_parser_phaseX_*.py` target specific entity types
-- **Validation**: `tests/validate_xml_xsd.py` ensures generated XML matches STEP.xsd
+- **Validation**: `tests/validate_xml_xsd.py` checks generated XML when an authorized STEP XSD is available locally
 - **Roundtrip tests**: `tests/test_creator_roundtrip.py` parses generated XML
 
 When adding new functionality:
@@ -504,9 +498,9 @@ xml_bytes = creator.to_bytes(encoding='utf-8')
 ## Roadmap
 
 
-### ✅ REST API v2 Client — OpenAPI v1.4.0 (200 operationIds, 22 groups)
+### REST API v2 Client (22 operation groups)
 
-All 200 operationIds from the OpenAPI v1.4.0 specification are covered by typed wrappers.
+The typed wrappers cover the operations documented in the STEP REST API specification.
 See [docs/REST_API_STATE.md](docs/REST_API_STATE.md) for the full coverage matrix.
 
 ### ✅ Parser - Complete (Phase 14, ~80% coverage)
@@ -544,8 +538,8 @@ See [docs/REST_API_STATE.md](docs/REST_API_STATE.md) for the full coverage matri
 - Full parity with Parser coverage
 
 ### Current Status Summary
-- **REST API v2 Client**: 8 operation groups (318 tests) - Production ready, feature-complete
-- **Parser**: Comprehensive, production-ready for data export/analysis
+- **REST API v2 Client**: 22 operation groups for STEP REST API v2
+- **Parser**: Supports the documented STEP-XML entity types for data export and analysis
 - **Creator**: Core functionality complete, suitable for basic import scenarios
 - **Testing**: Extensive phase-based test coverage with unit and integration tests
 
@@ -558,10 +552,8 @@ For detailed phase status, see:
 ## Core References
 
 ### STEP Schema
-- **STEP.xsd** - 8500+ line authoritative XML schema for all supported entities, attributes, and structures
-  - Reference for understanding valid XML structures
-  - Used for validation and adding new entity support
-  - Covers ~80% currently implemented
+
+The STEP XML schema is provided by Stibo Systems and is not included in this distribution. Obtain an authorized copy from Stibo Systems for schema reference or validation.
 
 ### Documentation
 - [PARSER_STATUS.md](docs/PARSER_STATUS.md) - Detailed parser feature coverage and phase breakdown
@@ -571,7 +563,7 @@ For detailed phase status, see:
 
 ### Requirements
 
-- Python 3.7+
+- Python 3.9+
 - requests-openapi - OpenAPI client generation
 - requests - HTTP library
 - xml.etree.ElementTree (built-in)
@@ -582,10 +574,22 @@ When extending functionality:
 1. **Parser**: Add `_parse_<element>()` function, create phase test in `test_parser_phaseX_*.py`
 2. **Model**: Extend `BaseObject` with declarative configuration per project conventions
 3. **Creator**: Implement serialization in model class `to_element()` method
-4. **Schema**: Validate new entities against `STEP.xsd`
+4. **Schema**: Validate against a locally available, authorized STEP XSD when applicable
 5. **Tests**: Ensure coverage with roundtrip parsing + XSD validation
 
 Follow established patterns from:
 - Existing parser functions in [stepxmlclient/parser.py](stepxmlclient/parser.py)
 - Model classes in [stepxmlclient/model/](stepxmlclient/model/)
-- Phase tests in workspace root
+- Phase tests in [tests/](tests/)
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
+
+## Security
+
+Please report suspected vulnerabilities privately to [everleah@hansch.info](mailto:everleah@hansch.info) rather than opening a public issue.
+
+## Maintainer
+
+Everleah — [everleah@hansch.info](mailto:everleah@hansch.info)

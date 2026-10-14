@@ -95,32 +95,4 @@ finally:
     if os.path.exists(test_file):
         os.remove(test_file)
 
-print("\nTest 3: Verify operation names match OpenAPI spec...")
-from pathlib import Path
-import json
-
-spec_file = Path(__file__).parent / 'stepxmlclient' / 'openapi.json'
-try:
-    with open(spec_file) as f:
-        spec = json.load(f)
-    
-    # The content endpoint is /assets/{id}/content, NOT /assets/{id}
-    get_op_id = spec['paths']['/assets/{id}/content']['get']['operationId']
-    put_op_id = spec['paths']['/assets/{id}/content']['put']['operationId']
-    
-    if get_op_id == 'getAssetContent':
-        print(f"[PASS] GET /assets/{{id}}/content has operationId: {get_op_id}")
-    else:
-        print(f"[FAIL] GET operation is {get_op_id}, expected getAssetContent")
-        sys.exit(1)
-    
-    if put_op_id == 'replaceAssetContent':
-        print(f"[PASS] PUT /assets/{{id}}/content has operationId: {put_op_id}")
-    else:
-        print(f"[FAIL] PUT operation is {put_op_id}, expected replaceAssetContent")
-        sys.exit(1)
-except Exception as e:
-    print(f"[FAIL] Error reading OpenAPI spec: {e}")
-    sys.exit(1)
-
-print("\n[SUCCESS] All tests passed! Asset download and upload operations are fixed.")
+print("\n[SUCCESS] Asset download and upload operations are fixed.")

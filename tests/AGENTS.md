@@ -28,7 +28,7 @@ All test and validation modules in this directory:
 - When adding a new phase, use the next available number and document the covered domain in the module docstring.
 
 ## Verification
-- `python -m unittest discover -s tests -p "test_*.py"` runs the full suite.
+- `python -m unittest discover -s tests -p "test_*.py"` runs test discovery; schema validation also requires an authorized local `STEP.xsd`.
 - Individual phase files can be executed directly: `python tests/test_parser_phase2.py`.
 
 ## Child DOX Index

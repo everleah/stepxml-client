@@ -178,6 +178,9 @@ Thumbs.db
 # STEP XML Client specific
 nocert
 openapi_cache.json
+/STEP.xsd
+/openapi.json
+/stepxmlclient/openapi.json
 
 # PyPI config
 .pypirc

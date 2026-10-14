@@ -848,8 +848,7 @@ def _parse_my_list(element):
 ---
 
 ## Schema Reference
-The complete STEP-XML specification is defined in [STEP.xsd](../STEP.xsd) (8500+ lines).
-Use this as the authoritative reference for what fields should be parsed.
+The authoritative STEP-XML schema is provided by Stibo Systems and is not included in this repository. Obtain an authorized copy from Stibo Systems when needed to confirm supported fields.
 
 ### Key Sections for Parser Development
 - ProductType (line 5669) - Product structure ✅ Phase 2 Complete
@@ -913,4 +912,3 @@ Use this as the authoritative reference for what fields should be parsed.
    - Error handling and validation enhancements
    - Documentation and usage examples
    - Integration with upstream STEP REST API client
-

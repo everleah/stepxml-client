@@ -15,7 +15,7 @@ Package-local contract for the public Python package surface under `stepxmlclien
 - Preserve `STEPXML_NS` and namespace-aware parsing behavior across package entry points.
 - Keep parser, creator, and uploader changes aligned with the STEP XML schema and the test fixtures.
 - Keep public imports stable unless a deliberate API change is being made and documented.
-- When REST-facing code changes, align request and response shapes with `openapi.json` and the repo-level REST model notes.
+- REST request and response shapes follow the STEP REST API specification, fetched from the server or supplied by the caller; do not bundle vendor specifications unless redistribution is authorized.
 
 ## Work Guidance
 - Prefer focused parser, creator, or REST client tests over broad repo-wide changes.

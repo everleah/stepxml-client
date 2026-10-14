@@ -1,86 +1,80 @@
-"""
-Test script for asset binary upload functionality.
+import io
+import tempfile
+from pathlib import Path
+from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
-This script demonstrates how to upload binary files to STEP assets.
-"""
-
-from stepxmlclient.client import StiboStepRestClient, BasicAuthorisation
 from stepxmlclient.upload import AssetUploader
 
-# Configure connection
-authorisation = BasicAuthorisation('CLHA', 'CLHA')
-rest_client = StiboStepRestClient(
-    location_base='https://hoerl-sb01.mdm.stibosystems.com/restapiv2',
-    authorisation=authorisation, 
-    cache_openapi=True, 
-    nocert=True
-)
 
-# Create uploader
-uploader = AssetUploader(rest_client)
+class TestAssetUploader(TestCase):
+    def setUp(self):
+        self.client = MagicMock()
+        self.client.client.server.url = "https://step.example/restapiv2"
+        self.uploader = AssetUploader(self.client)
 
-print("=== Asset Upload Test ===\n")
+    def test_upload_file_uses_upload_stream(self):
+        content = b"test image content"
 
-# Example 1: Upload a local file
-try:
-    print("Example 1: Upload local file")
-    print("-" * 40)
-    result = uploader.upload_file(
-        file_path='path/to/your/image.jpg',  # Replace with actual file path
-        asset_id='YOUR_ASSET_ID',            # Replace with actual asset ID
-        filename='custom_name.jpg',          # Optional: custom filename
-        context_id='Context1',               # Your STEP context
-        workspace_id=None                    # Optional: workspace
-    )
-    print(f"✓ Upload successful!")
-    print(f"  Asset ID: {result['asset_id']}")
-    print(f"  Filename: {result['filename']}")
-    print(f"  Status: {result['status_code']}")
-    print()
-except FileNotFoundError as e:
-    print(f"✗ File not found: {e}")
-    print()
-except Exception as e:
-    print(f"✗ Upload failed: {e}")
-    print()
+        with tempfile.TemporaryDirectory() as directory:
+            file_path = Path(directory) / "image.png"
+            file_path.write_bytes(content)
 
-# Example 2: Upload from URL
-try:
-    print("Example 2: Upload from URL")
-    print("-" * 40)
-    result = uploader.upload_file(
-        file_path='https://example.com/image.jpg',  # URL to download from
-        asset_id='YOUR_ASSET_ID',                   # Replace with actual asset ID
-        context_id='Context1'
-    )
-    print(f"✓ Upload successful!")
-    print(f"  Asset ID: {result['asset_id']}")
-    print(f"  Filename: {result['filename']}")
-    print(f"  Status: {result['status_code']}")
-    print()
-except Exception as e:
-    print(f"✗ Upload failed: {e}")
-    print()
+            def read_stream(file_stream, *args):
+                return file_stream.read()
 
-# Example 3: Download asset content
-try:
-    print("Example 3: Download asset content")
-    print("-" * 40)
-    content = uploader.get_content(
-        asset_id='YOUR_ASSET_ID',  # Replace with actual asset ID
-        context_id='Context1'
-    )
-    print(f"✓ Download successful!")
-    print(f"  Content size: {len(content)} bytes")
-    print()
-    
-    # Save to file
-    with open('downloaded_asset.bin', 'wb') as f:
-        f.write(content)
-    print(f"✓ Saved to: downloaded_asset.bin")
-    print()
-except Exception as e:
-    print(f"✗ Download failed: {e}")
-    print()
+            with patch.object(
+                self.uploader, "upload_stream", side_effect=read_stream
+            ) as upload_stream:
+                result = self.uploader.upload_file(
+                    file_path,
+                    asset_id="ASSET-1",
+                    context_id="Context1",
+                )
 
-print("=== Test Complete ===")
+        self.assertEqual(result, content)
+        self.assertEqual(upload_stream.call_args.args[1:], (
+            "ASSET-1",
+            "image.png",
+            "image/png",
+            "Context1",
+            None,
+        ))
+
+    def test_upload_stream_sends_binary_content(self):
+        response = MagicMock()
+        response.status_code = 200
+        self.client.client.requestor.put.return_value = response
+
+        result = self.uploader.upload_stream(
+            io.BytesIO(b"image bytes"),
+            asset_id="ASSET-1",
+            filename="image.png",
+            mime_type="image/png",
+            context_id="Context1",
+            workspace_id="Main",
+        )
+
+        self.client.client.requestor.put.assert_called_once_with(
+            "https://step.example/restapiv2/assets/ASSET-1/content",
+            params={"fileName": "image.png", "context": "Context1", "workspace": "Main"},
+            data=b"image bytes",
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        response.raise_for_status.assert_called_once_with()
+        self.assertTrue(result["success"])
+        self.assertEqual(result["asset_id"], "ASSET-1")
+
+    def test_get_content_returns_response_bytes(self):
+        response = MagicMock()
+        response.content = b"downloaded content"
+        self.client.client.requestor.get.return_value = response
+
+        result = self.uploader.get_content("ASSET-1", context_id="Context1")
+
+        self.client.client.requestor.get.assert_called_once_with(
+            "https://step.example/restapiv2/assets/ASSET-1/content",
+            params={"context": "Context1"},
+        )
+        response.raise_for_status.assert_called_once_with()
+        self.assertEqual(result, b"downloaded content")

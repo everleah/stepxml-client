@@ -10,7 +10,7 @@ The module is structured into distinct functional areas:
 - **`stepxmlclient/model/`**: Object models inheriting from `BaseObject`. These classes define the structure of STEP entities for generation/manipulation (`Product`, `Asset`, `Attribute`, `Classification`, etc.).
 - **`stepxmlclient/client.py`**: REST API configuration wrapper around `requests-openapi`.
 - **`stepxmlclient/upload.py`**: Specialized client for binary asset uploads (images, documents).
-- **`STEP.xsd`**: Authoritative XML schema used for validation.
+- **STEP XSD**: Authoritative XML schema provided by Stibo Systems; not included in public distributions.
 
 ## Critical Patterns & Conventions
 
@@ -63,15 +63,14 @@ The project follows a phased testing approach using `unittest`. All test modules
 - **Primary Coverage**: Phase-based test modules (`tests/test_parser_phaseX_*.py`, `tests/test_rest_client_phaseX_*.py`) and focused behaviour tests in `tests/test_*.py` files.
 - **Utility Script**: `tests/test.py` is a simple manual connectivity/example script, not the canonical full test runner.
 - **Phase Tests**: `tests/test_parser_phaseX_....py` target specific functionalities (e.g., `tests/test_parser_phase5_attributes.py`).
-- **Validation**: `tests/validate_xml_xsd.py` checks generated XML against `STEP.xsd`.
+- **Validation**: `tests/validate_xml_xsd.py` checks generated XML when an authorized `STEP.xsd` is available locally.
 - **Development**: When adding a feature, either extend an existing phase test or create a new phase file if it enters a new domain.
 
 ## Key Files for Context
 - `stepxmlclient/model/__init__.py`: Base object logic.
 - `stepxmlclient/parser.py`: Implementation of all parsing logic.
 - `stepxmlclient/creator.py`: Document generation logic.
-- `STEP.xsd`: Reference for tag names and attribute validity.
-- `openapi.json` : Reference for the STEP REST API V2
+- STEP XSD and OpenAPI specifications are supplied by Stibo Systems and are not included in public distributions.
 
 # DOX framework
 
@@ -152,6 +151,7 @@ Default section order:
 ## User Preferences
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
+- Project owner and package maintainer: Everleah (`everleah@hansch.info`).
 
 ## Child DOX Index
 
@@ -162,4 +162,4 @@ When the user requests a durable behavior change, record it here or in the relev
         - [stepxmlclient/rest_client/operations/AGENTS.md](stepxmlclient/rest_client/operations/AGENTS.md) - grouped REST operations and request handling.
 - [docs/AGENTS.md](docs/AGENTS.md) - project status and usage documentation.
 - [tests/AGENTS.md](tests/AGENTS.md) - test suite organisation and conventions.
-- Root-owned files remain under this contract, including `README.md`, `setup.py`, `requirements.txt`, `STEP.xsd`, and `openapi.json`.
+- Root-owned files remain under this contract, including `README.md`, `LICENSE`, `setup.py`, `requirements.txt`, and `MANIFEST.in`.

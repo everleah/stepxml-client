@@ -1025,6 +1025,6 @@ if isinstance(refs, dict):
 ## See Also
 
 - [PARSER_STATUS.md](PARSER_STATUS.md) - Feature status and coverage
-- [STEP.xsd](../STEP.xsd) - Authoritative STEP-XML schema (8500+ lines)
+- The authoritative STEP-XML schema is available from Stibo Systems; it is not included in this repository.
 - Parser source: [stepxmlclient/parser.py](../stepxmlclient/parser.py)
 - Tests: `test_parser_*.py` - Comprehensive usage examples

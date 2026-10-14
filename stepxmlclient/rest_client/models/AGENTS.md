@@ -17,7 +17,7 @@ Local contract for REST request and response shape helpers under `stepxmlclient/
 - `__init__.py`
 
 ## Local Contracts
-- Keep payload shapes aligned with `openapi.json` and the repo-level REST alignment notes.
+- Keep payload shapes aligned with the STEP REST API specification and the repo-level REST alignment notes.
 - Prefer STEP REST fields and nested structures as documented by the API, not legacy STEP XML field names.
 - Keep model helpers minimal and focused on translation between API shapes and wrapper code.
 

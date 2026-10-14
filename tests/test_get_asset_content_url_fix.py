@@ -37,15 +37,4 @@ except Exception as e:
     traceback.print_exc()
     sys.exit(1)
 
-print("\nTest 2: Verify openapi.json is bundled...")
-from pathlib import Path
-bundle_file = Path(__file__).parent / 'stepxmlclient' / 'openapi.json'
-if bundle_file.exists():
-    print(f"[PASS] Bundled openapi.json found at {bundle_file}")
-    file_size = bundle_file.stat().st_size
-    print(f"  File size: {file_size:,} bytes")
-else:
-    print(f"[FAIL] Bundled openapi.json not found at {bundle_file}")
-    sys.exit(1)
-
 print("\n[SUCCESS] All tests passed!")

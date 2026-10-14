@@ -11,7 +11,7 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - `operations/`
 
 ## Local Contracts
-- Keep grouped operation wrappers aligned with the dynamic `requests-openapi` client and `openapi.json`.
+- Keep grouped operation wrappers aligned with the dynamic `requests-openapi` client and the STEP REST API specification supplied by the server or caller.
 - Preserve shared error handling through the base operation layer.
 - Keep request payloads compatible with the STEP REST API shapes documented in the repo notes.
 - Avoid introducing duplicate REST client surfaces when an existing grouped wrapper can absorb the change.
