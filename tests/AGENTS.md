@@ -15,6 +15,7 @@ All test and validation modules in this directory:
 - `test_*debug*.py`, `test_*namespace*.py`, `test_*objects*.py` — focused behaviour tests
 - `test.py` — manual connectivity / example script
 - `validate_xml_xsd.py` — XML schema validation
+- `test_release.py` — offline release archive, credential handling, and upload safeguards
 
 ## Local Contracts
 - Tests use `unittest` with `unittest.mock` for client mocking; no live server is required to run the suite.
@@ -30,6 +31,7 @@ All test and validation modules in this directory:
 ## Verification
 - `python -m unittest discover -s tests -p "test_*.py"` runs test discovery; schema validation also requires an authorized local `STEP.xsd`.
 - Individual phase files can be executed directly: `python tests/test_parser_phase2.py`.
+- `python -m unittest tests.test_release` verifies the PyPI workflow without uploading; requires `requirements-release.txt`.
 
 ## Child DOX Index
 - None.

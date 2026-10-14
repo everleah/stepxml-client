@@ -55,8 +55,14 @@ The `Parser` class maintains separate lists for each entity type (`self.products
 ## Workflows & Testing
 
 ### Building
-- **Build**: `build_wheel.bat` (Windows) or `python setup.py bdist_wheel`.
+- **Metadata**: `pyproject.toml` owns the package version, author/maintainer, MIT license, dependencies, and build backend; `setup.py` is a compatibility shim.
+- **Release tools**: Install `requirements-release.txt` into the development environment.
+- **Build**: `build_wheel.bat` (Windows) or `python -m build`; build the wheel from the sdist to avoid stale build output.
+- **Forgejo**: Its upload script uses the shared build script when no wheel exists; install the release tools before either upload workflow.
 - **Install**: `pip install dist/stepxmlclient-x.x-py3-none-any.whl`.
+- **PyPI**: `upload_wheel_to_pypi.bat --check-only` validates a fresh release; without arguments it publishes through `publish_pypi.py`. Upload only the freshly checked wheel and sdist, retained under `dist/pypi/<version>`.
+- **Credentials**: `--configure-token` stores the PyPI token in the OS keyring, never the repository. Keep the existing Forgejo credentials separate. Never embed or log tokens.
+- **Public artifacts**: Exclude Stibo specifications, local credentials, and build caches from both wheel and sdist; validate with `twine check --strict` and `tests/test_release.py`.
 
 ### Testing Strategy
 The project follows a phased testing approach using `unittest`. All test modules live under `tests/`.
@@ -152,6 +158,7 @@ Default section order:
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 - Project owner and package maintainer: Everleah (`everleah@hansch.info`).
+- Publish the Python package as `stepxmlclient` on PyPI under account `everleah`; the current version `1.0.0` is the first public release.
 
 ## Child DOX Index
 
@@ -162,4 +169,4 @@ When the user requests a durable behavior change, record it here or in the relev
         - [stepxmlclient/rest_client/operations/AGENTS.md](stepxmlclient/rest_client/operations/AGENTS.md) - grouped REST operations and request handling.
 - [docs/AGENTS.md](docs/AGENTS.md) - project status and usage documentation.
 - [tests/AGENTS.md](tests/AGENTS.md) - test suite organisation and conventions.
-- Root-owned files remain under this contract, including `README.md`, `LICENSE`, `setup.py`, `requirements.txt`, and `MANIFEST.in`.
+- Root-owned files remain under this contract, including `README.md`, `LICENSE`, `pyproject.toml`, `setup.py`, `requirements*.txt`, `MANIFEST.in`, and the build and publication scripts.

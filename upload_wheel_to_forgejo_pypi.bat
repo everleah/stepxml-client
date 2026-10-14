@@ -10,7 +10,8 @@ cd /d %~dp0
 REM Build wheel if not present
 if not exist dist\*.whl (
 	echo Building wheel...
-	call .venv\Scripts\python.exe setup.py bdist_wheel
+	call "%~dp0build_wheel.bat"
+	if errorlevel 1 exit /b 1
 )
 twine upload -r forgejo dist\*.whl
 call .venv\Scripts\deactivate.bat

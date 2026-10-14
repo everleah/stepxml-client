@@ -58,15 +58,15 @@ STEP-XML parsing for a broad set of STEP entities, with XML generation for core 
 ## Installation
 
 
-**Latest Version**: See `setup.py` for the current package version.
+**First public release**: `1.0.0`. Package metadata and the release version are defined in `pyproject.toml`.
 
 ```bash
 # Install from PyPI (or your package repository)
 pip install stepxmlclient
 
 # Or build from source
-pip install -r requirements.txt
-python setup.py bdist_wheel
+pip install -r requirements-release.txt
+python -m build
 pip install dist/stepxmlclient-x.x.x-py3-none-any.whl
 ```
 
@@ -74,6 +74,7 @@ pip install dist/stepxmlclient-x.x.x-py3-none-any.whl
 - Python 3.9+
 - requests-openapi
 - requests
+- pydantic>=2.0
 - xml.etree.ElementTree (built-in)
 
 ## Quick Start
@@ -334,11 +335,12 @@ tests/
 ```bash
 # Install development dependencies
 pip install -r requirements.txt
+pip install -r requirements-release.txt
 
 # Build wheel package
 ./build_wheel.bat  # Windows
 # or
-python setup.py bdist_wheel  # Cross-platform
+python -m build  # Cross-platform; creates an sdist and a wheel from that sdist
 
 # Run the unit test suite
 python -m unittest discover -s tests -p "test_*.py"
@@ -348,6 +350,52 @@ python tests/validate_xml_xsd.py
 ```
 
 The distribution does not include Stibo Systems' OpenAPI specification or XML schema. The REST client fetches the OpenAPI specification from the configured STEP server by default; alternatively, supply a licensed specification using `openapi_file`. Obtain the STEP XSD separately from Stibo Systems if you want to run schema validation.
+
+### Publishing to PyPI
+
+The PyPI package is `stepxmlclient`, maintained by **everleah**
+(`everleah@hansch.info`). The first successful upload creates the PyPI project;
+the owner is the PyPI account that issued the upload token, not the author
+metadata. Sign in as `everleah`, verify the account email and enable PyPI's
+required two-factor authentication before creating a token.
+
+From the repository root, using your Python environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements-release.txt
+
+# Once: enter a NEW token locally at the hidden prompt, never in chat or a command.
+.\upload_wheel_to_pypi.bat --configure-token
+
+# Build and validate only; does not contact the upload endpoint.
+.\upload_wheel_to_pypi.bat --check-only
+
+# Publish the freshly built and checked wheel AND source distribution.
+.\upload_wheel_to_pypi.bat
+```
+
+Cross-platform equivalents are `python publish_pypi.py --configure-token`,
+`python publish_pypi.py --check-only`, and `python publish_pypi.py --publish`.
+Without an action, the Python script only builds and checks.
+
+- Tokens are saved by `keyring` in the local OS credential store (Windows
+  Credential Manager on Windows), never in the repository or a `.pypirc`.
+  The existing Forgejo credentials remain separate; Forgejo uses the shared
+  modern build script when it needs to build a wheel.
+- Revoke any token previously shared in chat. An account-wide token is needed
+  for a new project. After the first upload, replace it with a token scoped to
+  `stepxmlclient` by running `--configure-token` again.
+- Every release uses an isolated build, builds the wheel from the sdist, checks
+  metadata with `twine check --strict`, and rejects specifications and credential
+  files in either archive. Only the two newly checked files are uploaded.
+- Validated artifacts are retained in `dist\pypi\<version>`. Old files elsewhere
+  in `dist` are not uploaded. Failures return a nonzero exit code; existing
+  PyPI versions are not silently skipped.
+- Before subsequent releases, update `project.version` in `pyproject.toml`,
+  run the relevant tests, and run `--check-only`. PyPI releases cannot be
+  overwritten; use a new version for changed content.
+- To remove the locally saved token:
+  `python -m keyring delete https://upload.pypi.org/legacy/ __token__`.
 
 ### Architecture Highlights
 

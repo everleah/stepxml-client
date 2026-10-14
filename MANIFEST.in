@@ -1,2 +1,7 @@
 include README.md
 include LICENSE
+include pyproject.toml
+global-exclude *.json *.xsd .pypirc *.pem *.key *.pyc
+prune tests
+prune build
+prune dist
