@@ -19,6 +19,8 @@ Local contract for durable documentation artifacts under `docs/`.
 - Keep status documents aligned with the current implementation, not with planned work.
 - Keep usage documents consistent with the public package behavior and the supported test fixtures.
 - Update docs when behavior, supported fields, or workflow expectations change.
+- Usage guides own setup and workflows; `restapi/` owns detailed operation
+  references, including Publishing as an explicitly separate API.
 
 ## Work Guidance
 - Prefer concise, factual updates that mirror the codebase.
@@ -30,4 +32,4 @@ Local contract for durable documentation artifacts under `docs/`.
 - Any affected parser, creator, or REST client tests when documentation reflects a behavior change.
 
 ## Child DOX Index
-- [restapi/](restapi/) — detailed REST API v2 endpoint documentation with examples
+- [restapi/AGENTS.md](restapi/AGENTS.md) — detailed REST API v2 and separate Publishing references with examples

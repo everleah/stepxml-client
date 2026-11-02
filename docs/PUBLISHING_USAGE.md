@@ -83,40 +83,13 @@ with PublishingClient(
 
 ## Publishing operations
 
-Common keyword options are `context`, `workspace`, and `version`.
-Omitted context/workspace inherit client defaults. Explicit values override them.
-`version` controls table output; it is **not** the publication edition.
-Where offered, `version_id` maps to query `versionid` or form `versionID`.
-Arbitrary `format`/`xslt` transformations are not supported by the typed methods.
-
-| Method | Required arguments | Result |
-|---|---|---|
-| `list_publications` | none | `list[Publication]` |
-| `get_publication` | `publication_id` | `Publication` |
-| `get_publication_group` | `group_id` | `PublicationGroup` |
-| `get_section` | `section_id` | `PublicationSection` |
-| `get_section_autopage` | `section_id` | `PublicationSection` |
-| `list_actual_pages` | `publication_id`; optional keyword `version_id` | `list[ActualPage]` |
-| `list_planned_pages` | `publication_id` | `list[PlannedPage]` |
-| `get_actual_page` | `publication_id`, `planned_page_id`; optional keyword `version_id` | `ActualPage` or `None` for HTTP 204 |
-| `download_actual_page_document` | `publication_id`, `page_id`, `target` | saved `Path` |
-| `download_planned_page_document` | `publication_id`, `page_id`, `target`; optional keyword `version_id` | saved `Path` |
-| `create_indesign_package` | `page_id` | job, result field `ZIP` |
-| `create_actual_page_pdf` | `page_id` | job, result field `ATTACHMENT_PDF` |
-| `create_planned_page_pdf` | `page_id`, `pdf_profile`, `version_id` | job, result field `ATTACHMENT_PDF` |
-| `create_planned_page_document` | `page_id`, `version_id` | job; document becomes available via planned-page download |
-| `upload_dtp_document` | `page_id`, `source`; keyword `confirm_overwrite=True` | job |
-| `delete_page_document` | `publication_id`, `page_id`; keyword `confirm_delete=True` | `DocumentDeletion` |
-
-No background work, generation or `autopage` call happens implicitly.
-Typed XML models include original attributes and `raw_xml` so unmodeled content,
-including embedded products/assets/classifications, remains available.
-This XML is distinct from STEP-XML exchange documents.
-
-`Publication.pages_per_spread` is `str | None`, matching `PagesPerSpread` in
-the Publishing XSD/OpenAPI. Values are preserved verbatim (for example `"02"`);
-convert explicitly with `int(...)` only when your application expects a number.
-Absent attributes yield `None`, distinct from a present empty string.
+The [Publishing detail reference](restapi/publishing.md) documents all 16
+operations with exact call signatures, HTTP endpoints, parameter mappings,
+response models and errors, plus the job monitoring/download helpers.
+Use it for the distinction between `version`, query `versionid` and form
+`versionID`, and for XML model field types such as `pages_per_spread`.
+This guide focuses on setup and end-to-end workflows rather than duplicating
+the per-operation reference.
 
 ## Replacement and deletion
 

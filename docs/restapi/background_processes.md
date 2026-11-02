@@ -45,4 +45,5 @@ and accept a per-request timeout. Status-model snake_case fields accept the
 API's camelCase names. Attachment selection must use metadata `id` for content;
 `originalAttachmentId` can identify a result field but need not be unique.
 See [Publishing usage](../PUBLISHING_USAGE.md).
-
+For the Publishing helper signatures and result-field mapping, see the
+[Publishing detail reference](publishing.md#job-monitoring-and-result-helpers).

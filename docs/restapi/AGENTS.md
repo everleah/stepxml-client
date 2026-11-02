@@ -15,11 +15,16 @@ Local contract for per-endpoint REST API reference documentation under `docs/res
 - `workflows.md`, `workflow_tasks.md` — workflow automation
 - `background_processes.md`, `event_processors.md` — async processing
 - `exports.md`, `reports.md`, `batch.md` — data transfer
+- `publishing.md` - separate Publishing API endpoint/model/job-helper reference, not a v2 operation group.
 
 ## Local Contracts
-- Each document covers exactly one operation group.
+- Each detail document covers one operation group or explicitly separated API/subclient.
 - Documents follow the same template: title, group/import path, description, operations table, examples.
-- Operation signatures must match the actual Python method signatures in `stepxmlclient/rest_client/operations/`.
+- Operation signatures must match their implementation in
+  `stepxmlclient/rest_client/operations/` or, for Publishing, `stepxmlclient/publishing/`.
+- Keep Publishing under a separate index section; never add its endpoints to v2 counts.
+- Usage guides own setup/workflows; detail references own endpoint mappings,
+  signatures, models and error contracts. Link rather than duplicate method catalogs.
 - Examples must be self-contained and runnable (modulo authentication setup).
 
 ## Work Guidance
@@ -29,6 +34,8 @@ Local contract for per-endpoint REST API reference documentation under `docs/res
 
 ## Verification
 - Manual review against the OpenAPI v1.4.0 specification.
+- Publishing: cross-check endpoints with its supplied API references and models
+  with the Publishing XSD, preserving documented specification discrepancies.
 - Cross-reference operation signatures against the source code.
 
 ## Child DOX Index

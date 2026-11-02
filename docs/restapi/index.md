@@ -5,6 +5,9 @@
 All groups are accessible via `client.<group>` on a `StepRestClient` instance.
 For setup instructions see [REST_API_USAGE.md](../REST_API_USAGE.md).
 
+The separate Publishing API is documented below as a companion subclient;
+it does not change the v2 operation/group counts.
+
 ---
 
 ## Entity Types
@@ -59,6 +62,18 @@ For setup instructions see [REST_API_USAGE.md](../REST_API_USAGE.md).
 | [Exports & Imports](exports.md) | `client.exports` | Trigger export/import configurations |
 | [Reports](reports.md) | `client.reports` | Historic changes reports |
 | [Batch Operations](batch.md) | `client.batch` | Multi-operation batch execution |
+
+## Publishing API (Separate from REST v2)
+
+| Document | Subclient | Description |
+|----------|-----------|-------------|
+| [Publishing reference](publishing.md) | `client.publishing` | All 16 Publishing endpoints, parameters, models, errors and v2 job helpers |
+
+Available on both `StepRestClient` and `StiboStepRestClient`, or independently
+as `PublishingClient`. Publishing uses its own transport/XML models; only job
+monitoring and attachment retrieval are bridged to v2.
+See [Publishing usage](../PUBLISHING_USAGE.md) for setup and workflows, and
+[Publishing state](../PUBLISHING_STATE.md) for coverage and verification limits.
 
 ---
 
