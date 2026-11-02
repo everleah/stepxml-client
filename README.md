@@ -8,6 +8,8 @@ This library enables seamless integration with STEP systems via:
 - **OIEP (Outbound Integration Endpoint)**: Retrieve data from STEP as STEP-XML
 - **IIEP (Inbound Integration Endpoint)**: Send data to STEP as STEP-XML
 - **REST API v2**: Grouped, typed client for STEP REST API v2
+- **Publishing REST API**: Independent client for publications, pages and DTP generation,
+  available lazily as `client.publishing` with v2 background-process monitoring.
 
 ## Current Features
 
@@ -115,6 +117,21 @@ retrieved = ops_client.products.get_product(created.id)
 ```
 
 See [docs/REST_API_USAGE.md](docs/REST_API_USAGE.md) for detailed usage and all operation/model examples.
+
+### Publishing
+
+```python
+publications = ops_client.publishing.list_publications()
+job = ops_client.publishing.create_actual_page_pdf("ACTUAL_PAGE")
+ops_client.publishing.wait_for_job(job, timeout=300)
+ops_client.publishing.download_job_result(job, "page.pdf")
+```
+
+No extra dependencies or activation flag are required. Publishing remains usable
+standalone, without v2 imports. Upload/replacement and deletion require explicit
+confirmation because they can affect all pages in a DTP document.
+See [Publishing usage](docs/PUBLISHING_USAGE.md) and
+[implementation state / server verification](docs/PUBLISHING_STATE.md).
 
 ### Asset Binary Upload & Download
 

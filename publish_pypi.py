@@ -31,7 +31,7 @@ def validate_members(names: list[str]) -> None:
             path.is_absolute()
             or ".." in path.parts
             or path.suffix.lower() in FORBIDDEN_SUFFIXES
-            or path.name.lower() in {".pypirc", ".env"}
+            or path.name.lower() in {".pypirc", ".env", "wadl_pub.xml"}
             or any(part in {".git", ".venv", "__pycache__"} for part in path.parts)
         ):
             raise ValueError(f"Forbidden file in release artifact: {name}")

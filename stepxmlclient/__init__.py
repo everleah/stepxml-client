@@ -4,11 +4,13 @@ STEP XML Client Library.
 A Python client library for integrating with Stibo Systems STEP MDM (Master Data Management).
 Supports standard STEP-XML protocol (OIEP/IIEP) for parsing and creating STEP-XML documents,
 and wraps the STEP REST API v2 for direct system integration.
+Includes an independent Publishing REST client with optional v2 job monitoring.
 
 This library provides:
 - Parser: Deserialize STEP-XML documents into Python dictionaries
 - Creator: Serialize Python objects into STEP-XML documents
 - REST Client: Direct integration with STEP REST API v2
+- Publishing Client: Publications, pages, DTP documents and generation jobs
 - Asset Uploader: Binary file upload support for asset management
 
 Namespaces:

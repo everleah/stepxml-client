@@ -1,7 +1,7 @@
 # STEP XML Client - AI Coding Agent Instructions - AGENTS.md (project root)
 
 ## Project Overview
-This is a reusable Python client library for integrating with Stibo Systems STEP MDM (Master Data Management). It supports standard STEP-XML protocol (OIEP/IIEP) and STEP REST API v2.
+This is a reusable Python client library for integrating with Stibo Systems STEP MDM (Master Data Management). It supports standard STEP-XML protocol (OIEP/IIEP), STEP REST API v2 and the independent Publishing REST API.
 
 ## Architecture
 The module is structured into distinct functional areas:
@@ -10,6 +10,8 @@ The module is structured into distinct functional areas:
 - **`stepxmlclient/model/`**: Object models inheriting from `BaseObject`. These classes define the structure of STEP entities for generation/manipulation (`Product`, `Asset`, `Attribute`, `Classification`, etc.).
 - **`stepxmlclient/client.py`**: REST API configuration wrapper around `requests-openapi`.
 - **`stepxmlclient/upload.py`**: Specialized client for binary asset uploads (images, documents).
+- **`stepxmlclient/publishing/`**: Independent Publishing REST client, exposed lazily
+  as `.publishing` on both main clients; job monitoring uses an injected v2 adapter.
 - **STEP XSD**: Authoritative XML schema provided by Stibo Systems; not included in public distributions.
 
 ## Critical Patterns & Conventions
@@ -51,6 +53,11 @@ The `Parser` class maintains separate lists for each entity type (`self.products
     - Grouped operation wrappers through `StepRestClient` in `stepxmlclient/rest_client/client.py` (e.g., `products`, `assets`, `classifications`, `entities`, `inbound`, etc.).
 - **Inbound Operations**: `StiboStepRestClient` also initializes `inbound` operations (lazy import) for IIEP upload/status helpers.
 - **Uploads**: Use `AssetUploader` in `upload.py` for pushing binary content.
+- **Publishing separation**: Keep Publishing transport/XML/models independent
+  of REST v2. Share authentication/session settings through composition only;
+  v2 job integration belongs in `rest_client/publishing.py`, not the Publishing package.
+- **Publishing safety**: DTP replacement/deletion require explicit confirmation;
+  vendor Publishing specifications, including `wadl_pub.xml`, must stay out of releases.
 
 ## Workflows & Testing
 
@@ -163,6 +170,7 @@ When the user requests a durable behavior change, record it here or in the relev
 ## Child DOX Index
 
 - [stepxmlclient/AGENTS.md](stepxmlclient/AGENTS.md) - package-local contract for parser, creator, uploader, and REST entry points.
+    - [stepxmlclient/publishing/AGENTS.md](stepxmlclient/publishing/AGENTS.md) - independent Publishing transport, XML models and job-backend contract.
     - [stepxmlclient/model/AGENTS.md](stepxmlclient/model/AGENTS.md) - STEP XML object model and serialization rules.
     - [stepxmlclient/rest_client/AGENTS.md](stepxmlclient/rest_client/AGENTS.md) - REST API wrapper contract and operation grouping.
         - [stepxmlclient/rest_client/models/AGENTS.md](stepxmlclient/rest_client/models/AGENTS.md) - REST payload and response shape alignment.

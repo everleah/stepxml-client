@@ -14,6 +14,7 @@ Local contract for REST request and response shape helpers under `stepxmlclient/
 - `metadata.py`
 - `product.py`
 - `relations.py`
+- `background_process.py` - status fields accept v2 camelCase aliases and Python snake_case names.
 - `__init__.py`
 
 ## Local Contracts

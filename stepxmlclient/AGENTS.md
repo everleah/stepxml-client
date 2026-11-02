@@ -10,12 +10,17 @@ Package-local contract for the public Python package surface under `stepxmlclien
 - `upload.py`
 - `model/`
 - `rest_client/`
+- `publishing/`
 
 ## Local Contracts
 - Preserve `STEPXML_NS` and namespace-aware parsing behavior across package entry points.
 - Keep parser, creator, and uploader changes aligned with the STEP XML schema and the test fixtures.
 - Keep public imports stable unless a deliberate API change is being made and documented.
 - REST request and response shapes follow the STEP REST API specification, fetched from the server or supplied by the caller; do not bundle vendor specifications unless redistribution is authorized.
+- Publishing is a separate API implementation, composed lazily into both main
+  clients. It must not import REST v2 operations/models; job integration is injected.
+- Borrowed sessions retain their authentication/TLS/proxy settings and remain
+  owned by the caller. Publishing does not change global session headers.
 
 ## Work Guidance
 - Prefer focused parser, creator, or REST client tests over broad repo-wide changes.
@@ -30,3 +35,4 @@ Package-local contract for the public Python package surface under `stepxmlclien
 ## Child DOX Index
 - [model/AGENTS.md](model/AGENTS.md) - STEP XML object model hierarchy.
 - [rest_client/AGENTS.md](rest_client/AGENTS.md) - REST API client wrappers and grouped operations.
+- [publishing/AGENTS.md](publishing/AGENTS.md) - independent Publishing API and job backend.

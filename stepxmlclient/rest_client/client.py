@@ -5,7 +5,7 @@ operation groups for different STEP entities.
 """
 
 import logging
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from ..client import StiboStepRestClient
 from .base import BaseOperation
@@ -33,6 +33,9 @@ from .operations.users import UserOperations
 from .operations.workflow_tasks import WorkflowTaskOperations
 from .operations.workflows import WorkflowOperations
 
+if TYPE_CHECKING:
+    from ..publishing import PublishingClient
+
 
 class StepRestClient(StiboStepRestClient):
     """Extended REST client with organized operation groups.
@@ -55,7 +58,9 @@ class StepRestClient(StiboStepRestClient):
                  openapi_file=None, logger=None,
                  proxies=None, ssl_version=None,
                  cache_openapi=False, nocert=False,
-                 context: str | None = None, workspace: str | None = None):
+                 context: str | None = None, workspace: str | None = None,
+                 publishing_base_url: Optional[str] = None,
+                 publishing_client: Optional["PublishingClient"] = None):
         """Initialize StepRestClient with operation groups.
         
         Args:
@@ -69,6 +74,8 @@ class StepRestClient(StiboStepRestClient):
             nocert: Whether to skip SSL certificate verification
             context: STEP context ID passed to all context-aware API calls
             workspace: STEP workspace ID (server defaults to "Main" if not supplied)
+            publishing_base_url: Optional same-origin Publishing API URL override
+            publishing_client: Explicit independent Publishing client to expose unchanged
         """
         # Initialize parent class
         super().__init__(
@@ -79,7 +86,11 @@ class StepRestClient(StiboStepRestClient):
             proxies=proxies,
             ssl_version=ssl_version,
             cache_openapi=cache_openapi,
-            nocert=nocert
+            nocert=nocert,
+            context=context,
+            workspace=workspace,
+            publishing_base_url=publishing_base_url,
+            publishing_client=publishing_client
         )
         
         # Get logger for operation groups
@@ -105,7 +116,8 @@ class StepRestClient(StiboStepRestClient):
         self.collection_groups = CollectionGroupOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.batch = BatchOperations(self.client, logger=op_logger, context=context, workspace=workspace)
         self.data_type_groups = DataTypeGroupOperations(self.client, logger=op_logger)
-        self.background_processes = BackgroundProcessOperations(self.client, logger=op_logger)
+        self.background_processes = BackgroundProcessOperations(
+            self.client, logger=op_logger, context=context, workspace=workspace)
         self.event_processors = EventProcessorOperations(self.client, logger=op_logger)
         self.outbound = OutboundOperations(self.client, logger=op_logger)
         self.gateway = GatewayOperations(self.client, logger=op_logger)

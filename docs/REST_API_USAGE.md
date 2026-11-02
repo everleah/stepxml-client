@@ -82,6 +82,11 @@ ops_client = StepRestClient(
 
 The raw client exposes the OpenAPI client as `raw_client.client`. Grouped wrappers are available on `ops_client` (for example `ops_client.products`, `ops_client.assets`, `ops_client.inbound`).
 
+Both clients also expose lazy `client.publishing` for the separate Publishing API.
+It borrows authentication/session settings and uses a separate v2 adapter for job
+monitoring, without mixing Publishing operations into the v2 OpenAPI client.
+See [Publishing usage](PUBLISHING_USAGE.md) for all 16 operations and safeguards.
+
 ---
 
 ## Model Reference & Operations

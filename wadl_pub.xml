@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?enunciate-assumed-base-uri ./?>
+<wadl:application xmlns:wadl="http://wadl.dev.java.net/2009/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <wadl:doc xmlns:enunciate="http://enunciate.webcohesion.com/" enunciate:generatedBy="Enunciate-2.0"/>
+  
+  <wadl:grammars>
+    <wadl:include href="ns0.xsd"/>
+  </wadl:grammars>
+
+  <wadl:resources base="./">
+
+    <wadl:resource path="publications">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>All publications can be obtained with above URI.</p>
+<p><b>Sample output:</b></p>
+<pre>
+ &lt;Publications&gt;
+     &lt;Publication ParentID=&quot;Stibo Publication&quot; UserTypeID=&quot;Default publication type&quot; title=&quot;Publication1&quot; ID=&quot;Publication1_ID&quot;/&gt;
+ &lt;/Publications&gt;</pre>]]></wadl:doc>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="Publications"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="pblbackgroundprocesses/CreateInDesignPackage">
+      <wadl:method name="POST">
+        <wadl:doc><![CDATA[<p>Starts a background process that generates a InDesign package for an
+actual page.</p>
+<p>Returns a 201 status code when the background process have been started
+and the Location field in the response header set to the URI of status
+call of the background process. The InDesign package is zipped and attached to
+the background process and can be fetched by fetching the attachment in the field ZIP.
+Note that if the DTP document that contains the actual page, contains more
+acutal pages, the InDesign package will contain all the actual pages in the
+DTP document</p>
+<p><b>Sample output for Location field in the response header</b></p>
+<pre>/restapi/bgpinstance/BGP_16722/status</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:representation mediaType="application/x-www-form-urlencoded">
+            <wadl:param name="pageID" style="query">
+              <wadl:doc><![CDATA[Actual page id]]></wadl:doc>
+            </wadl:param>
+          </wadl:representation>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="text/plain"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="pblbackgroundprocesses/GetPDFOfActualPage">
+      <wadl:method name="POST">
+        <wadl:doc><![CDATA[<p>Start a background process that generates a PDF of an actual page by calling DTP.</p>
+<p>Returns a 201 status code when the background process have been started and the Location
+field in the response header set to the URI of status call of the background process.
+The created PDF is attached to the background process and can be fetched by fetching
+the attachment in the field ATTACHMENT_PDF</p>
+<p><b>Sample output for Location field in the response header:</b></p>
+<pre>/restapi/bgpinstance/BGP16722/status</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:representation mediaType="application/x-www-form-urlencoded">
+            <wadl:param name="pageID" style="query">
+              <wadl:doc><![CDATA[Actual page id]]></wadl:doc>
+            </wadl:param>
+          </wadl:representation>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="text/plain"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="pblbackgroundprocesses/GetPDFOfPlannedPage">
+      <wadl:method name="POST">
+        <wadl:doc><![CDATA[<p>Start a background process that creates a PDF of a planned page by calling DTP.</p>
+<p>Returns a 201 status code when the background process have been started and the Location
+field in the response header set to the URI of status call of the background process.
+The created PDF is attached to the background process and can be from it by fetching
+the attachment in the field ATTACHMENT_PDF</p>
+<p><b>Sample output for Location field in the response header:</b></p>
+<pre>/restapi/bgpinstance/BGP16722/status</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:representation mediaType="application/x-www-form-urlencoded">
+            <wadl:param name="pageID" style="query">
+              <wadl:doc><![CDATA[Planned page id]]></wadl:doc>
+            </wadl:param>
+            <wadl:param name="pdfProfile" style="query">
+              <wadl:doc><![CDATA[PDF profile]]></wadl:doc>
+            </wadl:param>
+            <wadl:param name="versionID" style="query">
+              <wadl:doc><![CDATA[Version id]]></wadl:doc>
+            </wadl:param>
+          </wadl:representation>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="text/plain"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="pblbackgroundprocesses/MountDocForPlan">
+      <wadl:method name="POST">
+        <wadl:doc><![CDATA[<p>Starts a background process that generates a DTP document of the planned page.</p>
+<p>Returns a 201 status code when the background process have been started and the Location
+field in the response header set to the URI of status call of the background process.
+The created DTP document is stored in the database and can be fetched by fetching
+the DTP document for the planned page.</p>
+<p><b>Sample output for Location field in the response header:</b></p>
+<pre>/restapi/bgpinstance/BGP_16722/status</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:representation mediaType="application/x-www-form-urlencoded">
+            <wadl:param name="pageID" style="query">
+              <wadl:doc><![CDATA[Planned page id]]></wadl:doc>
+            </wadl:param>
+            <wadl:param name="versionID" style="query">
+              <wadl:doc><![CDATA[Version id]]></wadl:doc>
+            </wadl:param>
+          </wadl:representation>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="text/plain"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="pblbackgroundprocesses/UploadDTPDocument">
+      <wadl:method name="POST">
+        <wadl:doc><![CDATA[<p>Starts a background process that uploads a DTP document for an actual page.</p>
+<p>The uploaded document will overwrite the existing DTP document that contains
+the actual page. This means that if the existing DTP document contains more
+actual pages all those pages will be overwritten.</p>
+<p>It is not possible to upload a DTP document without having an actual page. Create
+the initial actual page by use the "Create DTP document for a planned page" REST API call
+or by uploading the document to STEP through a DTP application.</p>
+<p>The post request is expected to be using the Content-Type multipart/form-data. The form
+should have two fields:
+pageID: The ID of the actual page
+file: A file containing the "content part" of the upload, that is containing the DTP document</p>
+<p>Using curl the post command would look like:</p>
+<pre>
+ curl -u user:pwd -F "pageId=20104" -F "file=@aDoc.indd"
+ http://serverURL/restapi/pblbackgroundprocesses/UploadDTPDocument</pre>
+<p>Returns a 201 status code when the background process have been started and the
+Location field in the response header set to the URI of status call of the background process.</p>
+<p><b>Sample output for Location field in the response header:</b></p>
+<pre>/restapi/bgpinstance/BGP_16722/status</pre>]]></wadl:doc>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="text/plain"/>
+        </wadl:response>
+      </wadl:method>
+    </wadl:resource>
+
+    <wadl:resource path="publicationgroups/{id}">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="PublicationGroup"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Details of publication can be obtained with above URI.</p>
+<p><b>Sample output:</b></p>
+<pre>
+ &lt;Publication ParentID=&quot;Stibo Publication&quot; PagesPerSpread=&quot;2&quot; DTPSystem=&quot;InDesign&quot; UserTypeId=&quot;Default publication type&quot; title=&quot;Publication1&quot; ID=&quot;Publication1_ID&quot;&gt;
+     &lt;Revision Created=&quot;2008-12-07 14:00:12 CEST&quot; LastModified=&quot;2010-12-07 16:21:12 CEST&quot; ModifiedBy=&quot;User1&quot; RevisionNumber=&quot;0.1&quot;&gt;&lt;/Revision&gt;
+     &lt;PageTemplates&gt;
+         &lt;PageTemplate title=&quot;PageTemplate1&quot; ID=&quot;PageTemplateID_1&quot;/&gt;
+         &lt;PageTemplate title=&quot;PageTemplate2&quot; ID=&quot;PageTemplateID_2&quot;/&gt;
+     &lt;/PageTemplates&gt;
+     &lt;ProductTemplates&gt;
+         &lt;ProductTemplate title=&quot;ProductTemplate_1&quot; ID=&quot;ProductTemplateID_1&quot;/&gt;
+         &lt;ProductTemplate title=&quot;ProductTemplate2&quot; ID=&quot;ProductTemplateID_2&quot;/&gt;
+     &lt;/ProductTemplates&gt;
+     &lt;PublicationTemplate title=&quot;PublicationTemplate&quot; ID=&quot;PublicationTemplate_ID_1&quot;/&gt;
+     &lt;Versions&gt;
+         &lt;Version UserTypeId=&quot;Publication Version&quot; title=&quot;Version1&quot; ID=&quot;VERSION_1&quot;/&gt;
+         &lt;Version UserTypeId=&quot;Publication Version&quot; title=&quot;Versiom2&quot; ID=&quot;UNITTEST_VERSION_1&quot;/&gt;
+     &lt;/Versions&gt;
+ &lt;/Publication&gt;</pre>]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="Publication"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="sections/{id}">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="Section"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/pages">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Get all the pages of the DTP documents stored in the publication.</p>
+<p><b>Sample output:</b></p>
+<pre>
+ &lt;Pages&gt;
+     &lt;Page Status=&quot;PlanningInProgress&quot; DTPDocumentID=&quot;DOCUMENT_1&quot; PageNumber=&quot;1&quot; title=&quot;1&quot; ID=&quot;5073&quot;/&gt;
+     &lt;Page Status=&quot;DTPInProgress&quot; DTPDocumentID=&quot;DOCUMENT_2&quot; PageNumber=&quot;2&quot; title=&quot;2&quot; ID=&quot;5074&quot;/&gt;
+ &lt;/Pages&gt;</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:param name="versionid" style="query">
+            <wadl:doc><![CDATA[Version id]]></wadl:doc>
+          </wadl:param>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="Pages"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/plannedpages">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Get all the planned pages in the publication</p>
+<p><b>Sample output:</b></p>
+<pre>
+ &lt;PlannedPages&gt;
+     &lt;PlannedPage Status=&quot;PlanningInProgress&quot; SectionID=&quot;SECTION_1&quot; PageNumber=&quot;1&quot; ID=&quot;PLANNEDPAGE_1&quot;/&gt;
+     &lt;PlannedPage Status=&quot;DTPInProgress&quot; SectionID=&quot;SECTION_2&quot; PageNumber=&quot;2&quot; ID=&quot;PLANNEDPAGE_2&quot;/&gt;
+ &lt;/PlannedPages&gt;</pre>]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="PlannedPages"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="sections/{id}/autopage">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml" element="Section"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/pages/{pageid}/document">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Get the saved DTP document of an actual page. The document is returned in a stream.
+If no document is found for the actual page, HTTP error 404 is returned.</p>]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/octet-stream"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+      <wadl:param name="pageid" style="template">
+        <wadl:doc><![CDATA[Actual page id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/pages/{pageid}/document">
+      <wadl:method name="DELETE">
+        <wadl:doc><![CDATA[<p>Delete the DTP document that contains the actual page. If the DTP
+document contains more actual pages these actual pages are deleted as well.
+If a DTP document is deleted HTTP confirm codes 200 is returned. If no DTP
+document is deleted (i.e. the actual page and the DTP document is allready deleted)
+HTP confirm code 204 is returned.</p>]]></wadl:doc>
+        <wadl:request>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+      <wadl:param name="pageid" style="template">
+        <wadl:doc><![CDATA[Actual page id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/plannedpages/{pageid}/actualpage">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Get the actual page for a planned page in the supplied version. If no
+actual page exists for the planned page in the version HTTP return code 204
+is returned.</p>
+<p><b>Sample output:</b></p>
+<pre>
+ &lt;Page Status=&quot;PlanningInProgress&quot; DTPDocumentID=&quot;DOCUMENT_1&quot; PageNumber=&quot;1&quot; title=&quot;1&quot; ID=&quot;5073&quot;/&gt;</pre>]]></wadl:doc>
+        <wadl:request>
+          <wadl:param name="versionid" style="query">
+            <wadl:doc><![CDATA[Version id]]></wadl:doc>
+          </wadl:param>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/xml"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+      <wadl:param name="pageid" style="template">
+        <wadl:doc><![CDATA[Planned page id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+
+    <wadl:resource path="publications/{id}/plannedpages/{pageid}/document">
+      <wadl:method name="GET">
+        <wadl:doc><![CDATA[<p>Get the saved DTP document of a planned page. The document is returned in a stream.
+If no document is saved for the planned page, HTTP error 404 is returned.</p>]]></wadl:doc>
+        <wadl:request>
+          <wadl:param name="versionid" style="query">
+            <wadl:doc><![CDATA[Version id]]></wadl:doc>
+          </wadl:param>
+        </wadl:request>
+        <wadl:response>
+          <wadl:doc><![CDATA[]]></wadl:doc>
+          <wadl:representation mediaType="application/octet-stream"/>
+        </wadl:response>
+      </wadl:method>
+      <wadl:param name="id" style="template">
+        <wadl:doc><![CDATA[Publication id]]></wadl:doc>
+      </wadl:param>
+      <wadl:param name="pageid" style="template">
+        <wadl:doc><![CDATA[Planned page id]]></wadl:doc>
+      </wadl:param>
+    </wadl:resource>
+  </wadl:resources>
+</wadl:application>

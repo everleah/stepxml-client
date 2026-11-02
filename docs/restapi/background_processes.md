@@ -10,11 +10,11 @@ Monitor STEP background processes (exports, imports, and other async jobs).
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `get_background_process` | `(process_id) -> BackgroundProcessResponse` | Get process status |
+| `get_background_process` | `(process_id, *, timeout=None) -> BackgroundProcessResponse` | Get process status |
 | `get_execution_report` | `(process_id) -> list[dict]` | Get execution report |
-| `get_attachments_metadata` | `(process_id) -> list[dict]` | List attachments |
+| `get_attachments_metadata` | `(process_id, *, timeout=None) -> list[dict]` | List attachments |
 | `get_attachment_metadata` | `(process_id, attachment_id) -> dict` | Get attachment details |
-| `get_attachment_content` | `(process_id, attachment_id) -> bytes` | Download attachment content |
+| `get_attachment_content` | `(process_id, attachment_id, *, timeout=None) -> bytes` | Download attachment content |
 
 ### Process Types
 
@@ -39,4 +39,10 @@ with open("result.zip", "wb") as f:
     f.write(content)
 ```
 
+The Publishing adapter reuses status, attachment listing and binary content.
+Those methods normalize raw HTTP responses and plain payloads, validate errors,
+and accept a per-request timeout. Status-model snake_case fields accept the
+API's camelCase names. Attachment selection must use metadata `id` for content;
+`originalAttachmentId` can identify a result field but need not be unique.
+See [Publishing usage](../PUBLISHING_USAGE.md).
 

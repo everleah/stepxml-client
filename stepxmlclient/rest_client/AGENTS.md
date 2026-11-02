@@ -7,6 +7,7 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - `base.py`
 - `client.py`
 - `exceptions.py`
+- `publishing.py` - optional v2 adapter implementing the independent Publishing job protocol.
 - `models/`
 - `operations/`
 
@@ -15,6 +16,10 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - Preserve shared error handling through the base operation layer.
 - Keep request payloads compatible with the STEP REST API shapes documented in the repo notes.
 - Avoid introducing duplicate REST client surfaces when an existing grouped wrapper can absorb the change.
+- Publishing endpoints are not v2 operations. Only the main-client composition
+  and job adapter may couple the two APIs; reuse BackgroundProcessOperations.
+- Pass context/workspace to the base client and background-process group so
+  the lazy Publishing integration inherits the same configuration.
 
 ## Work Guidance
 - Update the matching operation group and any request/response model files together.
@@ -31,6 +36,8 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - `tests/test_rest_client_phase6_imports_exports.py`
 - `tests/test_rest_client_phase7_relations.py`
 - `tests/test_rest_client_oiep_download.py`
+- `tests/test_rest_client_phase8_background_processes.py`
+- `tests/test_publishing_integration.py`
 
 ## Child DOX Index
 - [models/AGENTS.md](models/AGENTS.md) - REST payload and response shape models.

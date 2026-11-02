@@ -16,11 +16,15 @@ All test and validation modules in this directory:
 - `test.py` — manual connectivity / example script
 - `validate_xml_xsd.py` — XML schema validation
 - `test_release.py` — offline release archive, credential handling, and upload safeguards
+- `test_publishing_*.py` - independent Publishing endpoints, XML, jobs and lazy v2 integration.
+- `test_rest_client_phase8_background_processes.py` - status/attachment transport used by Publishing.
 
 ## Local Contracts
 - Tests use `unittest` with `unittest.mock` for client mocking; no live server is required to run the suite.
 - Phase test files follow a sequential numbering scheme: `test_parser_phaseN_<topic>.py` and `test_rest_client_phaseN_<topic>.py`.
 - Every new REST operation group must be accompanied by a corresponding phase test.
+- Publishing fixtures are synthetic and do not require vendor JSON/WADL/XSD.
+  The fake HTTP adapter exercises real requests-openapi transport without a live server.
 - Parser tests validate against real STEP-XML fixture data in `examples/`.
 
 ## Work Guidance

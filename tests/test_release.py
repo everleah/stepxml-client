@@ -55,7 +55,8 @@ class TestReleaseArtifacts(TestCase):
     def test_rejects_forbidden_files_in_either_archive(self):
         for location in ("extra_source", "extra_wheel"):
             for name in (
-                "stepxmlclient/openapi.json", "STEP.xsd", ".pypirc", ".env",
+                "stepxmlclient/openapi.json", "STEP.xsd", "wadl_pub.xml",
+                "stepxmlclient/wadl_pub.xml", ".pypirc", ".env",
                 "private.key", "secret.pem", ".venv/token", "../outside.py",
             ):
                 with self.subTest(location=location, name=name):

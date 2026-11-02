@@ -11,6 +11,8 @@ Local contract for durable documentation artifacts under `docs/`.
 - `PARSER_USAGE.md`
 - `REST_API_STATE.md`
 - `REST_API_USAGE.md`
+- `PUBLISHING_STATE.md` - implemented Publishing coverage and live-verification boundaries.
+- `PUBLISHING_USAGE.md` - independent/integrated usage, job bridge and destructive-operation safeguards.
 - `restapi/` — per-endpoint REST API reference documentation
 
 ## Local Contracts

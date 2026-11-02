@@ -60,6 +60,8 @@ def handle_rest_errors(func: Callable) -> Callable:
                     error_data = e.response.json()
                 except Exception:
                     error_data = {"message": e.response.text}
+                if not isinstance(error_data, dict):
+                    error_data = {"message": f"HTTP {status}"}
                 
                 error_msg = error_data.get('error_message') or error_data.get('message', str(e))
                 error_code = error_data.get('error_code')

@@ -83,6 +83,9 @@ stepxmlclient/rest_client/
 - Unified authentication via `StiboStepRestClient` / `BasicAuthorisation`
 - Asset upload/download integrated via `upload.py`
 - OIEP download via `StiboStepRestClient.download_oiep_result()`
+- Independent Publishing subclient through lazy `.publishing`; v2 job monitoring
+  is connected by an injected adapter, not additional v2 operationIds.
+  See [Publishing state](PUBLISHING_STATE.md) and [usage](PUBLISHING_USAGE.md).
 
 ---
 

@@ -15,12 +15,15 @@ Local contract for grouped STEP REST API operations under `stepxmlclient/rest_cl
 - `metadata.py`
 - `products.py`
 - `relations.py`
+- `background_processes.py` - v2 process status and attachment transport used by the Publishing adapter.
 - `__init__.py`
 
 ## Local Contracts
 - Keep each operation group focused on a single API area and its associated parameter mapping.
 - Preserve existing shared error handling and response normalization paths.
 - Keep inbound and bulk helpers compatible with the rest client entry points that call them.
+- Background-process status, attachment lists and binary content normalize HTTP
+  responses and native payloads, preserve errors, and accept optional request timeouts.
 
 ## Work Guidance
 - Update the corresponding model helpers when an operation changes request or response shapes.

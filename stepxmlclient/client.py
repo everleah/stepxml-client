@@ -5,6 +5,10 @@ import os
 import json
 from pathlib import Path
 from urllib.parse import urlparse
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .publishing import PublishingClient
 
 
 def _lazy_import_inbound_operations():
@@ -28,18 +32,21 @@ class StiboStepRestClient:
             openapi_file=None, logger=None,
             proxies = None, ssl_version = None, 
             cache_openapi = False, nocert=False,
-            context=None, workspace=None):
+            context=None, workspace=None,
+            publishing_base_url: Optional[str] = None,
+            publishing_client: Optional["PublishingClient"] = None):
         self.ssl_version = ssl_version
         self.context = context
         self.workspace = workspace
+        self._publishing_base_url = publishing_base_url
+        self._publishing = publishing_client
         
         if logger is None:
             self.logger = logging.getLogger(self.__class__.__name__)
         else:
             self.logger = logger
         # build location base
-        location_base = location_base.lower()
-        if not location_base.startswith('http'):
+        if not location_base.lower().startswith(('http://', 'https://')):
             location_base = '%s://%s' % ('https', location_base)
         if location_base.endswith('/'):
             location_base = location_base[:-1]
@@ -72,6 +79,37 @@ class StiboStepRestClient:
             self.inbound = None
         
         return
+
+    @property
+    def publishing(self) -> "PublishingClient":
+        """Lazily expose Publishing without loading a second OpenAPI specification."""
+        if self._publishing is None:
+            from .publishing import PublishingClient, PublishingConfigurationError
+            from .publishing.client import derive_base_url, same_origin, validate_base_url
+            from .rest_client.operations.background_processes import BackgroundProcessOperations
+            from .rest_client.publishing import V2PublishingJobBackend
+
+            v2_url = self._get_server_base_url()
+            base_url = (
+                validate_base_url(self._publishing_base_url)
+                if self._publishing_base_url is not None else derive_base_url(v2_url)
+            )
+            if not same_origin(v2_url, base_url):
+                raise PublishingConfigurationError(
+                    "Cross-origin Publishing requires an explicitly configured publishing_client")
+            session = self.client.requestor
+            if not isinstance(session, requests.Session):
+                raise PublishingConfigurationError(
+                    "Publishing requires a requests.Session or an explicit publishing_client")
+            operations = getattr(self, "background_processes", None)
+            if operations is None:
+                operations = BackgroundProcessOperations(
+                    self.client, logger=self.logger,
+                    context=self.context, workspace=self.workspace)
+            self._publishing = PublishingClient(
+                base_url, session=session, context=self.context, workspace=self.workspace,
+                logger=self.logger, job_backend=V2PublishingJobBackend(operations))
+        return self._publishing
 
     @staticmethod
     def _get_bundled_openapi_file():
@@ -369,5 +407,3 @@ class BasicAuthorisation(__Authorisation):
     def adapt_client(self, client):
         client.requestor.auth = (self.user, self.pwd)
         return
-
-
