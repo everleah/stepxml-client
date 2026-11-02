@@ -84,7 +84,7 @@ class TestPublishingClient(unittest.TestCase):
         publication = self.client.get_publication("P")
         self.assertEqual(publication.name, "Catalog")
         self.assertEqual(publication.user_type_id, "Type")
-        self.assertEqual(publication.pages_per_spread, 2)
+        self.assertEqual(publication.pages_per_spread, "2")
         self.assertTrue(publication.revision.is_major)
         self.assertEqual(publication.revision.number, "0.2")
         self.assertEqual(publication.versions[0].id, "V")
@@ -151,12 +151,42 @@ class TestPublishingClient(unittest.TestCase):
                 with self.assertRaises(PublishingError):
                     self.client.list_publications()
 
+    def test_pages_per_spread_preserves_schema_string_values(self):
+        for value in ("2", "02", "", "variable"):
+            with self.subTest(value=value):
+                body = f'<Publication PagesPerSpread="{value}"/>'.encode()
+                self.session.request.return_value = response(body)
+                publication = self.client.get_publication("P")
+                self.assertEqual(publication.pages_per_spread, value)
+        self.session.request.return_value = response(b"<Publication/>")
+        self.assertIsNone(self.client.get_publication("P").pages_per_spread)
+
+    def test_xsd_structure_and_optional_fields(self):
+        self.session.request.return_value = response(b"""
+          <PublicationGroup UserTypeId="group">
+            <Name>Catalogs</Name><Revision IsMajor="0"/>
+            <Publication ID="P">
+              <Name>Catalog</Name><Revision IsMajor="1" Created="server-specific"/>
+              <Versions><Version ID="V"><Name>Edition</Name><Revision/></Version></Versions>
+            </Publication>
+            <Publication/>
+          </PublicationGroup>""")
+        group = self.client.get_publication_group("G")
+        self.assertFalse(group.revision.is_major)
+        self.assertEqual(group.user_type_id, "group")
+        self.assertEqual(len(group.publications), 2)
+        publication = group.publications[0]
+        self.assertTrue(publication.revision.is_major)
+        self.assertEqual(publication.revision.created, "server-specific")
+        self.assertEqual(publication.versions[0].name, "Edition")
+        self.assertIsNotNone(publication.versions[0].revision)
+        self.assertIsNone(group.publications[1].id)
+
     def test_invalid_typed_fields_are_not_silently_discarded(self):
-        for body in (b'<Publication PagesPerSpread="invalid"/>',
-                     b'<Publication><Revision IsMajor="invalid"/></Publication>'):
-            self.session.request.return_value = response(body)
-            with self.assertRaises(PublishingError):
-                self.client.get_publication("P")
+        self.session.request.return_value = response(
+            b'<Publication><Revision IsMajor="invalid"/></Publication>')
+        with self.assertRaises(PublishingError):
+            self.client.get_publication("P")
 
     def test_ids_are_validated_and_encoded(self):
         self.session.request.return_value = response(b'<Publication ID="P"/>')

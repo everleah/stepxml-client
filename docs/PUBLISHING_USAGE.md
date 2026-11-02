@@ -113,6 +113,11 @@ Typed XML models include original attributes and `raw_xml` so unmodeled content,
 including embedded products/assets/classifications, remains available.
 This XML is distinct from STEP-XML exchange documents.
 
+`Publication.pages_per_spread` is `str | None`, matching `PagesPerSpread` in
+the Publishing XSD/OpenAPI. Values are preserved verbatim (for example `"02"`);
+convert explicitly with `int(...)` only when your application expects a number.
+Absent attributes yield `None`, distinct from a present empty string.
+
 ## Replacement and deletion
 
 ```python
@@ -173,7 +178,9 @@ Location, HTTP errors and ambiguous files are never silently converted to succes
 Publishing does not log credentials or server response bodies.
 
 The server needs the relevant Publishing functionality, DTP integration and user
-permissions. The supplied XSD is empty; it is not used for validation.
+permissions. The supplied Publishing XSD is available as a local reference,
+but is not enforced on responses: its empty page-list definition and missing
+publication template children contradict documented examples.
 Offline tests cover contracts, not installation-specific server compatibility.
 Before production use verify the shared Publishing/v2 process IDs, actual
 attachment-field mapping, upload's `pageID` spelling and XML variants on an

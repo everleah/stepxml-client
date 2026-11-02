@@ -1,0 +1,799 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema version="1.0"
+  
+  xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="Pages" type="actualPageList"/>
+  <xs:element name="Page" type="actualPageSO"/>
+  <xs:element name="PageTemplate" type="pageTemplateSO"/>
+  <xs:element name="PlannedPages" type="plannedPageList"/>
+  <xs:element name="PlannedPage" type="plannedPageSO"/>
+  <xs:element name="ProductTemplate" type="productTemplateSO"/>
+  <xs:element name="PublicationGroup" type="publicationGroupSO"/>
+  <xs:element name="Publications" type="publicationList"/>
+  <xs:element name="Publication" type="publicationSO"/>
+  <xs:element name="Sections" type="publicationSectionList"/>
+  <xs:element name="Section" type="publicationSectionSO"/>
+  <xs:element name="PublicationTemplate" type="publicationTemplateSO"/>
+  <xs:element name="Version" type="versionSO"/>
+  <xs:element name="AssetReference" type="assetReferenceSO"/>
+  <xs:element name="AttributeLink" type="attributeLinkSO"/>
+  <xs:element name="Attribute" type="attributeSO"/>
+  <xs:element name="Context" type="contextSO"/>
+  <xs:element name="Entity" type="entitySO"/>
+  <xs:element name="ListOfValues" type="listOfValuesSO"/>
+  <xs:element name="UserType" type="objectTypeSO"/>
+  <xs:element name="Reference" type="referenceSO"/>
+  <xs:element name="step" type="stepSO"/>
+  <xs:element name="Unit" type="unitSO"/>
+  <xs:element name="Values" type="valueListSO"/>
+  <xs:element name="Value" type="valueSO"/>
+  <xs:element name="Assets" type="assetList"/>
+  <xs:element name="Asset" type="assetSO"/>
+  <xs:element name="Classifications" type="classificationList"/>
+  <xs:element name="Classification" type="classificationSO"/>
+  <xs:element name="Products" type="productList"/>
+  <xs:element name="Product" type="productSO"/>
+<xs:complexType name="actualPageList">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[List of actual pages]]>
+    </xs:documentation>
+  </xs:annotation>
+ </xs:complexType>
+
+<xs:complexType name="actualPageSO">
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+      <xs:attribute name="PageNumber" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Page number]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="DTPDocumentID" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[DTP document ID]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Status" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Page status]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="pageTemplateSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Page template]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="plannedPageList">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[List of planned pages]]>
+    </xs:documentation>
+  </xs:annotation>
+       <xs:sequence>
+              <xs:element name="PlannedPage" type="plannedPageSO" minOccurs="0" maxOccurs="unbounded">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Planned pages list]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="plannedPageSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Planned page]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+      <xs:attribute name="PageNumber" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Page number]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="SectionID" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Parent id]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="Status" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Page status]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="productTemplateSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Product template]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="publicationGroupSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Publication group]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+      <xs:sequence>
+              <xs:element name="Publication" type="publicationSO" minOccurs="0" maxOccurs="unbounded">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Publication list]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="publicationList">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[List of publications]]>
+    </xs:documentation>
+  </xs:annotation>
+       <xs:sequence>
+              <xs:element name="Publication" type="publicationSO" minOccurs="0" maxOccurs="unbounded">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Publications list]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="publicationSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Publication]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+      <xs:sequence>
+        <xs:element name="Versions" minOccurs="0">
+          <xs:annotation>
+            <xs:documentation>
+              <![CDATA[Versions list]]>
+            </xs:documentation>
+          </xs:annotation>
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Version" type="versionSO" minOccurs="0" maxOccurs="unbounded">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Versions list]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="DTPSystem" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[DTP system]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="PagesPerSpread" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Pages per spread]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+      <xs:attribute name="ParentID" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            <![CDATA[Parent id]]>
+          </xs:documentation>
+        </xs:annotation>
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="publicationSectionList">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Publication section list]]>
+    </xs:documentation>
+  </xs:annotation>
+       <xs:sequence>
+              <xs:element name="Section" type="publicationSectionSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="publicationSectionSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Publication section]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+      <xs:sequence>
+              <xs:element name="MasterVersion" type="versionSO" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Master version]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Publication" type="publicationSO" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Publication]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Products" type="productList" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Products]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Assets" type="assetList" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Assets]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Pages" type="actualPageList" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Pages]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Children" type="publicationSectionList" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Children]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+              <xs:element name="Classifications" type="classificationList" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>
+                  <![CDATA[Classifications]]>
+                </xs:documentation>
+              </xs:annotation>
+              </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="publicationTemplateSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Publication template]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="versionSO">
+  <xs:annotation>
+    <xs:documentation>
+      <![CDATA[Version]]>
+    </xs:documentation>
+  </xs:annotation>
+   <xs:complexContent>
+    <xs:extension base="revisableNodeSO">
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="location">
+       <xs:sequence>
+              <xs:element name="name" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="prefix" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="uploaded" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="relativePathTemplate" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="extension" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="relativePath" type="xs:string" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="assetReferenceSO">
+   <xs:complexContent>
+    <xs:extension base="referenceSO">
+      <xs:attribute name="AssetID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="attributeLinkSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:attribute name="AttributeID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="attributeuri" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="attributetitle" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="IsMandatory" type="xs:boolean">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="attributeSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="HierarchialFilteringAllowed" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="FulltextIndexable" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="Calculated" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="ClassificationHierarchicalFiltering" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="validation" type="attribute-validation" minOccurs="0">
+              </xs:element>
+              <xs:element name="ExternallyMaintained" type="xs:boolean" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="AttributeID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="attribute-validation">
+       <xs:sequence>
+              <xs:element name="mask" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="HasListOfValues" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="BaseType" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="MaximumValue" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="MultiValued" type="xs:boolean" minOccurs="0">
+              </xs:element>
+              <xs:element name="MaximumLength" type="xs:int" minOccurs="1">
+              </xs:element>
+              <xs:element name="MinimumValue" type="xs:string" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="contextSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:attribute name="ContextID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="entitySO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="ClassificationCrossReference" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="ProductCrossReference" type="productSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="AssetCrossReference" type="assetReferenceSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="EntityCrossReference" type="entitySO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Values" type="valueListSO" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="ParentID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="EntityID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="lov-validation">
+       <xs:sequence>
+              <xs:element name="MaximumValue" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="MinimumValue" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="mask" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="BaseType" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="MaximumLength" type="xs:int" minOccurs="1">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="listOfValuesSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="validation" type="lov-validation" minOccurs="0">
+              </xs:element>
+        <xs:element name="LegalValues" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Value" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+              <xs:element name="UserCanAddValues" type="xs:boolean" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="Multivalue">
+       <xs:sequence>
+              <xs:element name="Value" type="valueSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="AttributeID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="title" type="xs:string">
+      </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="objectTypeSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:attribute name="UserTypeID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="referenceSO" abstract="true">
+       <xs:sequence>
+              <xs:element name="Values" type="valueListSO" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="title" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="Type" type="xs:string">
+      </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="SearchResult">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="ProductResultNode" type="nodeSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="stepSO">
+       <xs:sequence>
+        <xs:element name="Contexts" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Context" type="contextSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+              <xs:element name="listOfValueNodes" type="nodeSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+        <xs:element name="TagList" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Tag" type="nodeSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="ObjectTypes" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="ObjectType" type="objectTypeSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+        <xs:element name="Assets" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Asset" type="assetSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+              <xs:element name="SearchResult" type="SearchResult" minOccurs="0">
+              </xs:element>
+        <xs:element name="Units" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Unit" type="unitSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+              <xs:element name="ApproveStatus" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="ListOfValues" type="nodeSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="UnitConversion">
+       <xs:sequence>
+              <xs:element name="offset" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="target" type="unitSO" minOccurs="0">
+              </xs:element>
+              <xs:element name="factor" type="xs:string" minOccurs="0">
+              </xs:element>
+              <xs:element name="base" type="unitSO" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="unitSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+        <xs:element name="FromBase" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="Conversion" type="UnitConversion" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+              <xs:element name="ToBase" type="UnitConversion" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="UnitID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="valueListSO">
+       <xs:sequence>
+              <xs:element name="Value" type="valueSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="MultiValue" type="Multivalue" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="valueSO">
+  <xs:simpleContent>
+    <xs:extension base="xs:string">
+      <xs:attribute name="AttributeID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="ExternalID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="UnitID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="QualifierID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="title" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+
+<xs:complexType name="Workspace">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:attribute name="WorkspaceID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="assetList">
+       <xs:sequence>
+              <xs:element name="Asset" type="assetSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="assetSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="ClassificationReference" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="EntityCrossReference" type="entitySO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Values" type="valueListSO" minOccurs="0">
+              </xs:element>
+        <xs:element name="locations" minOccurs="0">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="location" type="location" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <xs:attribute name="AssetID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="classificationList">
+       <xs:sequence>
+              <xs:element name="Classification" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="classificationSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="AttributeLink" type="attributeLinkSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Classification" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="ClassificationCrossReference" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="ProductCrossReference" type="productSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="EntityCrossReference" type="entitySO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Asset" type="assetSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="AssetCrossReference" type="assetReferenceSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Values" type="valueListSO" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="ParentID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="ClassificationID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="nodeSO" abstract="true">
+       <xs:sequence>
+              <xs:element name="Name" type="xs:string" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="ID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="uri" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="title" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="Type" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="UserTypeId" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="Context" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="Workspace" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="usertypeuri" type="xs:string">
+      </xs:attribute>
+</xs:complexType>
+
+<xs:complexType name="productList">
+       <xs:sequence>
+              <xs:element name="Product" type="productSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+      </xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="productSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="AttributeLink" type="attributeLinkSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="ClassificationReference" type="classificationSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="ProductCrossReference" type="productSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="AssetCrossReference" type="assetReferenceSO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="EntityCrossReference" type="entitySO" minOccurs="0" maxOccurs="unbounded">
+              </xs:element>
+              <xs:element name="Values" type="valueListSO" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+      <xs:attribute name="ParentID" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="ProductID" type="xs:string">
+      </xs:attribute>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="revisableNodeSO">
+   <xs:complexContent>
+    <xs:extension base="nodeSO">
+      <xs:sequence>
+              <xs:element name="Revision" type="Revision" minOccurs="0">
+              </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+
+<xs:complexType name="Revision">
+       <xs:attribute name="RevisionNumber" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="IsMajor" type="xs:boolean">
+      </xs:attribute>
+      <xs:attribute name="Created" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="LastModified" type="xs:string">
+      </xs:attribute>
+      <xs:attribute name="ModifiedBy" type="xs:string">
+      </xs:attribute>
+</xs:complexType>
+
+</xs:schema>

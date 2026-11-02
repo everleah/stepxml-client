@@ -28,7 +28,7 @@ class PublishingNode(BaseModel):
 class Publication(PublishingNode):
     parent_id: Optional[str] = None
     dtp_system: Optional[str] = None
-    pages_per_spread: Optional[int] = None
+    pages_per_spread: Optional[str] = None
     versions: List[PublishingNode] = Field(default_factory=list)
     page_templates: List[PublishingNode] = Field(default_factory=list)
     product_templates: List[PublishingNode] = Field(default_factory=list)

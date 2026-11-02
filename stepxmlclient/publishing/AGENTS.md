@@ -11,6 +11,9 @@
 - Connect job monitoring through `JobBackend`; the v2 adapter belongs to `rest_client/`.
 - All 16 documented operations are supported without bundling vendor specifications.
 - Preserve unmodeled XML through `raw_xml` and original node attributes.
+- Preserve `PagesPerSpread` as a string, as declared by Publishing XSD/OpenAPI.
+- Do not enforce the vendor XSD on responses: its empty `actualPageList`
+  contradicts documented page-list examples, and publication templates are omitted.
 - Require explicit confirmation for document replacement and deletion, which can affect multiple pages.
 - Borrowed sessions are not mutated globally or closed; owned sessions must be closed.
 - Job Location is only a source of process identity, never an authenticated download URL.
