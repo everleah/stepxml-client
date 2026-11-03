@@ -459,14 +459,39 @@ print(result)
 
 ## Error Handling
 
-All client operations raise exceptions on HTTP errors. Use try/except blocks to handle errors:
+Grouped operations check HTTP status codes before processing the response.
+HTTP errors and STEP error bodies with `httpStatus >= 400` raise library exceptions,
+including on deletes. A rejected delete never returns `True`; `True` means the
+server accepted the request, not that an asynchronous deletion has completed.
+
+JSON responses are decoded before model construction: for example,
+`ops_client.assets.get_asset("A")` returns `AssetResponse`, so its
+`classifications` field can be read directly. Binary downloads are not JSON-decoded.
+Reference PUTs send the required empty JSON object when `data` is `None` or `{}`.
+
+HTTP errors expose `status_code` and `details`, with STEP's `message`, `httpReason`
+and `detail` included in the exception text. Status 401/403/404/409/429/5xx maps to
+`AuthenticationError` / `AuthorizationError` / `NotFoundError` / `ConflictError` /
+`RateLimitError` / `ServerError`; other HTTP errors, including 400, raise
+`RestApiError`. Local parameter validation still raises `ValidationError`.
+`RateLimitError.retry_after` preserves the `Retry-After` header when present.
+Network errors raise `RestClientError`, and timeouts raise the library's `TimeoutError`.
 
 ```python
+from stepxmlclient.rest_client.exceptions import NotFoundError, RestApiError
+
 try:
-    product = ops_client.products.get_product("P123")
-except Exception as e:
-    print("Error:", e)
+    ops_client.assets.delete_asset("A")
+except NotFoundError:
+    print("Asset not found")
+except RestApiError as error:
+    print(error.status_code, str(error), error.details)
 ```
+
+These guarantees apply to grouped wrappers, not direct calls through
+`raw_client.client`: raw OpenAPI access retains the transport's original response
+and error behavior. Convenience search methods reuse the checked wrappers.
+The Publishing job adapter uses the same checked v2 background-process operations.
 
 ---
 

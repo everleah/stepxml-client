@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError
+from ..exceptions import NotFoundError, RestClientError
 from ..models.data_type_group import DataTypeGroupResponse
 
 
@@ -17,7 +17,9 @@ class DataTypeGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroup", {"id": group_id})
         try:
-            r = self.client.getDataTypeGroup(id=group_id, **self._build_context_params())
+            r = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise
@@ -28,7 +30,9 @@ class DataTypeGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupChildren", {"id": group_id})
         try:
-            r = self.client.getDataTypeGroupChildren(id=group_id, **self._build_context_params())
+            r = self._call_operation("getDataTypeGroupChildren", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise
@@ -39,7 +43,9 @@ class DataTypeGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupAttributes", {"id": group_id})
         try:
-            r = self.client.getDataTypeGroupAttributes(id=group_id, **self._build_context_params())
+            r = self._call_operation("getDataTypeGroupAttributes", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise
@@ -50,7 +56,9 @@ class DataTypeGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupDataContainerTypes", {"id": group_id})
         try:
-            r = self.client.getDataTypeGroupDataContainerTypes(id=group_id, **self._build_context_params())
+            r = self._call_operation("getDataTypeGroupDataContainerTypes", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise
@@ -61,7 +69,9 @@ class DataTypeGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupReferenceTypes", {"id": group_id})
         try:
-            r = self.client.getDataTypeGroupReferenceTypes(id=group_id, **self._build_context_params())
+            r = self._call_operation("getDataTypeGroupReferenceTypes", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
             raise

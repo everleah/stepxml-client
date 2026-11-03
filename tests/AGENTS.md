@@ -18,6 +18,8 @@ All test and validation modules in this directory:
 - `test_release.py` — offline release archive, credential handling, and upload safeguards
 - `test_publishing_*.py` - independent Publishing endpoints, XML, jobs and lazy v2 integration.
 - `test_rest_client_phase8_background_processes.py` - status/attachment transport used by Publishing.
+- `test_rest_response_handling.py` - real HTTP responses, all delete wrappers,
+  typed JSON normalization, empty reference bodies and synthetic OpenAPI transport.
 
 ## Local Contracts
 - Tests use `unittest` with `unittest.mock` for client mocking; no live server is required to run the suite.

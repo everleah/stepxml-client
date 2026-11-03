@@ -14,6 +14,12 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 ## Local Contracts
 - Keep grouped operation wrappers aligned with the dynamic `requests-openapi` client and the STEP REST API specification supplied by the server or caller.
 - Preserve shared error handling through the base operation layer.
+- Route generated calls through `BaseOperation._call_operation`: check HTTP/STEP
+  errors before discarding bodies or constructing models, and decode HTTP JSON.
+  Keep the raw `.client` transport unchanged. Binary operations explicitly retain
+  checked raw responses and close them after consuming content.
+- Preserve status codes, STEP error details and `Retry-After` in exceptions;
+  never reinterpret structured errors by matching digits in their messages.
 - Keep request payloads compatible with the STEP REST API shapes documented in the repo notes.
 - Avoid introducing duplicate REST client surfaces when an existing grouped wrapper can absorb the change.
 - Publishing endpoints are not v2 operations. Only the main-client composition

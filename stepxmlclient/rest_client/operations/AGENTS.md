@@ -21,6 +21,11 @@ Local contract for grouped STEP REST API operations under `stepxmlclient/rest_cl
 ## Local Contracts
 - Keep each operation group focused on a single API area and its associated parameter mapping.
 - Preserve existing shared error handling and response normalization paths.
+- Use `_call_operation` for every generated OpenAPI request, including deletes
+  and dynamically selected reference operations. Deletes return `True` only after
+  response validation; reference PUTs always send JSON, including `{}`.
+- Re-raise `RestClientError` unchanged before legacy exception-message fallbacks,
+  so HTTP status, server messages and details survive operation-level handlers.
 - Keep inbound and bulk helpers compatible with the rest client entry points that call them.
 - Background-process status, attachment lists and binary content normalize HTTP
   responses and native payloads, preserve errors, and accept optional request timeouts.

@@ -2,7 +2,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.workflow import WorkflowResponse
 
 
@@ -13,7 +13,7 @@ class WorkflowOperations(BaseOperation):
     @handle_rest_errors
     def get_workflow_ids(self) -> list[str]:
         self._log_operation("getWorkflowIds", {})
-        r = self.client.getWorkflowIds(**self._build_context_params())
+        r = self._call_operation("getWorkflowIds", **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
@@ -21,7 +21,9 @@ class WorkflowOperations(BaseOperation):
         self._validate_required_params({"workflow_id": workflow_id}, ["workflow_id"])
         self._log_operation("getWorkflow", {"id": workflow_id})
         try:
-            r = self.client.getWorkflow(id=workflow_id, **self._build_context_params())
+            r = self._call_operation("getWorkflow", id=workflow_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(workflow_id, "Workflow")
             raise
@@ -32,7 +34,9 @@ class WorkflowOperations(BaseOperation):
         self._validate_required_params({"workflow_id": workflow_id}, ["workflow_id"])
         self._log_operation("createWorkflowInstance", {"id": workflow_id})
         try:
-            r = self.client.createWorkflowInstance(id=workflow_id, json=data, **self._build_context_params())
+            r = self._call_operation("createWorkflowInstance", id=workflow_id, json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
@@ -43,8 +47,10 @@ class WorkflowOperations(BaseOperation):
         self._validate_required_params({"workflow_id": workflow_id, "instance_id": instance_id}, ["workflow_id", "instance_id"])
         self._log_operation("deleteWorkflowInstance", {"id": workflow_id, "instanceId": instance_id})
         try:
-            self.client.deleteWorkflowInstance(id=workflow_id, instanceId=instance_id, **self._build_context_params())
+            self._call_operation("deleteWorkflowInstance", id=workflow_id, instanceId=instance_id, **self._build_context_params())
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(workflow_id, "Workflow")
             raise

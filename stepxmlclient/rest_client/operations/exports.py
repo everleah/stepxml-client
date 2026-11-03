@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.import_export import (
     BackgroundProcessResponse,
     ExportJobCreateRequest,
@@ -65,10 +65,12 @@ class ExportOperations(BaseOperation):
         self._log_operation("startExport", {"exportConfigurationId": export_configuration_id})
 
         try:
-            if create_data:
-                response = self.client.startExport(exportConfigurationId=export_configuration_id, json=create_data, **query_params)
+            if create_data is not None:
+                response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, json=create_data, **query_params)
             else:
-                response = self.client.startExport(exportConfigurationId=export_configuration_id, **query_params)
+                response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(export_configuration_id, "ExportConfiguration")
@@ -127,18 +129,20 @@ class ExportOperations(BaseOperation):
                     else:
                         binary_data = json.dumps(data).encode('utf-8')
                 
-                response = self.client.startImport(
+                response = self._call_operation("startImport",
                     importConfigurationId=import_configuration_id,
                     data=binary_data,
                     **query_params
                 )
                 response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
             else:
-                response = self.client.startImport(
+                response = self._call_operation("startImport",
                     importConfigurationId=import_configuration_id,
                     **query_params
                 )
                 response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(import_configuration_id, "ImportConfiguration")

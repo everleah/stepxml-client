@@ -8,7 +8,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError
+from ..exceptions import NotFoundError, RestClientError
 from ..models.attribute import (
     AttributeResponse,
     ListOfValueResponse,
@@ -55,7 +55,9 @@ class AttributeOperations(BaseOperation):
         self._log_operation("getAttribute", {"id": attribute_id})
 
         try:
-            response = self.client.getAttribute(id=attribute_id, **self._build_context_params())
+            response = self._call_operation("getAttribute", id=attribute_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(attribute_id, "Attribute")
@@ -92,7 +94,9 @@ class AttributeOperations(BaseOperation):
         self._log_operation("getListOfValuess", {"id": lov_id})
 
         try:
-            response = self.client.getListOfValuess(id=lov_id, **self._build_context_params())
+            response = self._call_operation("getListOfValuess", id=lov_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(lov_id, "ListOfValues")
@@ -125,7 +129,9 @@ class AttributeOperations(BaseOperation):
         self._log_operation("getListOfValuessEntries", {"id": lov_id})
 
         try:
-            response = self.client.getListOfValuessEntries(id=lov_id, **self._build_context_params())
+            response = self._call_operation("getListOfValuessEntries", id=lov_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(lov_id, "ListOfValues")
@@ -146,7 +152,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getDataContainerType", {"id": type_id})
         try:
-            response = self.client.getDataContainerType(id=type_id, **self._build_context_params())
+            response = self._call_operation("getDataContainerType", id=type_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(type_id, "DataContainerType")
@@ -162,7 +170,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroup", {"id": group_id})
         try:
-            response = self.client.getDataTypeGroup(id=group_id, **self._build_context_params())
+            response = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(group_id, "DataTypeGroup")
@@ -178,7 +188,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getObjectType", {"id": type_id})
         try:
-            response = self.client.getObjectType(id=type_id, **self._build_context_params())
+            response = self._call_operation("getObjectType", id=type_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(type_id, "ObjectType")
@@ -194,7 +206,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getObjectTypeChildren", {"id": type_id})
         try:
-            response = self.client.getObjectTypeChildren(id=type_id, **self._build_context_params())
+            response = self._call_operation("getObjectTypeChildren", id=type_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(type_id, "ObjectType")
@@ -212,7 +226,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"reference_type_id": reference_type_id}, ["reference_type_id"])
         self._log_operation("getReferenceType", {"id": reference_type_id})
         try:
-            response = self.client.getReferenceType(id=reference_type_id, **self._build_context_params())
+            response = self._call_operation("getReferenceType", id=reference_type_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(reference_type_id, "ReferenceType")
@@ -228,7 +244,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"unit_id": unit_id}, ["unit_id"])
         self._log_operation("getUnit", {"id": unit_id})
         try:
-            response = self.client.getUnit(id=unit_id, **self._build_context_params())
+            response = self._call_operation("getUnit", id=unit_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(unit_id, "Unit")
@@ -244,7 +262,9 @@ class AttributeOperations(BaseOperation):
         self._validate_required_params({"key_id": key_id}, ["key_id"])
         self._log_operation("getUniqueKey", {"id": key_id})
         try:
-            response = self.client.getUniqueKey(id=key_id, **self._build_context_params())
+            response = self._call_operation("getUniqueKey", id=key_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(key_id, "UniqueKey")

@@ -6,7 +6,7 @@ pagination, logging, and request/response processing.
 
 import logging
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, TypeVar
+from typing import Any, Callable, Dict, NoReturn, Optional, TypeVar
 
 import requests
 import requests_openapi as roa
@@ -17,13 +17,88 @@ from .models.common import PageInfo
 T = TypeVar('T')
 
 
+def _read_json_response(response: requests.Response) -> Any:
+    try:
+        return response.json()
+    except ValueError as error:
+        raise exc.RestClientError(f"Invalid JSON response: {error}") from error
+
+
+def _raise_api_error(status: int, payload: Any, *, response: Any = None,
+                     resource_id: str | None = None,
+                     resource_type: str | None = None) -> None:
+    if status < 400:
+        return
+    details = payload if isinstance(payload, dict) else {"message": payload}
+    message = "; ".join(dict.fromkeys(
+        str(details[key]) for key in ("error_message", "message", "httpReason", "detail")
+        if details.get(key)
+    )) or f"HTTP {status}"
+    error_code = details.get("error_code")
+    if status == 401:
+        raise exc.AuthenticationError(message, details=details)
+    if status == 403:
+        raise exc.AuthorizationError(message, details=details)
+    if status == 404:
+        raise exc.NotFoundError(resource_id, resource_type, details=details, error_message=message)
+    if status == 429:
+        headers = getattr(response, "headers", {})
+        raise exc.RateLimitError(retry_after=headers.get("Retry-After"), details=details,
+                                 error_message=message)
+    error_type = exc.ConflictError if status == 409 else (
+        exc.ServerError if status >= 500 else exc.RestApiError
+    )
+    raise error_type(status, message, error_code=error_code, details=details)
+
+
+def _check_response(response: Any, resource_id: str | None = None,
+                    resource_type: str | None = None) -> None:
+    raw_response = getattr(response, "_response", None)
+    if raw_response is None:
+        raw_response = getattr(response, "response", None)
+    if raw_response is None:
+        raw_response = response
+    status = getattr(raw_response, "status_code", None)
+    if isinstance(status, int) and status >= 400:
+        payload = None
+        read_json = getattr(raw_response, "json", None)
+        if callable(read_json):
+            try:
+                payload = read_json()
+            except ValueError:
+                payload = getattr(raw_response, "text", None)
+        if payload is None:
+            payload = getattr(raw_response, "text", None) or getattr(raw_response, "reason", None)
+        _raise_api_error(status, payload, response=raw_response,
+                         resource_id=resource_id, resource_type=resource_type)
+    if isinstance(response, dict):
+        status = response.get("httpStatus")
+        if isinstance(status, str) and status.isdecimal():
+            status = int(status)
+        if isinstance(status, int):
+            _raise_api_error(status, response, resource_id=resource_id,
+                             resource_type=resource_type)
+
+
+def _raise_request_error(error: requests.exceptions.RequestException,
+                         resource_id: str | None = None) -> NoReturn:
+    if error.response is not None:
+        try:
+            _check_response(error.response, resource_id)
+        finally:
+            error.response.close()
+    if isinstance(error, requests.exceptions.Timeout):
+        raise exc.TimeoutError(f"Request timed out: {error}") from error
+    raise exc.RestClientError(f"Request failed: {error}") from error
+
+
 def handle_rest_errors(func: Callable) -> Callable:
     """Decorator to handle common REST API errors.
     
     Converts HTTP errors to appropriate exception types.
     Allows FileNotFoundError and other file system exceptions to pass through.
 
-    Also detects STEP API error responses returned as dicts when
+    Also detects HTTP responses and STEP error dictionaries when
     requests_openapi does not raise an exception for non-2xx HTTP responses.
     The STEP REST API returns error payloads with the form
     ``{"httpStatus": <int>, "message": "...", "httpReason": "..."}``.
@@ -32,57 +107,10 @@ def handle_rest_errors(func: Callable) -> Callable:
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
-            # Detect STEP error responses returned as plain dicts instead of
-            # raised exceptions (requests_openapi may not call raise_for_status).
-            if isinstance(result, dict) and 'httpStatus' in result:
-                status = result.get('httpStatus', 0)
-                message = result.get('message') or result.get('httpReason', 'API error')
-                if status == 401:
-                    raise exc.AuthenticationError(f"Authentication failed: {message}")
-                elif status == 403:
-                    raise exc.AuthorizationError(f"Access denied: {message}")
-                elif status == 404:
-                    raise exc.NotFoundError(None, details=result)
-                elif status == 409:
-                    raise exc.ConflictError(status, message)
-                elif status == 429:
-                    raise exc.RateLimitError(details=result)
-                elif 500 <= status < 600:
-                    raise exc.ServerError(status, message)
-                elif 400 <= status < 500:
-                    raise exc.RestApiError(status, message)
+            _check_response(result)
             return result
         except requests.exceptions.RequestException as e:
-            # Handle requests library exceptions
-            if hasattr(e, 'response') and e.response is not None:
-                status = e.response.status_code
-                try:
-                    error_data = e.response.json()
-                except Exception:
-                    error_data = {"message": e.response.text}
-                if not isinstance(error_data, dict):
-                    error_data = {"message": f"HTTP {status}"}
-                
-                error_msg = error_data.get('error_message') or error_data.get('message', str(e))
-                error_code = error_data.get('error_code')
-                
-                if status == 401:
-                    raise exc.AuthenticationError(f"Authentication failed: {error_msg}")
-                elif status == 403:
-                    raise exc.AuthorizationError(f"Access denied: {error_msg}")
-                elif status == 404:
-                    raise exc.NotFoundError(None, details=error_data)
-                elif status == 409:
-                    raise exc.ConflictError(status, error_msg, error_code=error_code)
-                elif status == 429:
-                    retry_after = e.response.headers.get('Retry-After')
-                    raise exc.RateLimitError(retry_after=retry_after, details=error_data)
-                elif 500 <= status < 600:
-                    raise exc.ServerError(status, error_msg, error_code=error_code)
-                else:
-                    raise exc.RestApiError(status, error_msg, error_code=error_code)
-            else:
-                raise exc.RestClientError(f"Request failed: {str(e)}")
+            _raise_request_error(e)
         except (FileNotFoundError, OSError):
             # Let file system errors pass through unchanged
             raise
@@ -167,20 +195,7 @@ class BaseOperation:
             ConflictError: If httpStatus is 409
             RestApiError: For other 4xx/5xx status codes
         """
-        if not isinstance(response, dict) or 'httpStatus' not in response:
-            return
-        status = response.get('httpStatus', 0)
-        message = response.get('message') or response.get('httpReason', 'API error')
-        if status == 401:
-            raise exc.AuthenticationError(f"Authentication failed: {message}")
-        elif status == 403:
-            raise exc.AuthorizationError(f"Access denied: {message}")
-        elif status == 404:
-            raise exc.NotFoundError(resource_id, resource_type)
-        elif status == 409:
-            raise exc.ConflictError(status, message)
-        elif 400 <= status < 600:
-            raise exc.RestApiError(status, message)
+        _check_response(response, resource_id, resource_type)
 
     def _check_response_status(self, response: Any, resource_id: str | None = None,
                                 resource_type: str | None = None) -> None:
@@ -200,18 +215,7 @@ class BaseOperation:
             NotFoundError: If status is 404
             RestApiError: For other 4xx/5xx status codes
         """
-        # First check for STEP error dicts (JSON body with httpStatus field)
-        self._check_for_api_error(response, resource_id, resource_type)
-
-        raw_response = getattr(response, '_response', None) or getattr(response, 'response', None)
-        status_code = (
-            getattr(raw_response, 'status_code', None)
-            or getattr(response, 'status_code', None)
-        )
-        if status_code is not None and isinstance(status_code, int) and status_code >= 400:
-            if status_code == 404:
-                raise exc.NotFoundError(resource_id, resource_type)
-            raise exc.RestApiError(status_code, f"HTTP {status_code} for {resource_type} {resource_id}")
+        _check_response(response, resource_id, resource_type)
 
     def _log_operation(self, operation_id: str, params: Optional[Dict[str, Any]] = None) -> None:
         """Log an API operation.
@@ -270,16 +274,18 @@ class BaseOperation:
         return []
     
     def _process_response(self, response: Any) -> Any:
-        """Process API response (hook for subclasses).
-        
-        Override this method in subclasses to add custom response processing.
-        
-        Args:
-            response: Raw API response
-            
-        Returns:
-            Processed response
-        """
+        """Check errors and decode HTTP JSON before operation-specific processing."""
+        if isinstance(response, requests.Response):
+            try:
+                self._check_response_status(response)
+                if not response.content:
+                    return None
+                payload = _read_json_response(response)
+                self._check_for_api_error(payload)
+                return payload
+            finally:
+                response.close()
+        self._check_response_status(response)
         return response
     
     def _build_pagination_params(self, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
@@ -331,8 +337,7 @@ class BaseOperation:
         """
         self._log_operation(operation_id, params)
         
-        operation = getattr(self.client, operation_id)
-        response = operation(**(params or {}))
+        response = self._call_operation(operation_id, **(params or {}))
         
         # Handle different response formats
         if isinstance(response, dict):
@@ -345,12 +350,13 @@ class BaseOperation:
         
         return items, total
     
-    @handle_rest_errors
-    def _call_operation(self, operation_id: str, **params) -> Any:
+    def _call_operation(self, operation_id: str, *, _raw_response: bool = False,
+                        **params) -> Any:
         """Call an OpenAPI operation with error handling.
         
         Args:
             operation_id: OpenAPI operation ID to call
+            _raw_response: Preserve a checked binary HTTP response for the caller
             **params: Operation parameters
             
         Returns:
@@ -359,8 +365,21 @@ class BaseOperation:
         self._log_operation(operation_id, params)
         
         operation = getattr(self.client, operation_id)
-        response = operation(**params)
-        
+        try:
+            response = operation(**params)
+        except requests.exceptions.RequestException as error:
+            _raise_request_error(error, params.get("id"))
+        try:
+            self._check_response_status(response, params.get("id"))
+            if _raw_response and isinstance(response, requests.Response):
+                if "json" in response.headers.get("Content-Type", "").lower() and response.content:
+                    self._check_for_api_error(_read_json_response(response), params.get("id"))
+        except exc.RestClientError:
+            if isinstance(response, requests.Response):
+                response.close()
+            raise
+        if _raw_response:
+            return response
         return self._process_response(response)
     
     def _validate_required_params(self, params: Dict[str, Any], 

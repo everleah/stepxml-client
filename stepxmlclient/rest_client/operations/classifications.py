@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.classification import ClassificationListResponse, ClassificationResponse
 
 
@@ -56,7 +56,9 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("getClassification", {"classification_id": classification_id})
         
         try:
-            response = self.client.getClassification(id=classification_id, **query_params)
+            response = self._call_operation("getClassification", id=classification_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(classification_id, "Classification")
@@ -87,7 +89,7 @@ class ClassificationOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("createClassificationSearch", {"condition": condition})
         
-        response = self.client.createClassificationSearch(json=body, **self._build_context_params())
+        response = self._call_operation("createClassificationSearch", json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return ClassificationListResponse(**response)
@@ -115,7 +117,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getClassificationApprovalStatus", {"id": classification_id})
         try:
-            r = self.client.getClassificationApprovalStatus(id=classification_id, **qp)
+            r = self._call_operation("getClassificationApprovalStatus", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -129,7 +133,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveClassification", {"id": classification_id})
         try:
-            r = self.client.approveClassification(id=classification_id, **qp)
+            r = self._call_operation("approveClassification", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -143,7 +149,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveClassificationDeletion", {"id": classification_id})
         try:
-            r = self.client.approveClassificationDeletion(id=classification_id, **qp)
+            r = self._call_operation("approveClassificationDeletion", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -157,7 +165,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("purgeClassification", {"id": classification_id})
         try:
-            r = self.client.purgeClassification(id=classification_id, **qp)
+            r = self._call_operation("purgeClassification", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -171,7 +181,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getClassificationAssets", {"id": classification_id})
         try:
-            r = self.client.getClassificationAssets(id=classification_id, **qp)
+            r = self._call_operation("getClassificationAssets", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -185,7 +197,9 @@ class ClassificationOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getClassificationIncomingReferences", {"id": classification_id})
         try:
-            r = self.client.getClassificationIncomingReferences(id=classification_id, **qp)
+            r = self._call_operation("getClassificationIncomingReferences", id=classification_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -202,8 +216,10 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("getClassificationValueByAttributeId",
                            {"id": classification_id, "attributeId": attribute_id})
         try:
-            r = self.client.getClassificationValueByAttributeId(
+            r = self._call_operation("getClassificationValueByAttributeId",
                 id=classification_id, attributeId=attribute_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise
@@ -221,8 +237,10 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("replaceClassificationValueByAttributeId",
                            {"id": classification_id, "attributeId": attribute_id})
         try:
-            r = self.client.replaceClassificationValueByAttributeId(
+            r = self._call_operation("replaceClassificationValueByAttributeId",
                 id=classification_id, attributeId=attribute_id, json=value, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             if "400" in str(e): raise ValidationError(str(e))
@@ -240,9 +258,11 @@ class ClassificationOperations(BaseOperation):
         self._log_operation("deleteClassificationValueByAttributeId",
                            {"id": classification_id, "attributeId": attribute_id})
         try:
-            self.client.deleteClassificationValueByAttributeId(
+            self._call_operation("deleteClassificationValueByAttributeId",
                 id=classification_id, attributeId=attribute_id, **qp)
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(classification_id, "Classification")
             raise

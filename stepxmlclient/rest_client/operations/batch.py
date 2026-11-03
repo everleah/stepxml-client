@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import ValidationError
+from ..exceptions import RestClientError, ValidationError
 from ..models.batch import BatchResponse
 
 
@@ -21,7 +21,9 @@ class BatchOperations(BaseOperation):
         self._validate_required_params({"data": data}, ["data"])
         self._log_operation("executeBatchOperation", {})
         try:
-            r = self.client.executeBatchOperation(json=data, **self._build_context_params())
+            r = self._call_operation("executeBatchOperation", json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise

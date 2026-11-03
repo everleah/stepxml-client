@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError
+from ..exceptions import NotFoundError, RestClientError
 from ..models.context import ContextResponse
 
 
@@ -68,7 +68,7 @@ class ContextOperations(BaseOperation):
         We handle those shapes as well.
         """
         self._log_operation("getContexts", {})
-        response = self.client.getContexts(**self._build_context_params())
+        response = self._call_operation("getContexts", **self._build_context_params())
         return self._coerce_context_items(response)
 
     @handle_rest_errors
@@ -80,7 +80,9 @@ class ContextOperations(BaseOperation):
         self._validate_required_params({"context_id": context_id}, ["context_id"])
         self._log_operation("getContext", {"id": context_id})
         try:
-            response = self.client.getContext(id=context_id, **self._build_context_params())
+            response = self._call_operation("getContext", id=context_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(context_id, "Context")

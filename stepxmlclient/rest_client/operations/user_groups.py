@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.user import UserGroupResponse
 
 
@@ -17,7 +17,9 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getUserGroup", {"id": group_id})
         try:
-            r = self.client.getUserGroup(id=group_id, **self._build_context_params())
+            r = self._call_operation("getUserGroup", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
@@ -28,7 +30,9 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("createOrReplaceUserGroup", {"id": group_id})
         try:
-            r = self.client.createOrReplaceUserGroup(id=group_id, json=data, **self._build_context_params())
+            r = self._call_operation("createOrReplaceUserGroup", id=group_id, json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
@@ -39,7 +43,9 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("updateUserGroup", {"id": group_id})
         try:
-            r = self.client.updateUserGroup(id=group_id, json=data, **self._build_context_params())
+            r = self._call_operation("updateUserGroup", id=group_id, json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
@@ -50,8 +56,10 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("deleteUserGroup", {"id": group_id})
         try:
-            self.client.deleteUserGroup(id=group_id, **self._build_context_params())
+            self._call_operation("deleteUserGroup", id=group_id, **self._build_context_params())
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
@@ -61,7 +69,9 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getUserGroupUsers", {"id": group_id})
         try:
-            r = self.client.getUserGroupUsers(id=group_id, **self._build_context_params())
+            r = self._call_operation("getUserGroupUsers", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise
@@ -72,7 +82,9 @@ class UserGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getUserGroupChildren", {"id": group_id})
         try:
-            r = self.client.getUserGroupChildren(id=group_id, **self._build_context_params())
+            r = self._call_operation("getUserGroupChildren", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "UserGroup")
             raise

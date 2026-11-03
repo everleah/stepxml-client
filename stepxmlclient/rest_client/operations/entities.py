@@ -4,7 +4,7 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.entity import (
     EntityListResponse,
     EntityResponse,
@@ -59,7 +59,9 @@ class EntityOperations(BaseOperation):
         self._log_operation("getEntity", {"entity_id": entity_id})
         
         try:
-            response = self.client.getEntity(id=entity_id, **query_params)
+            response = self._call_operation("getEntity", id=entity_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, "Entity")
@@ -90,7 +92,7 @@ class EntityOperations(BaseOperation):
         body = {"condition": condition}
         self._log_operation("createEntitySearch", {"condition": condition})
         
-        response = self.client.createEntitySearch(json=body, **self._build_context_params())
+        response = self._call_operation("createEntitySearch", json=body, **self._build_context_params())
         
         if isinstance(response, dict):
             return EntityListResponse(**response)
@@ -121,7 +123,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("findSimilarEntities", {"id": entity_id})
         try:
-            r = self.client.findSimilarEntities(id=entity_id, **qp)
+            r = self._call_operation("findSimilarEntities", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -132,7 +136,9 @@ class EntityOperations(BaseOperation):
         self._validate_required_params({"data": data}, ["data"])
         self._log_operation("entityMatchAndMerge", data)
         try:
-            r = self.client.entityMatchAndMerge(json=data, **self._build_context_params())
+            r = self._call_operation("entityMatchAndMerge", json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
@@ -146,7 +152,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getEntityApprovalStatus", {"id": entity_id})
         try:
-            r = self.client.getEntityApprovalStatus(id=entity_id, **qp)
+            r = self._call_operation("getEntityApprovalStatus", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -160,7 +168,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveEntity", {"id": entity_id})
         try:
-            r = self.client.approveEntity(id=entity_id, **qp)
+            r = self._call_operation("approveEntity", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -174,7 +184,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveEntityDeletion", {"id": entity_id})
         try:
-            r = self.client.approveEntityDeletion(id=entity_id, **qp)
+            r = self._call_operation("approveEntityDeletion", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -188,7 +200,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("purgeEntity", {"id": entity_id})
         try:
-            r = self.client.purgeEntity(id=entity_id, **qp)
+            r = self._call_operation("purgeEntity", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -202,7 +216,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getEntityChildren", {"id": entity_id})
         try:
-            r = self.client.getEntityChildren(id=entity_id, **qp)
+            r = self._call_operation("getEntityChildren", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -216,7 +232,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getEntityDataContainers", {"id": entity_id})
         try:
-            r = self.client.getEntityDataContainers(id=entity_id, **qp)
+            r = self._call_operation("getEntityDataContainers", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -230,7 +248,9 @@ class EntityOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getEntityIncomingReferences", {"id": entity_id})
         try:
-            r = self.client.getEntityIncomingReferences(id=entity_id, **qp)
+            r = self._call_operation("getEntityIncomingReferences", id=entity_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -247,8 +267,10 @@ class EntityOperations(BaseOperation):
         self._log_operation("getEntityValueByAttributeId",
                            {"id": entity_id, "attributeId": attribute_id})
         try:
-            r = self.client.getEntityValueByAttributeId(
+            r = self._call_operation("getEntityValueByAttributeId",
                 id=entity_id, attributeId=attribute_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
@@ -266,8 +288,10 @@ class EntityOperations(BaseOperation):
         self._log_operation("replaceEntityValueByAttributeId",
                            {"id": entity_id, "attributeId": attribute_id})
         try:
-            r = self.client.replaceEntityValueByAttributeId(
+            r = self._call_operation("replaceEntityValueByAttributeId",
                 id=entity_id, attributeId=attribute_id, json=value, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             if "400" in str(e): raise ValidationError(str(e))
@@ -285,9 +309,11 @@ class EntityOperations(BaseOperation):
         self._log_operation("deleteEntityValueByAttributeId",
                            {"id": entity_id, "attributeId": attribute_id})
         try:
-            self.client.deleteEntityValueByAttributeId(
+            self._call_operation("deleteEntityValueByAttributeId",
                 id=entity_id, attributeId=attribute_id, **qp)
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise

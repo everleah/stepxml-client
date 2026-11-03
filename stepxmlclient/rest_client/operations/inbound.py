@@ -8,7 +8,7 @@ import logging
 from typing import Any, Optional, Union
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestApiError, ValidationError
+from ..exceptions import NotFoundError, RestApiError, RestClientError, ValidationError
 
 
 class InboundOperations(BaseOperation):
@@ -121,8 +121,15 @@ class InboundOperations(BaseOperation):
             if requestor is not None and hasattr(requestor, "post") and server_url:
                 url = f"{server_url.rstrip('/')}/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
                 response = requestor.post(url, data=xml_data, params=params, timeout=120)
+                response = self._process_response(response)
+                if isinstance(response, dict):
+                    return response
+                if response is None:
+                    return {"success": True, "endpoint": endpoint_id}
                 try:
                     response.raise_for_status()
+                except RestClientError:
+                    raise
                 except Exception as exc:
                     error_str = str(exc)
                     if "404" in error_str:
@@ -155,7 +162,7 @@ class InboundOperations(BaseOperation):
                 return {"success": True, "endpoint": endpoint_id}
 
             # Fallback to generated OpenAPI operation when a requestor is not available.
-            response = self.client.uploadFileToAndInvokeInboundRestEndpoint(
+            response = self._call_operation("uploadFileToAndInvokeInboundRestEndpoint",
                 id=endpoint_id,
                 data=xml_data,
                 **params
@@ -172,6 +179,8 @@ class InboundOperations(BaseOperation):
                     return payload
             return {"success": True, "endpoint": endpoint_id}
 
+        except RestClientError:
+            raise
         except Exception as e:
             error_str = str(e)
             if "404" in error_str:
@@ -208,7 +217,9 @@ class InboundOperations(BaseOperation):
         self._log_operation("getInboundIntegrationEndpoints", {})
 
         try:
-            response = self.client.getInboundIntegrationEndpoints(**params)
+            response = self._call_operation("getInboundIntegrationEndpoints", **params)
+        except RestClientError:
+            raise
         except Exception as e:
             raise RestApiError(0, f"Failed to list inbound endpoints: {str(e)}", details=str(e))
 
@@ -239,10 +250,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointStatus(
+            response = self._call_operation("getInboundIntegrationEndpointStatus",
                 id=endpoint_id,
                 **self._build_context_params()
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -282,10 +295,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.enableInboundIntegrationEndpoint(
+            response = self._call_operation("enableInboundIntegrationEndpoint",
                 id=endpoint_id,
                 **self._build_context_params()
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -325,10 +340,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.disableInboundIntegrationEndpoint(
+            response = self._call_operation("disableInboundIntegrationEndpoint",
                 id=endpoint_id,
                 **self._build_context_params()
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -367,10 +384,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointExecutionReport(
+            response = self._call_operation("getInboundIntegrationEndpointExecutionReport",
                 id=endpoint_id,
                 **self._build_context_params()
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -411,10 +430,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointStatistics(
+            response = self._call_operation("getInboundIntegrationEndpointStatistics",
                 id=endpoint_id,
                 **self._build_context_params()
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
@@ -458,10 +479,12 @@ class InboundOperations(BaseOperation):
         })
 
         try:
-            response = self.client.getInboundIntegrationEndpointWorkerProcesses(
+            response = self._call_operation("getInboundIntegrationEndpointWorkerProcesses",
                 id=endpoint_id,
                 **params
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")

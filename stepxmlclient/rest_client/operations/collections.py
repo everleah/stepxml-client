@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.collection import CollectionResponse
 
 
@@ -16,7 +16,9 @@ class CollectionOperations(BaseOperation):
     def create_collection(self, data: dict[str, Any]) -> CollectionResponse:
         self._log_operation("createCollection", data)
         try:
-            r = self.client.createCollection(json=data, **self._build_context_params())
+            r = self._call_operation("createCollection", json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "409" in str(e): raise ValidationError(str(e))
             raise
@@ -27,7 +29,9 @@ class CollectionOperations(BaseOperation):
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("getCollection", {"id": collection_id})
         try:
-            r = self.client.getCollection(id=collection_id, **self._build_context_params())
+            r = self._call_operation("getCollection", id=collection_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(collection_id, "Collection")
             raise
@@ -38,7 +42,9 @@ class CollectionOperations(BaseOperation):
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("createOrReplaceCollection", {"id": collection_id})
         try:
-            r = self.client.createOrReplaceCollection(id=collection_id, json=data, **self._build_context_params())
+            r = self._call_operation("createOrReplaceCollection", id=collection_id, json=data, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "400" in str(e): raise ValidationError(str(e))
             raise
@@ -49,8 +55,10 @@ class CollectionOperations(BaseOperation):
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("deleteCollection", {"id": collection_id})
         try:
-            self.client.deleteCollection(id=collection_id, **self._build_context_params())
+            self._call_operation("deleteCollection", id=collection_id, **self._build_context_params())
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(collection_id, "Collection")
             raise
@@ -60,7 +68,9 @@ class CollectionOperations(BaseOperation):
         self._validate_required_params({"collection_id": collection_id}, ["collection_id"])
         self._log_operation("getCollectionContent", {"id": collection_id})
         try:
-            r = self.client.getCollectionContent(id=collection_id, **self._build_context_params())
+            r = self._call_operation("getCollectionContent", id=collection_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(collection_id, "Collection")
             raise

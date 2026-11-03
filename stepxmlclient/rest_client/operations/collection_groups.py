@@ -3,7 +3,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError
+from ..exceptions import NotFoundError, RestClientError
 from ..models.collection import CollectionGroupResponse
 
 
@@ -17,7 +17,9 @@ class CollectionGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getCollectionGroup", {"id": group_id})
         try:
-            r = self.client.getCollectionGroup(id=group_id, **self._build_context_params())
+            r = self._call_operation("getCollectionGroup", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "CollectionGroup")
             raise
@@ -28,7 +30,9 @@ class CollectionGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getCollectionGroupChildren", {"id": group_id})
         try:
-            r = self.client.getCollectionGroupChildren(id=group_id, **self._build_context_params())
+            r = self._call_operation("getCollectionGroupChildren", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "CollectionGroup")
             raise
@@ -39,7 +43,9 @@ class CollectionGroupOperations(BaseOperation):
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getCollectionGroupCollections", {"id": group_id})
         try:
-            r = self.client.getCollectionGroupCollections(id=group_id, **self._build_context_params())
+            r = self._call_operation("getCollectionGroupCollections", id=group_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(group_id, "CollectionGroup")
             raise

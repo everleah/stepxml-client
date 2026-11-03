@@ -2,7 +2,7 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError
+from ..exceptions import NotFoundError, RestClientError
 from ..models.workflow import WorkflowTaskResponse
 
 
@@ -14,7 +14,7 @@ class WorkflowTaskOperations(BaseOperation):
     def search_workflow_tasks(self, condition: dict[str, Any]) -> WorkflowTaskResponse:
         self._validate_required_params({"condition": condition}, ["condition"])
         self._log_operation("searchWorkflowTasks", {})
-        r = self.client.searchWorkflowTasks(json={"condition": condition}, **self._build_context_params())
+        r = self._call_operation("searchWorkflowTasks", json={"condition": condition}, **self._build_context_params())
         return WorkflowTaskResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -22,7 +22,9 @@ class WorkflowTaskOperations(BaseOperation):
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("getWorkflowTask", {"id": task_id})
         try:
-            r = self.client.getWorkflowTask(id=task_id, **self._build_context_params())
+            r = self._call_operation("getWorkflowTask", id=task_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(task_id, "WorkflowTask")
             raise
@@ -32,7 +34,7 @@ class WorkflowTaskOperations(BaseOperation):
     def claim_workflow_task(self, task_id: str) -> WorkflowTaskResponse:
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("claimWorkflowTask", {"id": task_id})
-        r = self.client.claimWorkflowTask(id=task_id, **self._build_context_params())
+        r = self._call_operation("claimWorkflowTask", id=task_id, **self._build_context_params())
         return WorkflowTaskResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -40,7 +42,9 @@ class WorkflowTaskOperations(BaseOperation):
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("getWorkflowTaskEvents", {"id": task_id})
         try:
-            r = self.client.getWorkflowTaskEvents(id=task_id, **self._build_context_params())
+            r = self._call_operation("getWorkflowTaskEvents", id=task_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(task_id, "WorkflowTask")
             raise
@@ -50,12 +54,12 @@ class WorkflowTaskOperations(BaseOperation):
     def trigger_workflow_task_event(self, task_id: str, data: dict[str, Any]) -> WorkflowTaskResponse:
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("triggerWorkflowTaskEvent", {"id": task_id})
-        r = self.client.triggerWorkflowTaskEvent(id=task_id, json=data, **self._build_context_params())
+        r = self._call_operation("triggerWorkflowTaskEvent", id=task_id, json=data, **self._build_context_params())
         return WorkflowTaskResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def release_workflow_task(self, task_id: str) -> WorkflowTaskResponse:
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("releaseWorkflowTask", {"id": task_id})
-        r = self.client.releaseWorkflowTask(id=task_id, **self._build_context_params())
+        r = self._call_operation("releaseWorkflowTask", id=task_id, **self._build_context_params())
         return WorkflowTaskResponse(**r) if isinstance(r, dict) else r

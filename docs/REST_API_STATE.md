@@ -76,6 +76,16 @@ stepxmlclient/rest_client/
 - **No phantom operations**: Methods that don't exist in the spec were removed.
 - **Pydantic models**: Response types use Pydantic with `ConfigDict(extra="allow")` for STEP's dynamic schemas.
 - **Convenience wrappers**: `search_by_type()` wraps `query{Type}()` with an `objecttype` condition.
+- **Shared response boundary**: Grouped wrappers validate HTTP errors and STEP
+  `httpStatus` payloads before converting models, extracting lists or returning
+  delete success. JSON HTTP responses become native payloads first; binary
+  downloads retain checked content.
+- **Error metadata**: Exceptions retain server messages, response details and
+  status codes, including authentication/authorization failures. Rate-limit
+  errors also expose `retry_after`.
+- **Required reference bodies**: Reference PUTs send `{}` when no values are supplied.
+- **Offline regression coverage**: `tests/test_rest_response_handling.py` exercises
+  real `requests.Response` objects and synthetic `requests-openapi` transport.
 
 ---
 

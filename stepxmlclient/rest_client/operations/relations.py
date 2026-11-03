@@ -14,7 +14,7 @@ import logging
 from typing import Any, Literal, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, ValidationError
+from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.relations import (
     RelationshipListResponse,
     RelationshipResponse,
@@ -101,8 +101,9 @@ class RelationOperations(BaseOperation):
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
         try:
-            op_func = getattr(self.client, op_id)
-            response = op_func(id=entity_id, referenceTypeId=reference_type_id, **query_params)
+            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 prefix = _OP_PREFIX.get(entity_type, "Product")
@@ -155,8 +156,9 @@ class RelationOperations(BaseOperation):
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
-            op_func = getattr(self.client, op_id)
-            response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
+            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -184,7 +186,7 @@ class RelationOperations(BaseOperation):
             entity_id: Source entity ID (or alternate key if key_id is set)
             reference_type_id: The reference type ID
             target_id: Target entity ID (or alternate key if target_key_id is set)
-            data: Optional body with reference attribute values
+            data: Reference attribute values; None sends the required empty object
             key_id: Alternate key ID for source entity (optional)
             target_key_id: Alternate key ID for target entity (optional)
             allow_overwrite: Whether to allow overwriting an existing reference
@@ -210,11 +212,11 @@ class RelationOperations(BaseOperation):
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
-            op_func = getattr(self.client, op_id)
-            if data:
-                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, json=data, **query_params)
-            else:
-                response = op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
+            response = self._call_operation(
+                op_id, id=entity_id, referenceTypeId=reference_type_id,
+                targetId=target_id, json=data if data is not None else {}, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -264,9 +266,10 @@ class RelationOperations(BaseOperation):
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
         try:
-            op_func = getattr(self.client, op_id)
-            op_func(id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
+            self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -304,8 +307,9 @@ class RelationOperations(BaseOperation):
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
         try:
-            op_func = getattr(self.client, op_id)
-            response = op_func(id=entity_id, referenceTypeId=reference_type_id, **query_params)
+            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(entity_id, prefix)
@@ -338,7 +342,9 @@ class RelationOperations(BaseOperation):
         self._log_operation("getReferenceType", {"reference_type_id": reference_type_id})
 
         try:
-            response = self.client.getReferenceType(id=reference_type_id, **query_params)
+            response = self._call_operation("getReferenceType", id=reference_type_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise NotFoundError(reference_type_id, "ReferenceType")

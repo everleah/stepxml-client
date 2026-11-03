@@ -24,5 +24,5 @@ class SystemInformationOperations(BaseOperation):
         Calls: GET /system-information -> getSystemInformation
         """
         self._log_operation("getSystemInformation", {})
-        response = self.client.getSystemInformation(**self._build_context_params())
+        response = self._call_operation("getSystemInformation", **self._build_context_params())
         return SystemInformationResponse(**response) if isinstance(response, dict) else response

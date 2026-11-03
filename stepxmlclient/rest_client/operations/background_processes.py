@@ -35,7 +35,9 @@ class BackgroundProcessOperations(BaseOperation):
             params = self._build_context_params()
             if timeout is not None:
                 params["_timeout"] = timeout
-            r = self.client.getBackgroundProcess(id=quote(process_id, safe=""), **params)
+            r = self._call_operation("getBackgroundProcess", id=quote(process_id, safe=""), **params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
@@ -51,7 +53,9 @@ class BackgroundProcessOperations(BaseOperation):
         self._validate_required_params({"process_id": process_id}, ["process_id"])
         self._log_operation("getBackgroundProcessExecutionReport", {"id": process_id})
         try:
-            r = self.client.getBackgroundProcessExecutionReport(id=process_id, **self._build_context_params())
+            r = self._call_operation("getBackgroundProcessExecutionReport", id=process_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
@@ -66,8 +70,10 @@ class BackgroundProcessOperations(BaseOperation):
             params = self._build_context_params()
             if timeout is not None:
                 params["_timeout"] = timeout
-            r = self.client.getBackgroundProcessAttachmentsMetadata(
+            r = self._call_operation("getBackgroundProcessAttachmentsMetadata",
                 id=quote(process_id, safe=""), **params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
@@ -81,7 +87,9 @@ class BackgroundProcessOperations(BaseOperation):
         self._validate_required_params({"process_id": process_id, "attachment_id": attachment_id}, ["process_id", "attachment_id"])
         self._log_operation("getBackgroundProcessAttachmentMetadata", {"id": process_id, "attachmentId": attachment_id})
         try:
-            r = self.client.getBackgroundProcessAttachmentMetadata(id=process_id, attachmentId=attachment_id, **self._build_context_params())
+            r = self._call_operation("getBackgroundProcessAttachmentMetadata", id=process_id, attachmentId=attachment_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
@@ -96,9 +104,11 @@ class BackgroundProcessOperations(BaseOperation):
             params = self._build_context_params()
             if timeout is not None:
                 params["_timeout"] = timeout
-            r = self.client.getBackgroundProcessAttachmentContent(
+            r = self._call_operation("getBackgroundProcessAttachmentContent", _raw_response=True,
                 id=quote(process_id, safe=""),
                 attachmentId=quote(attachment_id, safe=""), **params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(process_id, "BackgroundProcess")
             raise
@@ -116,7 +126,7 @@ class BackgroundProcessOperations(BaseOperation):
     @handle_rest_errors
     def get_process_types(self) -> list[dict[str, Any]]:
         self._log_operation("getBackgroundProcessTypes", {})
-        r = self.client.getBackgroundProcessTypes(**self._build_context_params())
+        r = self._call_operation("getBackgroundProcessTypes", **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
@@ -124,7 +134,9 @@ class BackgroundProcessOperations(BaseOperation):
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getBackgroundProcessesOfType", {"typeId": type_id})
         try:
-            r = self.client.getBackgroundProcessesOfType(typeId=type_id, **self._build_context_params())
+            r = self._call_operation("getBackgroundProcessesOfType", typeId=type_id, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise NotFoundError(type_id, "BackgroundProcessType")
             raise

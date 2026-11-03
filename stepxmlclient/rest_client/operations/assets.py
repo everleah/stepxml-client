@@ -7,10 +7,12 @@ import logging
 import os
 from typing import Any, Optional
 
+import requests
 import requests_openapi as roa
 
 from .. import exceptions as exc
 from ..base import BaseOperation, handle_rest_errors
+from ..exceptions import RestClientError
 from ..models.asset import (
     AssetCreateRequest,
     AssetDownloadResponse,
@@ -73,7 +75,9 @@ class AssetOperations(BaseOperation):
         self._log_operation("getAsset", {"asset_id": asset_id, "keyId": key_id})
         
         try:
-            response = self.client.getAsset(id=asset_id, **query_params)
+            response = self._call_operation("getAsset", id=asset_id, **query_params)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -106,7 +110,7 @@ class AssetOperations(BaseOperation):
         self._log_operation("createAssetSearch", {"condition": condition})
         
         params = self._build_context_params()
-        response = self.client.createAssetSearch(json=body, **params)
+        response = self._call_operation("createAssetSearch", json=body, **params)
         
         if isinstance(response, dict):
             items = response.get("items", [])
@@ -158,7 +162,9 @@ class AssetOperations(BaseOperation):
         self._log_operation("createAsset", {"objectType": asset_data.objectType})
         
         try:
-            response = self.client.createAsset(json=asset_dict, **self._build_context_params())
+            response = self._call_operation("createAsset", json=asset_dict, **self._build_context_params())
+        except RestClientError:
+            raise
         except Exception as e:
             if "409" in str(e) or "conflict" in str(e).lower():
                 raise exc.ConflictError(409, "Asset conflict while creating asset")
@@ -202,11 +208,13 @@ class AssetOperations(BaseOperation):
         self._log_operation("updateAsset", {"asset_id": asset_id})
         
         try:
-            response = self.client.updateAsset(
+            response = self._call_operation("updateAsset",
                 id=asset_id,
                 json=updates_dict,
                 **query_params
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -253,11 +261,13 @@ class AssetOperations(BaseOperation):
         self._log_operation("createOrReplaceAsset", {"asset_id": asset_id})
         
         try:
-            response = self.client.createOrReplaceAsset(
+            response = self._call_operation("createOrReplaceAsset",
                 id=asset_id,
                 json=asset_dict,
                 **query_params
             )
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -296,8 +306,10 @@ class AssetOperations(BaseOperation):
         self._log_operation("deleteAsset", {"asset_id": asset_id})
         
         try:
-            self.client.deleteAsset(id=asset_id, **query_params)
+            self._call_operation("deleteAsset", id=asset_id, **query_params)
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -362,7 +374,7 @@ class AssetOperations(BaseOperation):
         try:
             # Open file in binary mode and upload
             with open(file_path, 'rb') as f:
-                response = self.client.replaceAssetContent(
+                response = self._call_operation("replaceAssetContent",
                     id=asset_id,
                     data=f.read(),
                     **query_params
@@ -371,6 +383,8 @@ class AssetOperations(BaseOperation):
             self._check_response_status(response, asset_id, "Asset")
         except FileNotFoundError as e:
             raise FileNotFoundError(f"File not found: {file_path}") from e
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
@@ -420,34 +434,32 @@ class AssetOperations(BaseOperation):
         
         try:
             # Use getAssetContent (GET /assets/{id}/content)
-            response = self.client.getAssetContent(id=asset_id, **query_params)
+            response = self._call_operation("getAssetContent", _raw_response=True, id=asset_id, **query_params)
             self._check_response_status(response, asset_id, "Asset")
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e):
                 raise exc.NotFoundError(asset_id, "Asset")
             raise
         
-        # If output_path provided, save the content
-        if output_path and hasattr(response, 'content'):
-            with open(output_path, 'wb') as f:
-                f.write(response.content)
-            self.logger.info(f"Asset content saved to: {output_path}")
-        
-        # Build download response
-        filename = getattr(response, 'filename', None) or asset_id
-        size = getattr(response, 'size', None)
-        mime_type = getattr(response, 'mime_type', None)
-        content_url = getattr(response, 'content_url', None)
-        expires_at = getattr(response, 'expires_at', None)
-        
-        return AssetDownloadResponse(
-            asset_id=asset_id,
-            filename=filename,
-            size=size,
-            mime_type=mime_type,
-            content_url=content_url,
-            expires_at=expires_at
-        )
+        try:
+            if output_path and hasattr(response, 'content'):
+                with open(output_path, 'wb') as f:
+                    f.write(response.content)
+                self.logger.info(f"Asset content saved to: {output_path}")
+
+            return AssetDownloadResponse(
+                asset_id=asset_id,
+                filename=getattr(response, 'filename', None) or asset_id,
+                size=getattr(response, 'size', None),
+                mime_type=getattr(response, 'mime_type', None),
+                content_url=getattr(response, 'content_url', None),
+                expires_at=getattr(response, 'expires_at', None)
+            )
+        finally:
+            if isinstance(response, requests.Response):
+                response.close()
     
     def get_asset_content_url(self, asset_id: str) -> str:
         """Get download URL for asset binary content.
@@ -533,7 +545,9 @@ class AssetOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getAssetApprovalStatus", {"id": asset_id})
         try:
-            r = self.client.getAssetApprovalStatus(id=asset_id, **qp)
+            r = self._call_operation("getAssetApprovalStatus", id=asset_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -547,7 +561,9 @@ class AssetOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveAsset", {"id": asset_id})
         try:
-            r = self.client.approveAsset(id=asset_id, **qp)
+            r = self._call_operation("approveAsset", id=asset_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -561,7 +577,9 @@ class AssetOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveAssetDeletion", {"id": asset_id})
         try:
-            r = self.client.approveAssetDeletion(id=asset_id, **qp)
+            r = self._call_operation("approveAssetDeletion", id=asset_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -575,7 +593,9 @@ class AssetOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("purgeAsset", {"id": asset_id})
         try:
-            r = self.client.purgeAsset(id=asset_id, **qp)
+            r = self._call_operation("purgeAsset", id=asset_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -592,8 +612,10 @@ class AssetOperations(BaseOperation):
         self._log_operation("getAssetValueByAttributeId",
                            {"id": asset_id, "attributeId": attribute_id})
         try:
-            r = self.client.getAssetValueByAttributeId(
+            r = self._call_operation("getAssetValueByAttributeId",
                 id=asset_id, attributeId=attribute_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -611,8 +633,10 @@ class AssetOperations(BaseOperation):
         self._log_operation("replaceAssetValueByAttributeId",
                            {"id": asset_id, "attributeId": attribute_id})
         try:
-            r = self.client.replaceAssetValueByAttributeId(
+            r = self._call_operation("replaceAssetValueByAttributeId",
                 id=asset_id, attributeId=attribute_id, json=value, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             if "400" in str(e): raise exc.ValidationError(str(e))
@@ -630,9 +654,11 @@ class AssetOperations(BaseOperation):
         self._log_operation("deleteAssetValueByAttributeId",
                            {"id": asset_id, "attributeId": attribute_id})
         try:
-            self.client.deleteAssetValueByAttributeId(
+            self._call_operation("deleteAssetValueByAttributeId",
                 id=asset_id, attributeId=attribute_id, **qp)
             return True
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise
@@ -645,7 +671,9 @@ class AssetOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getAssetIncomingReferences", {"id": asset_id})
         try:
-            r = self.client.getAssetIncomingReferences(id=asset_id, **qp)
+            r = self._call_operation("getAssetIncomingReferences", id=asset_id, **qp)
+        except RestClientError:
+            raise
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(asset_id, "Asset")
             raise

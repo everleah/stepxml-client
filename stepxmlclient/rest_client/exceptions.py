@@ -30,27 +30,31 @@ class RestApiError(RestClientError):
         super().__init__(message)
 
 
-class AuthenticationError(RestClientError):
+class AuthenticationError(RestApiError):
     """Exception raised for authentication failures."""
     
-    pass  # noqa: PIE790
+    def __init__(self, error_message, details=None):
+        super().__init__(401, error_message, details=details)
 
 
-class AuthorizationError(RestClientError):
+class AuthorizationError(RestApiError):
     """Exception raised for authorization failures (insufficient permissions)."""
     
-    pass  # noqa: PIE790  # noqa: PIE790
+    def __init__(self, error_message, details=None):
+        super().__init__(403, error_message, details=details)
 
 
 class NotFoundError(RestApiError):
     """Exception raised when a requested resource is not found (HTTP 404)."""
     
-    def __init__(self, resource_id, resource_type=None, details=None):
+    def __init__(self, resource_id, resource_type=None, details=None, *, error_message=None):
         message = "Resource not found"
         if resource_type:
             message += f": {resource_type}"
         if resource_id:
             message += f" (ID: {resource_id})"
+        if error_message:
+            message += f": {error_message}"
         super().__init__(404, message, error_code="NOT_FOUND", details=details)
         self.resource_id = resource_id
         self.resource_type = resource_type
@@ -74,8 +78,11 @@ class ConflictError(RestApiError):
 class RateLimitError(RestApiError):
     """Exception raised when rate limit is exceeded (HTTP 429)."""
     
-    def __init__(self, retry_after=None, details=None):
-        super().__init__(429, "Rate limit exceeded", error_code="RATE_LIMITED", details=details)
+    def __init__(self, retry_after=None, details=None, *, error_message=None):
+        message = "Rate limit exceeded"
+        if error_message:
+            message += f": {error_message}"
+        super().__init__(429, message, error_code="RATE_LIMITED", details=details)
         self.retry_after = retry_after
 
 
