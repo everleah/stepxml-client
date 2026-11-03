@@ -165,7 +165,7 @@ Default section order:
 
 When the user requests a durable behavior change, record it here or in the relevant child AGENTS.md
 - Project owner and package maintainer: Everleah (`everleah@hansch.info`).
-- Publish the Python package as `stepxmlclient` on PyPI under account `everleah`; the current version `1.0.0` is the first public release.
+- Publish the Python package as `stepxmlclient` on PyPI under account `everleah`; `1.0.0` was the first public release. The current package version is defined in `pyproject.toml`.
 
 ## Child DOX Index
 
