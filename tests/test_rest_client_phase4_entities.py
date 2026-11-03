@@ -124,7 +124,7 @@ class TestEntityOperations(unittest.TestCase):
         self.assertNotIn("entityId", call_args[1])
 
     def test_get_entity_not_found(self):
-        self.mock_client.getEntity.side_effect = Exception("404 not found")
+        self.mock_client.getEntity.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_entity("NONEXISTENT")
 

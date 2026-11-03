@@ -4,6 +4,8 @@ Tests for product CRUD operations, search, and integration with the REST client.
 """
 
 import unittest
+from tests.test_rest_response_handling import json_response
+from requests import HTTPError
 from unittest.mock import Mock, MagicMock, patch
 import logging
 
@@ -182,7 +184,7 @@ class TestProductOperations(unittest.TestCase):
     
     def test_get_product_not_found(self):
         """Test product retrieval when not found."""
-        self.mock_client.getProduct.side_effect = Exception("404 not found")
+        self.mock_client.getProduct.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_product("NONEXISTENT")
@@ -293,7 +295,7 @@ class TestProductOperations(unittest.TestCase):
             attributeLinks=None,
             dataContainers=None,
         )
-        self.mock_client.createProduct.side_effect = Exception("409 conflict")
+        self.mock_client.createProduct.side_effect = HTTPError(response=json_response({"message": '409 conflict'}, status=409))
         
         with self.assertRaises(exc.ConflictError):
             self.operations.create_product(request)
@@ -309,10 +311,11 @@ class TestProductOperations(unittest.TestCase):
             attributeLinks=None,
             dataContainers=None,
         )
-        self.mock_client.createProduct.side_effect = Exception("400 invalid")
+        self.mock_client.createProduct.side_effect = HTTPError(response=json_response({"message": '400 invalid'}, status=400))
         
-        with self.assertRaises(exc.ValidationError):
+        with self.assertRaises(exc.RestApiError) as caught:
             self.operations.create_product(request)
+        self.assertEqual(caught.exception.status_code, 400)
     
     def test_create_product_requires_object_type(self):
         """Test that product creation requires objectType."""
@@ -371,7 +374,7 @@ class TestProductOperations(unittest.TestCase):
     def test_update_product_not_found(self):
         """Test product update when not found."""
         updates = ProductUpdateRequest(name="Updated", parent=None, values=None, references=None, attributeLinks=None, dataContainers=None)
-        self.mock_client.updateProduct.side_effect = Exception("404 not found")
+        self.mock_client.updateProduct.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_product("NONEXISTENT", updates)
@@ -440,7 +443,7 @@ class TestProductOperations(unittest.TestCase):
     
     def test_delete_product_not_found(self):
         """Test product deletion when not found."""
-        self.mock_client.deleteProduct.side_effect = Exception("404 not found")
+        self.mock_client.deleteProduct.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_product("NONEXISTENT")

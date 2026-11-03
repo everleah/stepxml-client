@@ -10,6 +10,7 @@ import logging
 
 from stepxmlclient.rest_client.operations.inbound import InboundOperations
 from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError, RestApiError
+from tests.test_rest_response_handling import json_response
 
 
 class TestInboundOperations(unittest.TestCase):
@@ -122,27 +123,26 @@ class TestInboundOperations(unittest.TestCase):
         endpoint_id = "missing_endpoint"
         
         # Mock 404 response
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = Exception("404 Not Found")
+        mock_response = json_response({"message": "Missing endpoint"}, status=404)
         self.mock_requestor.post.return_value = mock_response
         
         with self.assertRaises(NotFoundError):
             self.inbound.upload_and_invoke(endpoint_id, xml_data)
 
     def test_upload_and_invoke_endpoint_not_enabled(self):
-        """Test upload_and_invoke raises ValidationError when endpoint disabled."""
+        """A server-side validation failure retains HTTP 400 and its error body."""
         xml_data = b"<StepXML>test</StepXML>"
         endpoint_id = "disabled_endpoint"
         
         # Mock 400 response with 'not enabled' message
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = Exception("400 Bad Request: endpoint not enabled")
+        mock_response = json_response({"message": "endpoint not enabled"}, status=400)
         self.mock_requestor.post.return_value = mock_response
         
-        with self.assertRaises(ValidationError) as ctx:
+        with self.assertRaises(RestApiError) as ctx:
             self.inbound.upload_and_invoke(endpoint_id, xml_data)
         
         self.assertIn("not enabled", str(ctx.exception))
+        self.assertEqual(ctx.exception.status_code, 400)
 
     def test_upload_and_invoke_no_rest_receiver(self):
         """Test upload_and_invoke raises error when REST receiver not configured."""
@@ -150,11 +150,10 @@ class TestInboundOperations(unittest.TestCase):
         endpoint_id = "no_rest_receiver"
         
         # Mock 400 response with 'REST receiver' message
-        mock_response = Mock()
-        mock_response.raise_for_status.side_effect = Exception("400 Bad Request: REST receiver not configured")
+        mock_response = json_response({"message": "REST receiver not configured"}, status=400)
         self.mock_requestor.post.return_value = mock_response
         
-        with self.assertRaises(ValidationError) as ctx:
+        with self.assertRaises(RestApiError) as ctx:
             self.inbound.upload_and_invoke(endpoint_id, xml_data)
         
         self.assertIn("REST", str(ctx.exception))

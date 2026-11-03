@@ -8,7 +8,6 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.attribute import (
     AttributeResponse,
     ListOfValueResponse,
@@ -54,14 +53,7 @@ class AttributeOperations(BaseOperation):
         )
         self._log_operation("getAttribute", {"id": attribute_id})
 
-        try:
-            response = self._call_operation("getAttribute", id=attribute_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(attribute_id, "Attribute")
-            raise
+        response = self._call_operation("getAttribute", id=attribute_id, **self._build_context_params())
 
         if isinstance(response, dict):
             return AttributeResponse(**response)
@@ -93,14 +85,7 @@ class AttributeOperations(BaseOperation):
         )
         self._log_operation("getListOfValues", {"id": lov_id})
 
-        try:
-            response = self._call_operation("getListOfValues", id=lov_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(lov_id, "ListOfValues")
-            raise
+        response = self._call_operation("getListOfValues", id=lov_id, **self._build_context_params())
 
         if isinstance(response, dict):
             return ListOfValueResponse(**response)
@@ -128,14 +113,7 @@ class AttributeOperations(BaseOperation):
         )
         self._log_operation("getListOfValuesEntries", {"id": lov_id})
 
-        try:
-            response = self._call_operation("getListOfValuesEntries", id=lov_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(lov_id, "ListOfValues")
-            raise
+        response = self._call_operation("getListOfValuesEntries", id=lov_id, **self._build_context_params())
 
         return self._coerce_list_payload(response)
 
@@ -151,14 +129,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getDataContainerType", {"id": type_id})
-        try:
-            response = self._call_operation("getDataContainerType", id=type_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(type_id, "DataContainerType")
-            raise
+        response = self._call_operation("getDataContainerType", id=type_id, **self._build_context_params())
         return response if isinstance(response, dict) else response
 
     @handle_rest_errors
@@ -169,14 +140,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroup", {"id": group_id})
-        try:
-            response = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        response = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
         return response if isinstance(response, dict) else response
 
     @handle_rest_errors
@@ -187,14 +151,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getObjectType", {"id": type_id})
-        try:
-            response = self._call_operation("getObjectType", id=type_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(type_id, "ObjectType")
-            raise
+        response = self._call_operation("getObjectType", id=type_id, **self._build_context_params())
         return response if isinstance(response, dict) else response
 
     @handle_rest_errors
@@ -205,14 +162,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"type_id": type_id}, ["type_id"])
         self._log_operation("getObjectTypeChildren", {"id": type_id})
-        try:
-            response = self._call_operation("getObjectTypeChildren", id=type_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(type_id, "ObjectType")
-            raise
+        response = self._call_operation("getObjectTypeChildren", id=type_id, **self._build_context_params())
         if isinstance(response, list):
             return response
         return []
@@ -225,14 +175,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"reference_type_id": reference_type_id}, ["reference_type_id"])
         self._log_operation("getReferenceType", {"id": reference_type_id})
-        try:
-            response = self._call_operation("getReferenceType", id=reference_type_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(reference_type_id, "ReferenceType")
-            raise
+        response = self._call_operation("getReferenceType", id=reference_type_id, **self._build_context_params())
         return response if isinstance(response, dict) else response
 
     @handle_rest_errors
@@ -243,14 +186,7 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"unit_id": unit_id}, ["unit_id"])
         self._log_operation("getUnit", {"id": unit_id})
-        try:
-            response = self._call_operation("getUnit", id=unit_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(unit_id, "Unit")
-            raise
+        response = self._call_operation("getUnit", id=unit_id, **self._build_context_params())
         return response if isinstance(response, dict) else response
 
     @handle_rest_errors
@@ -261,12 +197,5 @@ class AttributeOperations(BaseOperation):
         """
         self._validate_required_params({"key_id": key_id}, ["key_id"])
         self._log_operation("getUniqueKey", {"id": key_id})
-        try:
-            response = self._call_operation("getUniqueKey", id=key_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(key_id, "UniqueKey")
-            raise
+        response = self._call_operation("getUniqueKey", id=key_id, **self._build_context_params())
         return response if isinstance(response, dict) else response

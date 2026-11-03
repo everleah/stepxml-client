@@ -14,7 +14,7 @@ import logging
 from typing import Any, Literal, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError, ValidationError
+from ..exceptions import RestClientError, ValidationError
 from ..models.relations import (
     RelationshipListResponse,
     RelationshipResponse,
@@ -99,15 +99,7 @@ class RelationOperations(BaseOperation):
             query_params["keyId"] = key_id
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
-        try:
-            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                prefix = _OP_PREFIX.get(entity_type, "Product")
-                raise NotFoundError(entity_id, prefix)
-            raise
+        response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
 
         if isinstance(response, dict):
             return RelationshipListResponse(**response)
@@ -154,14 +146,7 @@ class RelationOperations(BaseOperation):
             query_params["includeInheritedData"] = include_inherited_data
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
-        try:
-            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, prefix)
-            raise
+        response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
 
         if isinstance(response, dict):
             return RelationshipResponse(**response)
@@ -210,18 +195,9 @@ class RelationOperations(BaseOperation):
             query_params["allow-overwrite"] = allow_overwrite
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
-        try:
-            response = self._call_operation(
-                op_id, id=entity_id, referenceTypeId=reference_type_id,
-                targetId=target_id, json=data if data is not None else {}, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, prefix)
-            if "400" in str(e):
-                raise ValidationError(str(e))
-            raise
+        response = self._call_operation(
+            op_id, id=entity_id, referenceTypeId=reference_type_id,
+            targetId=target_id, json=data if data is not None else {}, **query_params)
 
         if isinstance(response, dict):
             return RelationshipResponse(**response)
@@ -264,21 +240,15 @@ class RelationOperations(BaseOperation):
             query_params["targetKeyId"] = target_key_id
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id, "target_id": target_id})
 
-        try:
-            self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
-            return True
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, prefix)
-            raise
+        self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, targetId=target_id, **query_params)
+        return True
 
     @handle_rest_errors
     def get_incoming_references(self, entity_type: EntityType,
                                 entity_id: str,
                                 reference_type_id: str,
-                                key_id: str | None = None) -> RelationshipListResponse:
+                                key_id: str | None = None
+                                ) -> list[dict[str, Any]] | RelationshipListResponse:
         """List incoming references of a given type for a target entity.
 
         Calls: GET /{entity_type}/{id}/incoming-references/{referenceTypeId}
@@ -290,7 +260,8 @@ class RelationOperations(BaseOperation):
             key_id: Alternate key ID for the target entity (optional)
 
         Returns:
-            RelationshipListResponse with list of incoming references
+            List of dictionaries from STEP array endpoints, or RelationshipListResponse
+            for compatible object payloads. Array results are not converted into a model.
         """
         self._validate_required_params(
             {"entity_id": entity_id, "reference_type_id": reference_type_id},
@@ -305,18 +276,15 @@ class RelationOperations(BaseOperation):
             query_params["keyId"] = key_id
         self._log_operation(op_id, {"entity_id": entity_id, "reference_type_id": reference_type_id})
 
-        try:
-            response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(entity_id, prefix)
-            raise
+        response = self._call_operation(op_id, id=entity_id, referenceTypeId=reference_type_id, **query_params)
 
-        if isinstance(response, dict):
-            return RelationshipListResponse(**response)
-        return response
+        if isinstance(response, list):
+            if not all(isinstance(item, dict) for item in response):
+                raise RestClientError("Incoming references response must contain objects")
+            return response
+        if isinstance(response, (dict, RelationshipListResponse)):
+            return RelationshipListResponse.model_validate(response)
+        raise RestClientError("Incoming references response must be an array or an object")
 
     # ============================================================================
     # Reference Type Lookup
@@ -340,14 +308,7 @@ class RelationOperations(BaseOperation):
         query_params = self._build_context_params()
         self._log_operation("getReferenceType", {"reference_type_id": reference_type_id})
 
-        try:
-            response = self._call_operation("getReferenceType", id=reference_type_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(reference_type_id, "ReferenceType")
-            raise
+        response = self._call_operation("getReferenceType", id=reference_type_id, **query_params)
 
         if isinstance(response, dict):
             return RelationshipTypeResponse(**response)

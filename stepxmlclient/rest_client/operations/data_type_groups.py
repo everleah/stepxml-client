@@ -3,7 +3,6 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.data_type_group import DataTypeGroupResponse
 
 
@@ -16,63 +15,33 @@ class DataTypeGroupOperations(BaseOperation):
     def get_data_type_group(self, group_id: str) -> DataTypeGroupResponse:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroup", {"id": group_id})
-        try:
-            r = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        r = self._call_operation("getDataTypeGroup", id=group_id, **self._build_context_params())
         return DataTypeGroupResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_data_type_group_children(self, group_id: str) -> list[str]:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupChildren", {"id": group_id})
-        try:
-            r = self._call_operation("getDataTypeGroupChildren", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        r = self._call_operation("getDataTypeGroupChildren", id=group_id, **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
     def get_data_type_group_attributes(self, group_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupAttributes", {"id": group_id})
-        try:
-            r = self._call_operation("getDataTypeGroupAttributes", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        r = self._call_operation("getDataTypeGroupAttributes", id=group_id, **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
     def get_data_type_group_data_container_types(self, group_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupDataContainerTypes", {"id": group_id})
-        try:
-            r = self._call_operation("getDataTypeGroupDataContainerTypes", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        r = self._call_operation("getDataTypeGroupDataContainerTypes", id=group_id, **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
     def get_data_type_group_reference_types(self, group_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"group_id": group_id}, ["group_id"])
         self._log_operation("getDataTypeGroupReferenceTypes", {"id": group_id})
-        try:
-            r = self._call_operation("getDataTypeGroupReferenceTypes", id=group_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(group_id, "DataTypeGroup")
-            raise
+        r = self._call_operation("getDataTypeGroupReferenceTypes", id=group_id, **self._build_context_params())
         return r if isinstance(r, list) else []

@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.context import ContextResponse
 
 
@@ -79,12 +78,5 @@ class ContextOperations(BaseOperation):
         """
         self._validate_required_params({"context_id": context_id}, ["context_id"])
         self._log_operation("getContext", {"id": context_id})
-        try:
-            response = self._call_operation("getContext", id=context_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(context_id, "Context")
-            raise
+        response = self._call_operation("getContext", id=context_id, **self._build_context_params())
         return ContextResponse(**response) if isinstance(response, dict) else response

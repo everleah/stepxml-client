@@ -2,7 +2,6 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.integration_endpoint import IntegrationEndpointResponse
 
 
@@ -20,26 +19,14 @@ class GatewayOperations(BaseOperation):
     def get_gateway_endpoint(self, ep_id: str) -> IntegrationEndpointResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getGatewayIntegrationEndpoint", {"id": ep_id})
-        try:
-            r = self._call_operation("getGatewayIntegrationEndpoint", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "GatewayIntegrationEndpoint")
-            raise
+        r = self._call_operation("getGatewayIntegrationEndpoint", id=ep_id, **self._build_context_params())
         return IntegrationEndpointResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_gateway_endpoint_status(self, ep_id: str) -> IntegrationEndpointResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getGatewayIntegrationEndpointStatus", {"id": ep_id})
-        try:
-            r = self._call_operation("getGatewayIntegrationEndpointStatus", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "GatewayIntegrationEndpoint")
-            raise
+        r = self._call_operation("getGatewayIntegrationEndpointStatus", id=ep_id, **self._build_context_params())
         return IntegrationEndpointResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors

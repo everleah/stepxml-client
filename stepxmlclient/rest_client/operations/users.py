@@ -7,7 +7,6 @@ import logging
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.user import UserResponse
 
 
@@ -26,13 +25,7 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("getUser", {"id": user_id})
-        try:
-            r = self._call_operation("getUser", id=user_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            raise
+        r = self._call_operation("getUser", id=user_id, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -42,13 +35,7 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("createOrReplaceUser", {"id": user_id})
-        try:
-            r = self._call_operation("createOrReplaceUser", id=user_id, json=data, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "400" in str(e): raise ValidationError(str(e))
-            raise
+        r = self._call_operation("createOrReplaceUser", id=user_id, json=data, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -58,14 +45,7 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("updateUser", {"id": user_id})
-        try:
-            r = self._call_operation("updateUser", id=user_id, json=data, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            if "400" in str(e): raise ValidationError(str(e))
-            raise
+        r = self._call_operation("updateUser", id=user_id, json=data, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -75,14 +55,8 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("deleteUser", {"id": user_id})
-        try:
-            self._call_operation("deleteUser", id=user_id, **self._build_context_params())
-            return True
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            raise
+        self._call_operation("deleteUser", id=user_id, **self._build_context_params())
+        return True
 
     @handle_rest_errors
     def randomize_password(self, user_id: str) -> UserResponse:
@@ -91,13 +65,7 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("randomizeStepPassword", {"id": user_id})
-        try:
-            r = self._call_operation("randomizeStepPassword", id=user_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            raise
+        r = self._call_operation("randomizeStepPassword", id=user_id, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -107,13 +75,7 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("addUserToGroup", {"id": user_id})
-        try:
-            r = self._call_operation("addUserToGroup", id=user_id, json=group_data, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            raise
+        r = self._call_operation("addUserToGroup", id=user_id, json=group_data, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -123,11 +85,5 @@ class UserOperations(BaseOperation):
         """
         self._validate_required_params({"user_id": user_id}, ["user_id"])
         self._log_operation("removeUserFromGroup", {"id": user_id})
-        try:
-            r = self._call_operation("removeUserFromGroup", id=user_id, json=group_data, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(user_id, "User")
-            raise
+        r = self._call_operation("removeUserFromGroup", id=user_id, json=group_data, **self._build_context_params())
         return UserResponse(**r) if isinstance(r, dict) else r

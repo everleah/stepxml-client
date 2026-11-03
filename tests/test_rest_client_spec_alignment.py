@@ -47,6 +47,10 @@ CONTRACTS = (
     ("get", "/assets/{id}/references/{referenceTypeId}", "getAssetReferencesByReferenceTypeId"),
     ("get", "/classifications/{id}/references/{referenceTypeId}", "getClassificationReferenceByReferenceTypeId"),
     ("get", "/entities/{id}/references/{referenceTypeId}", "getEntityReferenceByReferenceTypeId"),
+    ("get", "/products/{id}/incoming-references/{referenceTypeId}", "getProductIncomingReferences"),
+    ("get", "/assets/{id}/incoming-references/{referenceTypeId}", "getAssetIncomingReferences"),
+    ("get", "/classifications/{id}/incoming-references/{referenceTypeId}", "getClassificationIncomingReferences"),
+    ("get", "/entities/{id}/incoming-references/{referenceTypeId}", "getEntityIncomingReferences"),
 )
 
 
@@ -210,6 +214,22 @@ class TestSpecTransport(unittest.TestCase):
             with self.subTest(group=group):
                 self.assertEqual(operations.list_references(group, "X", "R").relationships, [])
                 self.assert_request("GET", f"/{group}/X/references/R")
+
+    def test_incoming_reference_arrays_for_all_target_types(self):
+        operations = RelationOperations(self.client, context="C", workspace="Main")
+        for group in ("products", "assets", "classifications", "entities"):
+            for payload in ([], [{"source": "P", "sourceType": "product"}]):
+                with self.subTest(group=group, payload=payload):
+                    self.adapter.payload = payload
+                    result = operations.get_incoming_references(group, "X", "R", key_id="Key")
+                    self.assertIsInstance(result, list)
+                    self.assertEqual(result, payload)
+                    self.assert_request("GET", f"/{group}/X/incoming-references/R", keyId="Key")
+            self.adapter.payload = {"message": "Missing target"}
+            self.adapter.status = 404
+            with self.subTest(group=group), self.assertRaises(exc.NotFoundError):
+                operations.get_incoming_references(group, "X", "R")
+            self.adapter.status = 200
 
 
 class TestAuthorizedLocalSpecification(unittest.TestCase):

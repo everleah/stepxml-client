@@ -4,7 +4,6 @@ import logging
 from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.import_export import (
     BackgroundProcessResponse,
     ExportJobCreateRequest,
@@ -61,19 +60,10 @@ class ExportOperations(BaseOperation):
 
         self._log_operation("startExport", {"exportConfigurationId": export_configuration_id})
 
-        try:
-            if create_data is not None:
-                response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, json=create_data, **query_params)
-            else:
-                response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(export_configuration_id, "ExportConfiguration")
-            if "400" in str(e):
-                raise ValidationError(f"Export failed: {str(e)}")
-            raise
+        if create_data is not None:
+            response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, json=create_data, **query_params)
+        else:
+            response = self._call_operation("startExport", exportConfigurationId=export_configuration_id, **query_params)
 
         return BackgroundProcessResponse.model_validate(response)
 
@@ -106,41 +96,32 @@ class ExportOperations(BaseOperation):
 
         self._log_operation("startImport", {"importConfigurationId": import_configuration_id})
 
-        try:
-            if data is not None:
-                # Binary data: convert to bytes if needed
-                if isinstance(data, str):
-                    binary_data = data.encode('utf-8')
-                elif isinstance(data, bytes):
-                    binary_data = data
-                else:
-                    # For Pydantic models or dicts, convert to JSON bytes
-                    import json
-                    
-                    from pydantic import BaseModel
-                    if isinstance(data, BaseModel):
-                        binary_data = json.dumps(data.model_dump(exclude_none=True)).encode('utf-8')
-                    else:
-                        binary_data = json.dumps(data).encode('utf-8')
-                
-                response = self._call_operation("startImport",
-                    importConfigurationId=import_configuration_id,
-                    data=binary_data,
-                    **query_params
-                )
+        if data is not None:
+            # Binary data: convert to bytes if needed
+            if isinstance(data, str):
+                binary_data = data.encode('utf-8')
+            elif isinstance(data, bytes):
+                binary_data = data
             else:
-                response = self._call_operation("startImport",
-                    importConfigurationId=import_configuration_id,
-                    **query_params
-                )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(import_configuration_id, "ImportConfiguration")
-            if "400" in str(e):
-                raise ValidationError(f"Import failed: {e!s}")
-            raise
+                # For Pydantic models or dicts, convert to JSON bytes
+                import json
+                    
+                from pydantic import BaseModel
+                if isinstance(data, BaseModel):
+                    binary_data = json.dumps(data.model_dump(exclude_none=True)).encode('utf-8')
+                else:
+                    binary_data = json.dumps(data).encode('utf-8')
+                
+            response = self._call_operation("startImport",
+                importConfigurationId=import_configuration_id,
+                data=binary_data,
+                **query_params
+            )
+        else:
+            response = self._call_operation("startImport",
+                importConfigurationId=import_configuration_id,
+                **query_params
+            )
 
         return BackgroundProcessResponse.model_validate(response)
     

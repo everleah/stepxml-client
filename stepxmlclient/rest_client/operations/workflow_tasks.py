@@ -2,7 +2,6 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.workflow import WorkflowTaskResponse
 
 
@@ -21,13 +20,7 @@ class WorkflowTaskOperations(BaseOperation):
     def get_workflow_task(self, task_id: str) -> WorkflowTaskResponse:
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("getWorkflowTask", {"id": task_id})
-        try:
-            r = self._call_operation("getWorkflowTask", id=task_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(task_id, "WorkflowTask")
-            raise
+        r = self._call_operation("getWorkflowTask", id=task_id, **self._build_context_params())
         return WorkflowTaskResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -41,13 +34,7 @@ class WorkflowTaskOperations(BaseOperation):
     def get_workflow_task_events(self, task_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"task_id": task_id}, ["task_id"])
         self._log_operation("getWorkflowTaskEvents", {"id": task_id})
-        try:
-            r = self._call_operation("getWorkflowTaskEvents", id=task_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(task_id, "WorkflowTask")
-            raise
+        r = self._call_operation("getWorkflowTaskEvents", id=task_id, **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors

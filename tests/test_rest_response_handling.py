@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
+from typing import Any, get_type_hints
 import unittest
 from unittest.mock import Mock
 
@@ -18,7 +19,7 @@ from stepxmlclient.rest_client.models.asset import AssetResponse
 from stepxmlclient.rest_client.models.classification import ClassificationResponse
 from stepxmlclient.rest_client.models.entity import EntityResponse
 from stepxmlclient.rest_client.models.product import ProductResponse
-from stepxmlclient.rest_client.models.relations import RelationshipResponse
+from stepxmlclient.rest_client.models.relations import RelationshipListResponse, RelationshipResponse
 from stepxmlclient.rest_client.operations.assets import AssetOperations
 from stepxmlclient.rest_client.operations.background_processes import BackgroundProcessOperations
 from stepxmlclient.rest_client.operations.classifications import ClassificationOperations
@@ -186,6 +187,42 @@ class TestResponseNormalization(unittest.TestCase):
 
 
 class TestHttpErrors(unittest.TestCase):
+    def test_non_http_errors_are_not_classified_by_message(self):
+        cases = (
+            (AssetOperations, "get_asset", ("A",), "getAsset"),
+            (ProductOperations, "get_product", ("P",), "getProduct"),
+            (ClassificationOperations, "get_classification", ("C",), "getClassification"),
+            (EntityOperations, "get_entity", ("E",), "getEntity"),
+            (CollectionOperations, "get_collection", ("C",), "getCollection"),
+            (UserOperations, "get_user", ("U",), "getUser"),
+            (BackgroundProcessOperations, "get_background_process", ("B",), "getBackgroundProcess"),
+            (InboundOperations, "get_status", ("I",), "getInboundIntegrationEndpointStatus"),
+            (RelationOperations, "get_reference", ("assets", "A", "R", "T"),
+             "getAssetReferenceEntryByReferenceTypeIdAndTargetId"),
+        )
+        for cls, method, args, operation in cases:
+            for error in (ValueError("Invalid value 404 not found"), RuntimeError("400 invalid"),
+                          RuntimeError("409 conflict"), requests.RequestException("404 network failure")):
+                with self.subTest(method=method, error=error):
+                    client = Mock()
+                    getattr(client, operation).side_effect = error
+                    with self.assertRaises(exc.RestClientError) as caught:
+                        getattr(cls(client), method)(*args)
+                    self.assertIs(type(caught.exception), exc.RestClientError)
+                    self.assertIn(str(error), str(caught.exception))
+                    self.assertIs(caught.exception.__context__, error)
+
+    def test_typed_and_filesystem_errors_pass_through_unchanged(self):
+        client = Mock()
+        for error in (exc.NotFoundError("A"), exc.ValidationError("Local validation"),
+                      exc.ConflictError(409, "Conflict"), FileNotFoundError("404 file"),
+                      OSError("400 local IO")):
+            with self.subTest(error=error):
+                client.getAsset.side_effect = error
+                with self.assertRaises(type(error)) as caught:
+                    AssetOperations(client).get_asset("A")
+                self.assertIs(caught.exception, error)
+
     def test_status_mapping_body_and_metadata_for_all_transports(self):
         cases = (
             (400, exc.RestApiError), (401, exc.AuthenticationError),
@@ -333,6 +370,92 @@ class TestGroupedTransportContract(unittest.TestCase):
                     continue
                 with self.subTest(path=path.name, line=node.lineno):
                     self.assertNotEqual(ast.unparse(node.func.value), "self.client")
+
+    def test_wrapper_exceptions_are_not_classified_from_strings(self):
+        directory = Path(__file__).resolve().parents[1] / "stepxmlclient" / "rest_client" / "operations"
+        for path in directory.glob("*.py"):
+            for node in ast.walk(ast.parse(path.read_text(encoding="utf-8-sig"))):
+                if isinstance(node, ast.ExceptHandler):
+                    for child in ast.walk(node):
+                        if not isinstance(child, ast.Compare):
+                            continue
+                        status_text = any(isinstance(part, ast.Constant)
+                                          and part.value in ("400", "404", "409")
+                                          for part in ast.walk(child))
+                        string_conversion = any(
+                            isinstance(part, ast.Call) and isinstance(part.func, ast.Name)
+                            and part.func.id == "str" for part in ast.walk(child)
+                        )
+                        with self.subTest(path=path.name, line=child.lineno):
+                            self.assertFalse(status_text and string_conversion,
+                                             "Classify HTTP errors by structured status codes")
+
+
+class TestIncomingReferenceResponses(unittest.TestCase):
+    def test_annotation_covers_supported_response_shapes(self):
+        annotation = get_type_hints(RelationOperations.get_incoming_references)["return"]
+        self.assertEqual(annotation, list[dict[str, Any]] | RelationshipListResponse)
+
+    def test_native_array_and_compatible_model_are_preserved(self):
+        client = Mock()
+        operations = RelationOperations(client)
+        for payload in ([], [{"source": "P", "sourceType": "product"}]):
+            with self.subTest(payload=payload):
+                client.getAssetIncomingReferences.return_value = payload
+                self.assertIs(operations.get_incoming_references("assets", "A", "R"), payload)
+        model = RelationshipListResponse.model_validate({"relationships": []})
+        client.getAssetIncomingReferences.return_value = model
+        self.assertIs(operations.get_incoming_references("assets", "A", "R"), model)
+        client.getAssetIncomingReferences.return_value = {"relationships": []}
+        result = operations.get_incoming_references("assets", "A", "R")
+        self.assertIsInstance(result, RelationshipListResponse)
+        assert isinstance(result, RelationshipListResponse)
+        self.assertEqual(result.relationships, [])
+
+    def test_unexpected_response_shapes_fail_explicitly(self):
+        client = Mock()
+        operations = RelationOperations(client)
+        for payload in (None, "not references", [1], ["P"], [None]):
+            with self.subTest(payload=payload):
+                client.getAssetIncomingReferences.return_value = payload
+                with self.assertRaises(exc.RestClientError):
+                    operations.get_incoming_references("assets", "A", "R")
+
+
+class TestInboundResponseShapes(unittest.TestCase):
+    def test_empty_success_remains_supported(self):
+        for direct in (True, False):
+            with self.subTest(direct=direct):
+                client = Mock()
+                result = response(b"", status=204)
+                if direct:
+                    client.server.url = "https://step.invalid/restapiv2"
+                    client.requestor.post.return_value = result
+                else:
+                    client.requestor = None
+                    client.uploadFileToAndInvokeInboundRestEndpoint.return_value = result
+                self.assertEqual(
+                    InboundOperations(client).upload_and_invoke("I", b"<STEP/>"),
+                    {"success": True, "endpoint": "I"},
+                )
+                assert_closed(result)
+
+    def test_malformed_payloads_do_not_become_success(self):
+        for direct in (True, False):
+            for payload in ([], "unexpected", b"invalid JSON"):
+                with self.subTest(direct=direct, payload=payload):
+                    client = Mock()
+                    result = (response(payload, **{"Content-Type": "application/json"})
+                              if isinstance(payload, bytes) else json_response(payload))
+                    if direct:
+                        client.server.url = "https://step.invalid/restapiv2"
+                        client.requestor.post.return_value = result
+                    else:
+                        client.requestor = None
+                        client.uploadFileToAndInvokeInboundRestEndpoint.return_value = result
+                    with self.assertRaises(exc.RestClientError):
+                        InboundOperations(client).upload_and_invoke("I", b"<STEP/>")
+                    assert_closed(result)
 
 
 class TestRealOpenApiTransport(unittest.TestCase):

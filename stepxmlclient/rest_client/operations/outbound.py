@@ -2,7 +2,6 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.integration_endpoint import IntegrationEndpointResponse
 
 
@@ -20,26 +19,14 @@ class OutboundOperations(BaseOperation):
     def get_outbound_endpoint(self, ep_id: str) -> IntegrationEndpointResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getOutboundIntegrationEndpoint", {"id": ep_id})
-        try:
-            r = self._call_operation("getOutboundIntegrationEndpoint", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "OutboundIntegrationEndpoint")
-            raise
+        r = self._call_operation("getOutboundIntegrationEndpoint", id=ep_id, **self._build_context_params())
         return IntegrationEndpointResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_outbound_endpoint_status(self, ep_id: str) -> IntegrationEndpointResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getOutboundIntegrationEndpointStatus", {"id": ep_id})
-        try:
-            r = self._call_operation("getOutboundIntegrationEndpointStatus", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "OutboundIntegrationEndpoint")
-            raise
+        r = self._call_operation("getOutboundIntegrationEndpointStatus", id=ep_id, **self._build_context_params())
         return IntegrationEndpointResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -60,11 +47,5 @@ class OutboundOperations(BaseOperation):
     def get_outbound_endpoint_execution_report(self, ep_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getOutboundIntegrationEndpointExecutionReport", {"id": ep_id})
-        try:
-            r = self._call_operation("getOutboundIntegrationEndpointExecutionReport", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "OutboundIntegrationEndpoint")
-            raise
+        r = self._call_operation("getOutboundIntegrationEndpointExecutionReport", id=ep_id, **self._build_context_params())
         return r if isinstance(r, list) else []

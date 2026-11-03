@@ -475,18 +475,16 @@ print(f"Messages: {stats.get('messageCount')}")
 
 **Error Handling:**
 ```python
-from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError
+from stepxmlclient.rest_client.exceptions import NotFoundError, RestApiError, ValidationError
 
 try:
     result = client.inbound.upload_and_invoke(endpoint_id, xml_data)
 except NotFoundError:
     print("Endpoint not found")
-except ValidationError as e:
-    if "not enabled" in str(e):
-        print("Endpoint is disabled, enabling it...")
-        client.inbound.enable_endpoint(endpoint_id)
-    else:
-        print(f"Validation error: {e}")
+except ValidationError as error:
+    print(f"Invalid local parameters: {error}")
+except RestApiError as error:
+    print(error.status_code, str(error), error.details)
 ```
 
 **Note on Context and Workspace:**
@@ -535,6 +533,9 @@ and `detail` included in the exception text. Status 401/403/404/409/429/5xx maps
 `RestApiError`. Local parameter validation still raises `ValidationError`.
 `RateLimitError.retry_after` preserves the `Retry-After` header when present.
 Network errors raise `RestClientError`, and timeouts raise the library's `TimeoutError`.
+HTTP classification uses structured status codes only, never digits in exception
+messages. Other unexpected operation errors become `RestClientError`; filesystem
+errors and existing library exceptions pass through unchanged.
 
 ```python
 from stepxmlclient.rest_client.exceptions import NotFoundError, RestApiError

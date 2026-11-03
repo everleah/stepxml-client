@@ -8,7 +8,7 @@ import logging
 from typing import Any, Optional, Union
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestApiError, RestClientError, ValidationError
+from ..exceptions import RestClientError
 
 
 class InboundOperations(BaseOperation):
@@ -77,9 +77,9 @@ class InboundOperations(BaseOperation):
             Dictionary with response details (typically includes processId or similar)
             
         Raises:
-            ValidationError: If endpoint_id is missing or endpoint not enabled
+            ValidationError: If required parameters are missing
             NotFoundError: If endpoint cannot be found
-            RestApiError: For other API errors
+            RestApiError: For server errors, including disabled endpoints (HTTP 400)
             
         Note:
             - Endpoint must have status "enabled" to invoke
@@ -117,89 +117,26 @@ class InboundOperations(BaseOperation):
             if server_url is not None:
                 server_url = getattr(server_url, "url", None)
 
-        try:
-            if requestor is not None and hasattr(requestor, "post") and server_url:
-                url = f"{server_url.rstrip('/')}/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
-                response = requestor.post(url, data=xml_data, params=params, timeout=120)
-                response = self._process_response(response)
-                if isinstance(response, dict):
-                    return response
-                if response is None:
-                    return {"success": True, "endpoint": endpoint_id}
-                try:
-                    response.raise_for_status()
-                except RestClientError:
-                    raise
-                except Exception as exc:
-                    error_str = str(exc)
-                    if "404" in error_str:
-                        raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-                    elif "400" in error_str:
-                        if "not enabled" in error_str.lower() or "disabled" in error_str.lower():
-                            raise ValidationError(
-                                f"Inbound endpoint '{endpoint_id}' is not enabled. "
-                                f"Enable it first using enable_endpoint()."
-                            )
-                        elif "REST receiver" in error_str:
-                            raise ValidationError(
-                                f"Inbound endpoint '{endpoint_id}' does not have a REST-enabled receiver plugin. "
-                                f"Configure a REST receiver in the endpoint settings."
-                            )
-                        raise ValidationError(f"Upload failed: {error_str}")
-                    elif "503" in error_str:
-                        raise RestApiError(503, "Endpoint temporarily unavailable", details=error_str)
-                    raise
-
-                if isinstance(response, dict):
-                    return response
-                if hasattr(response, "json"):
-                    try:
-                        payload = response.json()
-                    except Exception:
-                        payload = None
-                    if isinstance(payload, dict):
-                        return payload
-                return {"success": True, "endpoint": endpoint_id}
-
-            # Fallback to generated OpenAPI operation when a requestor is not available.
-            response = self._call_operation("uploadFileToAndInvokeInboundRestEndpoint",
+        if requestor is not None and hasattr(requestor, "post") and server_url:
+            url = f"{server_url.rstrip('/')}/inbound-integration-endpoints/{endpoint_id}/upload-and-invoke"
+            response = requestor.post(url, data=xml_data, params=params, timeout=120)
+            response = self._process_response(response)
+        else:
+            response = self._call_operation(
+                "uploadFileToAndInvokeInboundRestEndpoint",
                 id=endpoint_id,
                 data=xml_data,
                 **params
             )
 
-            if isinstance(response, dict):
-                return response
-            if hasattr(response, "json"):
-                try:
-                    payload = response.json()
-                except Exception:  # noqa: BLE001
-                    payload = None
-                if isinstance(payload, dict):
-                    return payload
+        if response is None:
             return {"success": True, "endpoint": endpoint_id}
-
-        except RestClientError:
-            raise
-        except Exception as e:
-            error_str = str(e)
-            if "404" in error_str:
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            elif "400" in error_str:
-                if "not enabled" in error_str.lower() or "disabled" in error_str.lower():
-                    raise ValidationError(
-                        f"Inbound endpoint '{endpoint_id}' is not enabled. "
-                        f"Enable it first using enable_endpoint()."
-                    )
-                elif "REST receiver" in error_str:
-                    raise ValidationError(
-                        f"Inbound endpoint '{endpoint_id}' does not have a REST-enabled receiver plugin. "
-                        f"Configure a REST receiver in the endpoint settings."
-                    )
-                raise ValidationError(f"Upload failed: {error_str}")
-            elif "503" in error_str:
-                raise RestApiError(503, "Endpoint temporarily unavailable", details=error_str)
-            raise
+        if not isinstance(response, dict) and hasattr(response, "json"):
+            response = response.json()
+        self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
+        if not isinstance(response, dict):
+            raise RestClientError("Inbound upload response must be an object or an empty response")
+        return response
 
 
     @handle_rest_errors
@@ -216,12 +153,7 @@ class InboundOperations(BaseOperation):
 
         self._log_operation("getInboundIntegrationEndpoints", {})
 
-        try:
-            response = self._call_operation("getInboundIntegrationEndpoints", **params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            raise RestApiError(0, f"Failed to list inbound endpoints: {str(e)}", details=str(e))
+        response = self._call_operation("getInboundIntegrationEndpoints", **params)
 
         return self._coerce_list_payload(response)
 
@@ -249,17 +181,10 @@ class InboundOperations(BaseOperation):
             "endpointId": endpoint_id
         })
 
-        try:
-            response = self._call_operation("getInboundIntegrationEndpointStatus",
-                id=endpoint_id,
-                **self._build_context_params()
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("getInboundIntegrationEndpointStatus",
+            id=endpoint_id,
+            **self._build_context_params()
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
@@ -294,17 +219,10 @@ class InboundOperations(BaseOperation):
             "endpointId": endpoint_id
         })
 
-        try:
-            response = self._call_operation("enableInboundIntegrationEndpoint",
-                id=endpoint_id,
-                **self._build_context_params()
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("enableInboundIntegrationEndpoint",
+            id=endpoint_id,
+            **self._build_context_params()
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
@@ -339,17 +257,10 @@ class InboundOperations(BaseOperation):
             "endpointId": endpoint_id
         })
 
-        try:
-            response = self._call_operation("disableInboundIntegrationEndpoint",
-                id=endpoint_id,
-                **self._build_context_params()
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("disableInboundIntegrationEndpoint",
+            id=endpoint_id,
+            **self._build_context_params()
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
@@ -383,17 +294,10 @@ class InboundOperations(BaseOperation):
             "endpointId": endpoint_id
         })
 
-        try:
-            response = self._call_operation("getInboundIntegrationEndpointExecutionReport",
-                id=endpoint_id,
-                **self._build_context_params()
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("getInboundIntegrationEndpointExecutionReport",
+            id=endpoint_id,
+            **self._build_context_params()
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
@@ -429,17 +333,10 @@ class InboundOperations(BaseOperation):
             "endpointId": endpoint_id
         })
 
-        try:
-            response = self._call_operation("getInboundIntegrationEndpointStatistics",
-                id=endpoint_id,
-                **self._build_context_params()
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("getInboundIntegrationEndpointStatistics",
+            id=endpoint_id,
+            **self._build_context_params()
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 
@@ -478,17 +375,10 @@ class InboundOperations(BaseOperation):
             "statusFilter": status_filter
         })
 
-        try:
-            response = self._call_operation("getInboundIntegrationEndpointWorkerProcesses",
-                id=endpoint_id,
-                **params
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise NotFoundError(endpoint_id, "InboundIntegrationEndpoint")
-            raise
+        response = self._call_operation("getInboundIntegrationEndpointWorkerProcesses",
+            id=endpoint_id,
+            **params
+        )
 
         self._check_for_api_error(response, endpoint_id, "InboundIntegrationEndpoint")
 

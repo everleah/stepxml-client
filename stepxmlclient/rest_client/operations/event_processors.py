@@ -3,7 +3,6 @@
 from typing import Any
 
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import NotFoundError, RestClientError
 from ..models.event_processor import EventProcessorResponse
 
 
@@ -21,39 +20,21 @@ class EventProcessorOperations(BaseOperation):
     def get_event_processor(self, ep_id: str) -> EventProcessorResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getEventProcessor", {"id": ep_id})
-        try:
-            r = self._call_operation("getEventProcessor", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "EventProcessor")
-            raise
+        r = self._call_operation("getEventProcessor", id=ep_id, **self._build_context_params())
         return EventProcessorResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_event_processor_status(self, ep_id: str) -> EventProcessorResponse:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getEventProcessorStatus", {"id": ep_id})
-        try:
-            r = self._call_operation("getEventProcessorStatus", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "EventProcessor")
-            raise
+        r = self._call_operation("getEventProcessorStatus", id=ep_id, **self._build_context_params())
         return EventProcessorResponse(**r) if isinstance(r, dict) else r
 
     @handle_rest_errors
     def get_event_processor_execution_report(self, ep_id: str) -> list[dict[str, Any]]:
         self._validate_required_params({"ep_id": ep_id}, ["ep_id"])
         self._log_operation("getEventProcessorExecutionReport", {"id": ep_id})
-        try:
-            r = self._call_operation("getEventProcessorExecutionReport", id=ep_id, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise NotFoundError(ep_id, "EventProcessor")
-            raise
+        r = self._call_operation("getEventProcessorExecutionReport", id=ep_id, **self._build_context_params())
         return r if isinstance(r, list) else []
 
     @handle_rest_errors

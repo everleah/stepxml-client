@@ -93,7 +93,11 @@ stepxmlclient/rest_client/
   downloads retain checked content.
 - **Error metadata**: Exceptions retain server messages, response details and
   status codes, including authentication/authorization failures. Rate-limit
-  errors also expose `retry_after`.
+  errors also expose `retry_after`. Wrappers do not classify errors from message
+  text; HTTP classification is centralized.
+- **Incoming references**: Array endpoints return lists of dictionaries;
+  compatible object payloads remain `RelationshipListResponse`. The return
+  annotation includes both forms.
 - **Required reference bodies**: Reference PUTs send `{}` when no values are supplied.
 - **Offline regression coverage**: `tests/test_rest_response_handling.py` exercises
   real `requests.Response` objects and synthetic `requests-openapi` transport.

@@ -10,7 +10,6 @@ import requests_openapi as roa
 
 from .. import exceptions as exc
 from ..base import BaseOperation, handle_rest_errors
-from ..exceptions import RestClientError
 from ..models.product import (
     ProductCreateRequest,
     ProductListResponse,
@@ -74,14 +73,7 @@ class ProductOperations(BaseOperation):
             query_params["includeInheritedData"] = include_inherited_data
         self._log_operation("getProduct", {"product_id": product_id})
         
-        try:
-            response = self._call_operation("getProduct", id=product_id, **query_params)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e) or "not found" in str(e).lower():
-                raise exc.NotFoundError(product_id, "Product")
-            raise
+        response = self._call_operation("getProduct", id=product_id, **query_params)
         
         # Convert response to ProductResponse if needed
         if isinstance(response, dict):
@@ -154,16 +146,7 @@ class ProductOperations(BaseOperation):
         product_dict = product_data.model_dump(exclude_none=True)
         self._log_operation("createProduct", {"objectType": product_data.objectType, "parent": product_data.parent})
         
-        try:
-            response = self._call_operation("createProduct", json=product_dict, **self._build_context_params())
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "409" in str(e) or "conflict" in str(e).lower():
-                raise exc.ConflictError(409, "Product conflict while creating product")
-            if "400" in str(e):
-                raise exc.ValidationError(str(e))
-            raise
+        response = self._call_operation("createProduct", json=product_dict, **self._build_context_params())
         
         # Convert response to ProductResponse
         if isinstance(response, dict):
@@ -200,20 +183,11 @@ class ProductOperations(BaseOperation):
             query_params["keyId"] = key_id
         self._log_operation("updateProduct", {"product_id": product_id})
         
-        try:
-            response = self._call_operation("updateProduct",
-                id=product_id,
-                json=updates_dict,
-                **query_params
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(product_id, "Product")
-            if "400" in str(e):
-                raise exc.ValidationError(str(e))
-            raise
+        response = self._call_operation("updateProduct",
+            id=product_id,
+            json=updates_dict,
+            **query_params
+        )
         
         if isinstance(response, dict):
             return ProductResponse(**response)
@@ -253,20 +227,11 @@ class ProductOperations(BaseOperation):
             query_params["allow-overwrite"] = allow_overwrite
         self._log_operation("createOrReplaceProduct", {"product_id": product_id})
         
-        try:
-            response = self._call_operation("createOrReplaceProduct",
-                id=product_id,
-                json=product_dict,
-                **query_params
-            )
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(product_id, "Product")
-            if "400" in str(e) or "409" in str(e):
-                raise exc.ValidationError(str(e))
-            raise
+        response = self._call_operation("createOrReplaceProduct",
+            id=product_id,
+            json=product_dict,
+            **query_params
+        )
         
         if isinstance(response, dict):
             return ProductResponse(**response)
@@ -298,15 +263,8 @@ class ProductOperations(BaseOperation):
             query_params["keyId"] = key_id
         self._log_operation("deleteProduct", {"product_id": product_id})
         
-        try:
-            self._call_operation("deleteProduct", id=product_id, **query_params)
-            return True
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e):
-                raise exc.NotFoundError(product_id, "Product")
-            raise
+        self._call_operation("deleteProduct", id=product_id, **query_params)
+        return True
     
     def search_by_type(self, user_type_id: str) -> ProductListResponse:
         """Search products by object type (convenience method).
@@ -345,13 +303,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("getProductApprovalStatus", {"id": product_id})
-        try:
-            r = self._call_operation("getProductApprovalStatus", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("getProductApprovalStatus", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -361,13 +313,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveProduct", {"id": product_id})
-        try:
-            r = self._call_operation("approveProduct", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("approveProduct", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -377,13 +323,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("approveProductDeletion", {"id": product_id})
-        try:
-            r = self._call_operation("approveProductDeletion", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("approveProductDeletion", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -393,13 +333,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("purgeProduct", {"id": product_id})
-        try:
-            r = self._call_operation("purgeProduct", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("purgeProduct", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -409,13 +343,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("getProductChildren", {"id": product_id})
-        try:
-            r = self._call_operation("getProductChildren", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("getProductChildren", id=product_id, **qp)
         return r if isinstance(r, list) else []
 
     @handle_rest_errors
@@ -425,13 +353,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("getProductDataContainers", {"id": product_id})
-        try:
-            r = self._call_operation("getProductDataContainers", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("getProductDataContainers", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -441,13 +363,7 @@ class ProductOperations(BaseOperation):
         qp = self._build_context_params()
         if key_id: qp["keyId"] = key_id
         self._log_operation("getProductIncomingReferences", {"id": product_id})
-        try:
-            r = self._call_operation("getProductIncomingReferences", id=product_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("getProductIncomingReferences", id=product_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -460,14 +376,8 @@ class ProductOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("getProductValueByAttributeId",
                            {"id": product_id, "attributeId": attribute_id})
-        try:
-            r = self._call_operation("getProductValueByAttributeId",
-                id=product_id, attributeId=attribute_id, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        r = self._call_operation("getProductValueByAttributeId",
+            id=product_id, attributeId=attribute_id, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -481,15 +391,8 @@ class ProductOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("replaceProductValueByAttributeId",
                            {"id": product_id, "attributeId": attribute_id})
-        try:
-            r = self._call_operation("replaceProductValueByAttributeId",
-                id=product_id, attributeId=attribute_id, json=value, **qp)
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            if "400" in str(e): raise exc.ValidationError(str(e))
-            raise
+        r = self._call_operation("replaceProductValueByAttributeId",
+            id=product_id, attributeId=attribute_id, json=value, **qp)
         return r if isinstance(r, dict) else r
 
     @handle_rest_errors
@@ -502,12 +405,6 @@ class ProductOperations(BaseOperation):
         if key_id: qp["keyId"] = key_id
         self._log_operation("deleteProductValueByAttributeId",
                            {"id": product_id, "attributeId": attribute_id})
-        try:
-            self._call_operation("deleteProductValueByAttributeId",
-                id=product_id, attributeId=attribute_id, **qp)
-            return True
-        except RestClientError:
-            raise
-        except Exception as e:
-            if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
-            raise
+        self._call_operation("deleteProductValueByAttributeId",
+            id=product_id, attributeId=attribute_id, **qp)
+        return True

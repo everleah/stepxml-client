@@ -21,7 +21,12 @@ All reference operations require an `entity_type` parameter: `"products"`, `"ass
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `get_incoming_references` | `(entity_type, entity_id, reference_type_id, key_id=None) -> RelationshipListResponse` | List incoming references |
+| `get_incoming_references` | `(entity_type, entity_id, reference_type_id, key_id=None) -> list[dict[str, Any]] \| RelationshipListResponse` | List incoming references |
+
+The STEP array endpoints return a list of dictionaries, including `[]` for no
+references. For compatibility, object payloads are still returned as
+`RelationshipListResponse`. Existing model instances remain unchanged. Other
+payload shapes raise `RestClientError`.
 
 ### Type Lookup
 
@@ -53,4 +58,3 @@ for ref in refs.relationships or []:
 ```python
 incoming = client.relations.get_incoming_references("products", "P456", "Accessory")
 ```
-

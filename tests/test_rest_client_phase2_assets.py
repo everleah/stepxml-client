@@ -4,6 +4,8 @@ Tests for asset CRUD operations, search, binary uploads/downloads, and integrati
 """
 
 import unittest
+from tests.test_rest_response_handling import json_response
+from requests import HTTPError
 from unittest.mock import Mock, MagicMock, patch, mock_open
 import logging
 import os
@@ -203,7 +205,7 @@ class TestAssetOperations(unittest.TestCase):
         self.assertNotIn("assetId", call_args[1])
 
     def test_get_asset_not_found(self):
-        self.mock_client.getAsset.side_effect = Exception("404 not found")
+        self.mock_client.getAsset.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_asset("NONEXISTENT")
 
@@ -243,7 +245,7 @@ class TestAssetOperations(unittest.TestCase):
         self.mock_client.createAsset.assert_called_once()
 
     def test_create_asset_conflict(self):
-        self.mock_client.createAsset.side_effect = Exception("409 conflict")
+        self.mock_client.createAsset.side_effect = HTTPError(response=json_response({"message": '409 conflict'}, status=409))
         request = AssetCreateRequest(
             objectType="ProductImage",
             classifications=["ProductImageRoot"],
@@ -264,7 +266,7 @@ class TestAssetOperations(unittest.TestCase):
         self.assertNotIn("assetId", call_args[1])
 
     def test_update_asset_not_found(self):
-        self.mock_client.updateAsset.side_effect = Exception("404 not found")
+        self.mock_client.updateAsset.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         updates = AssetUpdateRequest(name="Updated", classifications=None, values=None, references=None)
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_asset("NONEXISTENT", updates)
@@ -312,7 +314,7 @@ class TestAssetOperations(unittest.TestCase):
         self.assertNotIn("assetId", call_args[1])
 
     def test_delete_asset_not_found(self):
-        self.mock_client.deleteAsset.side_effect = Exception("404 not found")
+        self.mock_client.deleteAsset.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_asset("NONEXISTENT")
 
@@ -343,7 +345,7 @@ class TestAssetOperations(unittest.TestCase):
     @patch("os.path.getsize", return_value=102400)
     @patch("os.path.exists", return_value=True)
     def test_upload_asset_content_asset_not_found(self, mock_exists, mock_getsize, mock_file):
-        self.mock_client.replaceAssetContent.side_effect = Exception("404 not found")
+        self.mock_client.replaceAssetContent.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.upload_asset_content("NONEXISTENT", "/path/to/file.jpg")
 
@@ -374,7 +376,7 @@ class TestAssetOperations(unittest.TestCase):
         mock_file.assert_called_once_with("/tmp/image.jpg", "wb")
 
     def test_download_asset_content_not_found(self):
-        self.mock_client.getAssetContent.side_effect = Exception("404 not found")
+        self.mock_client.getAssetContent.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.download_asset_content("NONEXISTENT")
 

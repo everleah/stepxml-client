@@ -5,6 +5,8 @@ Phase 7 focuses on relationship-related operations.
 """
 
 import unittest
+from tests.test_rest_response_handling import json_response
+from requests import HTTPError
 import logging
 from unittest.mock import Mock, MagicMock, patch, call
 from stepxmlclient.rest_client.operations.relations import RelationOperations
@@ -82,7 +84,7 @@ class TestRelationshipOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["targetId"], "PROD2")
 
     def test_get_reference_not_found(self):
-        self.mock_client.getProductReferenceEntryByReferenceTypeIdAndTargetId.side_effect = Exception("404 not found")
+        self.mock_client.getProductReferenceEntryByReferenceTypeIdAndTargetId.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.get_reference("products", "PROD1", "RelType", "PROD2")
 
@@ -113,7 +115,7 @@ class TestRelationshipOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "PROD1")
 
     def test_delete_reference_not_found(self):
-        self.mock_client.deleteProductReferenceEntryByReferenceTypeIdAndTargetId.side_effect = Exception("404 not found")
+        self.mock_client.deleteProductReferenceEntryByReferenceTypeIdAndTargetId.side_effect = HTTPError(response=json_response({"message": '404 not found'}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_reference("products", "PROD1", "RelType", "PROD2")
 

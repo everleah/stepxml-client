@@ -38,6 +38,8 @@ All test and validation modules in this directory:
 - Prefer restricted mock operation sets and real HTTP responses to prevent invented
   operation names from passing. Keep synthetic endpoint contracts independent of the
   implementation; optional vendor-spec checks skip only when the spec is unavailable.
+- Represent HTTP failures with real responses or `HTTPError.response`, not generic
+  exceptions containing status-code text. Test non-HTTP errors with similar text separately.
 - Prefer `unittest.TestCase` over pytest fixtures to stay consistent with the existing suite.
 - When adding a new phase, use the next available number and document the covered domain in the module docstring.
 
