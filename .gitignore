@@ -181,6 +181,8 @@ openapi_cache.json
 /STEP.xsd
 /openapi.json
 /stepxmlclient/openapi.json
+/openapi_pub.json
+/stepxmlclient/openapi_pub.json
 
 # PyPI config
 .pypirc

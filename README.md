@@ -366,7 +366,17 @@ python -m unittest discover -s tests -p "test_*.py"
 python tests/validate_xml_xsd.py
 ```
 
-The distribution does not include Stibo Systems' OpenAPI specification or XML schema. The REST client fetches the OpenAPI specification from the configured STEP server by default; alternatively, supply a licensed specification using `openapi_file`. Obtain the STEP XSD separately from Stibo Systems if you want to run schema validation.
+The OpenAPI files are not versioned in Git. Builds optionally include locally
+available `openapi.json` and `openapi_pub.json` from the repository root or
+`stepxmlclient/` (root copies take precedence). They are carried through the sdist
+into the wheel's `stepxmlclient/` package. Builds without either file also work.
+The REST client uses bundled `openapi.json` when present; otherwise it fetches
+the specification from the configured STEP server using its authenticated session.
+Alternatively, pass an absolute local path using `openapi_file` to avoid that download.
+Publishing does not require or load `openapi_pub.json` at runtime.
+An existing working-directory cache is used only with `cache_openapi=True`.
+See [specification loading and authentication](docs/REST_API_USAGE.md#openapi-specification-loading).
+Obtain the STEP XSD separately from Stibo Systems if you want to run schema validation.
 
 ### Publishing to PyPI
 
@@ -403,8 +413,9 @@ Without an action, the Python script only builds and checks.
   for a new project. After the first upload, replace it with a token scoped to
   `stepxmlclient` by running `--configure-token` again.
 - Every release uses an isolated build, builds the wheel from the sdist, checks
-  metadata with `twine check --strict`, and rejects specifications and credential
-  files in either archive. Only the two newly checked files are uploaded.
+  metadata with `twine check --strict`, and allows only the two named optional
+  OpenAPI JSON files as specification data. XSD/WADL, other JSON and credential
+  files are rejected in either archive. Only the two newly checked archives are uploaded.
 - Validated artifacts are retained in `dist\pypi\<version>`. Old files elsewhere
   in `dist` are not uploaded. Failures return a nonzero exit code; existing
   PyPI versions are not silently skipped.

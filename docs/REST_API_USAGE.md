@@ -82,6 +82,53 @@ ops_client = StepRestClient(
 
 The raw client exposes the OpenAPI client as `raw_client.client`. Grouped wrappers are available on `ops_client` (for example `ops_client.products`, `ops_client.assets`, `ops_client.inbound`).
 
+### OpenAPI specification loading
+
+`openapi.json` and `openapi_pub.json` are local, Git-ignored build inputs.
+If present at the repository root or directly in `stepxmlclient/`, they are
+included in the source distribution and copied into the wheel's `stepxmlclient/`
+package (root copies take precedence). Builds without them remain supported.
+Publishing does not load or require its JSON specification at runtime.
+
+Loading order:
+
+1. Existing `openapi_file`.
+2. Existing `openapi.json` in the application's working directory, only when
+   `cache_openapi=True`.
+3. Package-local `openapi.json` if supplied at build time or present in a source installation.
+4. GET `{location_base}/specification/openapi.json` using the configured,
+   authenticated request session, including its TLS and proxy settings.
+
+For applications that already have a local specification, pass its absolute path:
+
+```python
+ops_client = StepRestClient(
+    location_base="https://your-step-server/restapiv2",
+    authorisation=auth,
+    openapi_file=r"C:\app\config\step-openapi.json",
+)
+```
+
+This avoids a specification download (API calls still require authentication).
+Without caching, a missing explicit file raises `FileNotFoundError`; with
+`cache_openapi=True`, the existing cache/package/server fallback remains enabled.
+Successful remote specifications are parsed and loaded before caching. Invalid
+responses, HTTP authentication failures and other HTTP errors propagate instead
+of being cached or silently ignored. The bootstrap request has a 30-second
+timeout and does not follow redirects.
+
+Earlier releases fetched the server specification through an unauthenticated
+standalone request before configuring authentication. That could raise HTTP 401
+during construction despite correct API credentials, especially in installations
+without a local specification. Supplying `openapi_file` also avoids this problem
+in those releases; merely having a file in a different repository does not.
+
+Custom authentication handlers run `adapt_client` followed by `do_authorisation`
+once, with the server and session configured. When fetching the spec from the
+server, these hooks run **before operations exist** and must set up authentication
+on the request session rather than call generated API operations. With a local
+specification, the existing behavior (hooks see loaded operations) is preserved.
+
 Search wrappers call `queryProducts`, `queryAssets`, `queryClassifications` or
 `queryEntities` and wrap STEP's identifier arrays in the existing list models.
 Search items contain IDs, not full objects; call `get_product`, `get_asset`,

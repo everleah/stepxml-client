@@ -3,7 +3,9 @@
 import contextlib
 import io
 from pathlib import Path
+import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 from unittest import TestCase
@@ -55,9 +57,10 @@ class TestReleaseArtifacts(TestCase):
     def test_rejects_forbidden_files_in_either_archive(self):
         for location in ("extra_source", "extra_wheel"):
             for name in (
-                "stepxmlclient/openapi.json", "STEP.xsd", "wadl_pub.xml",
+                "stepxmlclient/credentials.json", "STEP.xsd", "wadl_pub.xml",
                 "stepxmlclient/wadl_pub.xml", ".pypirc", ".env",
                 "private.key", "secret.pem", ".venv/token", "../outside.py",
+                "other/openapi.json", "stepxmlclient/nested/openapi_pub.json",
             ):
                 with self.subTest(location=location, name=name):
                     with tempfile.TemporaryDirectory() as temporary:
@@ -65,6 +68,24 @@ class TestReleaseArtifacts(TestCase):
                         make_artifacts(directory, **{location: name})
                         with self.assertRaisesRegex(ValueError, "Forbidden file"):
                             release.check_artifacts(directory)
+
+    def test_accepts_only_named_optional_specifications(self):
+        for name in ("openapi.json", "openapi_pub.json"):
+            for source_name in (name, f"stepxmlclient/{name}"):
+                with self.subTest(name=name, source_name=source_name):
+                    with tempfile.TemporaryDirectory() as temporary:
+                        directory = Path(temporary)
+                        make_artifacts(directory, extra_wheel=f"stepxmlclient/{name}",
+                                       extra_source=source_name)
+                        release.check_artifacts(directory)
+
+    def test_rejects_root_specifications_in_wheel(self):
+        for name in ("openapi.json", "openapi_pub.json"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                directory = Path(temporary)
+                make_artifacts(directory, extra_wheel=name)
+                with self.assertRaisesRegex(ValueError, "Forbidden file"):
+                    release.check_artifacts(directory)
 
     def test_rejects_multiple_wheels(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -80,6 +101,67 @@ class TestReleaseArtifacts(TestCase):
             make_artifacts(directory, source_version="0.9.0")
             with self.assertRaisesRegex(ValueError, "do not match"):
                 release.check_artifacts(directory)
+
+
+class TestOptionalSpecificationBuild(TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name)
+        for name in ("pyproject.toml", "setup.py", "MANIFEST.in", "README.md", "LICENSE"):
+            shutil.copyfile(release.ROOT / name, self.root / name)
+        self.package = self.root / "stepxmlclient"
+        self.package.mkdir()
+        (self.package / "__init__.py").write_text("", encoding="utf-8")
+
+    def build(self, output, wheel_only=False):
+        arguments = [sys.executable, "-m", "build", "--no-isolation", "--outdir", str(output)]
+        if wheel_only:
+            arguments.append("--wheel")
+        result = subprocess.run(arguments, cwd=self.root, text=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self.assertEqual(result.returncode, 0, result.stdout)
+        return next(output.glob("*.whl"))
+
+    def test_sdist_to_wheel_with_both_either_or_no_specifications(self):
+        for names in ((), ("openapi.json",), ("openapi_pub.json",),
+                      ("openapi.json", "openapi_pub.json")):
+            with self.subTest(names=names):
+                for name in release.OPTIONAL_SPECIFICATIONS:
+                    (self.root / name).unlink(missing_ok=True)
+                    (self.package / name).unlink(missing_ok=True)
+                for name in names:
+                    (self.root / name).write_bytes(b'{"synthetic":"root"}')
+                    (self.package / name).write_bytes(b'{"synthetic":"older package copy"}')
+                (self.package / "credentials.json").write_text("excluded", encoding="utf-8")
+                output = self.root / ("output-" + str(len(list(self.root.glob("output-*")))))
+                wheel = self.build(output)
+                release.check_artifacts(output)
+                with zipfile.ZipFile(wheel) as archive:
+                    for name in release.OPTIONAL_SPECIFICATIONS:
+                        member = f"stepxmlclient/{name}"
+                        self.assertEqual(member in archive.namelist(), name in names)
+                        if name in names:
+                            self.assertEqual(archive.read(member), b'{"synthetic":"root"}')
+                    self.assertNotIn("stepxmlclient/credentials.json", archive.namelist())
+                with tarfile.open(next(output.glob("*.tar.gz")), "r:gz") as archive:
+                    root = archive.getnames()[0].split("/")[0]
+                    for name in release.OPTIONAL_SPECIFICATIONS:
+                        self.assertEqual(f"{root}/{name}" in archive.getnames(), name in names)
+
+    def test_package_local_spec_and_stale_direct_wheel_output(self):
+        for name in release.OPTIONAL_SPECIFICATIONS:
+            (self.package / name).write_bytes(b'{"synthetic":"package"}')
+        wheel = self.build(self.root / "first", wheel_only=True)
+        with zipfile.ZipFile(wheel) as archive:
+            for name in release.OPTIONAL_SPECIFICATIONS:
+                self.assertEqual(archive.read(f"stepxmlclient/{name}"),
+                                 b'{"synthetic":"package"}')
+                (self.package / name).unlink()
+        wheel = self.build(self.root / "second", wheel_only=True)
+        with zipfile.ZipFile(wheel) as archive:
+            for name in release.OPTIONAL_SPECIFICATIONS:
+                self.assertNotIn(f"stepxmlclient/{name}", archive.namelist())
 
 
 class TestReleaseWorkflow(TestCase):

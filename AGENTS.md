@@ -57,19 +57,20 @@ The `Parser` class maintains separate lists for each entity type (`self.products
   of REST v2. Share authentication/session settings through composition only;
   v2 job integration belongs in `rest_client/publishing.py`, not the Publishing package.
 - **Publishing safety**: DTP replacement/deletion require explicit confirmation;
-  vendor Publishing specifications, including `wadl_pub.xml`, must stay out of releases.
+  Publishing WADL/XSD must stay out of releases.
 
 ## Workflows & Testing
 
 ### Building
-- **Metadata**: `pyproject.toml` owns the package version, author/maintainer, MIT license, dependencies, and build backend; `setup.py` is a compatibility shim.
+- **Metadata**: `pyproject.toml` owns the package version, author/maintainer, MIT license, dependencies, and build backend; `setup.py` adds optional local specification copying to the standard build.
 - **Release tools**: Install `requirements-release.txt` into the development environment.
 - **Build**: `build_wheel.bat` (Windows) or `python -m build`; build the wheel from the sdist to avoid stale build output.
 - **Forgejo**: Its upload script uses the shared build script when no wheel exists; install the release tools before either upload workflow.
 - **Install**: `pip install dist/stepxmlclient-x.x-py3-none-any.whl`.
 - **PyPI**: `upload_wheel_to_pypi.bat --check-only` validates a fresh release; without arguments it publishes through `publish_pypi.py`. Upload only the freshly checked wheel and sdist, retained under `dist/pypi/<version>`.
 - **Credentials**: `--configure-token` stores the PyPI token in the OS keyring, never the repository. Keep the existing Forgejo credentials separate. Never embed or log tokens.
-- **Public artifacts**: Exclude Stibo specifications, local credentials, and build caches from both wheel and sdist; validate with `twine check --strict` and `tests/test_release.py`.
+- **Optional specifications**: Never track `openapi.json` or `openapi_pub.json` in Git. When present locally at the root or directly under `stepxmlclient/`, include them in the sdist and wheel under `stepxmlclient/`; root copies take precedence. Builds without them remain supported. Do not rewrite Git history to remove prior copies.
+- **Public artifacts**: Only the two named OpenAPI JSON files are allowed specification data. Exclude XSD/WADL, other JSON, local credentials, and build caches from both wheel and sdist; validate with `twine check --strict` and `tests/test_release.py`.
 
 ### Testing Strategy
 The project follows a phased testing approach using `unittest`. All test modules live under `tests/`.
@@ -83,7 +84,7 @@ The project follows a phased testing approach using `unittest`. All test modules
 - `stepxmlclient/model/__init__.py`: Base object logic.
 - `stepxmlclient/parser.py`: Implementation of all parsing logic.
 - `stepxmlclient/creator.py`: Document generation logic.
-- STEP XSD and OpenAPI specifications are supplied by Stibo Systems and are not included in public distributions.
+- STEP XSD and OpenAPI specifications are supplied by Stibo Systems. XSD stays outside distributions; the two locally supplied OpenAPI JSON files are optional build inputs, never Git-tracked source.
 
 # DOX framework
 

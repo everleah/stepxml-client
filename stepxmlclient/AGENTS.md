@@ -16,11 +16,16 @@ Package-local contract for the public Python package surface under `stepxmlclien
 - Preserve `STEPXML_NS` and namespace-aware parsing behavior across package entry points.
 - Keep parser, creator, and uploader changes aligned with the STEP XML schema and the test fixtures.
 - Keep public imports stable unless a deliberate API change is being made and documented.
-- REST request and response shapes follow the STEP REST API specification, fetched from the server or supplied by the caller; do not bundle vendor specifications unless redistribution is authorized.
+- REST request and response shapes follow the STEP REST API specification, fetched from the server, supplied by the caller, or optionally bundled from local build inputs under the root contract.
 - Publishing is a separate API implementation, composed lazily into both main
   clients. It must not import REST v2 operations/models; job integration is injected.
 - Borrowed sessions retain their authentication/TLS/proxy settings and remain
   owned by the caller. Publishing does not change global session headers.
+- REST server specification bootstrap must use the configured authenticated
+  request session, TLS and proxies before any remote spec request. Local specs
+  retain their loading priority, including optionally bundled `openapi.json`.
+- Authentication hooks run once; during remote bootstrap they configure the
+  session before generated operations exist. Local specs are loaded before hooks.
 
 ## Work Guidance
 - Prefer focused parser, creator, or REST client tests over broad repo-wide changes.

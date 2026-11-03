@@ -2,6 +2,8 @@ include README.md
 include LICENSE
 include pyproject.toml
 global-exclude *.json *.xsd wadl_pub.xml .pypirc *.pem *.key *.pyc
+include openapi.json openapi_pub.json
+include stepxmlclient/openapi.json stepxmlclient/openapi_pub.json
 prune tests
 prune build
 prune dist

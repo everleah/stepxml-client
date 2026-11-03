@@ -15,13 +15,15 @@ All test and validation modules in this directory:
 - `test_*debug*.py`, `test_*namespace*.py`, `test_*objects*.py` — focused behaviour tests
 - `test.py` — manual connectivity / example script
 - `validate_xml_xsd.py` — XML schema validation
-- `test_release.py` — offline release archive, credential handling, and upload safeguards
+- `test_release.py` — offline release archive, optional-specification builds, stale build cleanup, credential handling, and upload safeguards
 - `test_publishing_*.py` - independent Publishing endpoints, XML, jobs and lazy v2 integration.
 - `test_rest_client_phase8_background_processes.py` - status/attachment transport used by Publishing.
 - `test_rest_response_handling.py` - real HTTP responses, all delete wrappers,
   typed JSON normalization, empty reference bodies and synthetic OpenAPI transport.
 - `test_rest_client_spec_alignment.py` - independently specified operation IDs,
   search arrays, CRUD/LOV/reference transport and optional local OpenAPI checks.
+- `test_openapi_loading.py` - authenticated specification bootstrap, local/cache
+  priority, session/TLS/proxy reuse and unsuccessful-response cache prevention.
 
 ## Local Contracts
 - Tests use `unittest` with `unittest.mock` for client mocking; no live server is required to run the suite.

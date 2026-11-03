@@ -18,19 +18,28 @@ ROOT = Path(__file__).resolve().parent
 PYPI_URL = "https://upload.pypi.org/legacy/"
 PYPI_USERNAME = "__token__"
 FORBIDDEN_SUFFIXES = {".json", ".xsd", ".pem", ".key", ".pyc", ".p12", ".pfx"}
+OPTIONAL_SPECIFICATIONS = {"openapi.json", "openapi_pub.json"}
 
 
 def run_module(*arguments: str, env: Optional[dict[str, str]] = None) -> None:
     subprocess.run([sys.executable, "-m", *arguments], cwd=ROOT, check=True, env=env)
 
 
-def validate_members(names: list[str]) -> None:
+def validate_members(names: list[str], source_root: Optional[str] = None) -> None:
     for name in names:
         path = PurePosixPath(name)
+        relative = path.relative_to(source_root) if source_root is not None else path
+        allowed_spec = (
+            relative.name in OPTIONAL_SPECIFICATIONS
+            and (
+                relative.parent == PurePosixPath("stepxmlclient")
+                or (source_root is not None and relative.parent == PurePosixPath("."))
+            )
+        )
         if (
             path.is_absolute()
             or ".." in path.parts
-            or path.suffix.lower() in FORBIDDEN_SUFFIXES
+            or (path.suffix.lower() in FORBIDDEN_SUFFIXES and not allowed_spec)
             or path.name.lower() in {".pypirc", ".env", "wadl_pub.xml"}
             or any(part in {".git", ".venv", "__pycache__"} for part in path.parts)
         ):
@@ -60,11 +69,11 @@ def check_artifacts(directory: Path) -> tuple[list[Path], str]:
         raise ValueError("Unexpected package name or missing release version.")
     with tarfile.open(sources[0], "r:gz") as source:
         names = source.getnames()
-        validate_members(names)
         roots = {PurePosixPath(name).parts[0] for name in names}
         if len(roots) != 1:
             raise ValueError("Expected a single source distribution root.")
         root = roots.pop()
+        validate_members(names, source_root=root)
         for required in ("pyproject.toml", "README.md", "LICENSE", "stepxmlclient/__init__.py"):
             if f"{root}/{required}" not in names:
                 raise ValueError(f"Source distribution is missing {required}.")

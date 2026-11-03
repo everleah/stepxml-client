@@ -50,10 +50,9 @@ class StiboStepRestClient:
             location_base = '%s://%s' % ('https', location_base)
         if location_base.endswith('/'):
             location_base = location_base[:-1]
-        # create client
-        self.__create_client(location_base, openapi_file, cache_openapi)
-        # set server
-        self.client.set_server(roa.Server(url=location_base))
+        needs_server_spec = self.__create_client(location_base, openapi_file, cache_openapi)
+        if not needs_server_spec:
+            self.client.set_server(roa.Server(url=location_base))
         if isinstance(self.client.requestor, requests.Session):
             # no ssl verify?
             if nocert or os.path.exists('nocert'):
@@ -62,9 +61,11 @@ class StiboStepRestClient:
             if isinstance(proxies, dict):
                 self.client.requestor.proxies.update(proxies)
         self.proxies = proxies
-        # authorisation (Always after creating client!)
+        # Authenticate the session before any server specification request.
         authorisation.adapt_client(self.client)
         authorisation.do_authorisation(self.client)
+        if needs_server_spec:
+            self.__load_server_spec(location_base, cache_openapi)
         
         # Initialize inbound operations (lazy import to avoid circular dependencies)
         InboundOperations = _lazy_import_inbound_operations()
@@ -113,40 +114,20 @@ class StiboStepRestClient:
 
     @staticmethod
     def _get_bundled_openapi_file():
-        """Get the path to the bundled openapi.json file.
+        """Find an optionally bundled package specification.
         
         Returns:
             Path to bundled openapi.json if it exists, None otherwise
         """
-        try:
-            # Get the directory of this module
-            module_dir = Path(__file__).parent
-            bundled_file = module_dir / 'openapi.json'
-            if bundled_file.exists():
-                return str(bundled_file)
-        except Exception:
-            pass
-        return None
+        bundled_file = Path(__file__).parent / 'openapi.json'
+        return str(bundled_file) if bundled_file.is_file() else None
 
     def __create_client(self, location_base, openapi_file, cache_openapi):
-        """Create and initialize the OpenAPI client.
-        
-        Internal method that loads the OpenAPI specification and creates the
-        requests-openapi client instance.
-        
-        Priority order for loading spec:
-        1. Specified openapi_file (if exists)
-        2. Cache file (if caching enabled and exists)
-        3. Bundled openapi.json (shipped with package)
-        4. Fetch from STEP server (if caching enabled, save to cache)
-        
-        Args:
-            location_base: Base URL of the STEP API server
-            openapi_file: Path to OpenAPI specification file (if available)
-            cache_openapi: Whether to cache the OpenAPI spec if fetched
-            
-        Raises:
-            FileNotFoundError: If specified openapi_file doesn't exist and no other source available
+        """Load a local spec, or create a bare client for authenticated bootstrap.
+
+        Priority: explicit file, enabled cache, package-local file, server.
+        Returns True only when the server spec still needs to be loaded.
+        Distributions may include specifications supplied locally at build time.
         """
         # Determine which file to try to load
         cache_file = self._OPENAPI_CACHE_FILE if cache_openapi else None
@@ -156,7 +137,7 @@ class StiboStepRestClient:
         if openapi_file:
             if os.path.exists(openapi_file):
                 self.client = roa.Client().load_spec_from_file(openapi_file)
-                return
+                return False
             elif not cache_openapi:
                 # User specified a file that doesn't exist and isn't caching, so fail
                 raise FileNotFoundError(
@@ -167,28 +148,43 @@ class StiboStepRestClient:
         if cache_file and os.path.exists(cache_file):
             self.logger.debug(f"Loading OpenAPI spec from cache: {cache_file}")
             self.client = roa.Client().load_spec_from_file(cache_file)
-            return
+            return False
         
-        # Try bundled file (always available as fallback)
+        # Retain compatibility with source checkouts and private installations.
         if bundled_file:
             self.logger.debug(f"Loading OpenAPI spec from bundled file: {bundled_file}")
             self.client = roa.Client().load_spec_from_file(bundled_file)
-            return
+            return False
         
-        # Last resort: fetch from server
+        self.client = roa.Client(server=roa.Server(url=location_base))
+        return True
+
+    def __load_server_spec(self, location_base, cache_openapi):
+        """Fetch using the configured session, then validate before caching."""
         self.logger.debug(f"Loading OpenAPI spec from server: {location_base}/specification/openapi.json")
-        spec = roa.core.load_spec_from_url(
-            f'{location_base}/specification/openapi.json')
-        
-        # If caching is enabled, save the spec
-        if cache_openapi and cache_file:
-            self.logger.debug(f"Caching OpenAPI spec to: {cache_file}")
-            with open(cache_file, 'w') as f:
-                json.dump(spec, f)
-        
-        self.client = roa.Client()
+        # The dependency's abstract Requestor.request incorrectly infers a None return.
+        request = getattr(self.client.requestor, "request")
+        response = request(
+            "GET", f'{location_base}/specification/openapi.json',
+            timeout=30, allow_redirects=False,
+        )
+        if not isinstance(response, requests.Response):
+            raise TypeError("OpenAPI specification request must return a requests.Response")
+        with response:
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise requests.HTTPError(
+                    f"Unexpected HTTP {response.status_code} loading STEP OpenAPI specification",
+                    response=response,
+                )
+            spec = response.json()
         self.client.load_spec(spec)
-        return
+        
+        if cache_openapi:
+            cache_file = self._OPENAPI_CACHE_FILE
+            self.logger.debug(f"Caching OpenAPI spec to: {cache_file}")
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(spec, f)
 
     def _get_server_base_url(self):
         """Get configured server base URL from the OpenAPI client.
@@ -356,8 +352,9 @@ class __Authorisation:
     def adapt_client(self, client):
         """Adapt the client with authentication-specific configuration.
         
-        Called to modify the client's request session or configuration
-        before making authenticated requests.
+        Called once with the configured server and session, before making
+        authenticated requests. When bootstrapping from the server, no OpenAPI
+        operations exist yet; configure session authentication directly.
         
         Args:
             client: The requests_openapi.Client instance to configure
@@ -367,8 +364,8 @@ class __Authorisation:
     def do_authorisation(self, client):
         """Perform any post-initialization authorization setup.
         
-        Called after client creation and adaptation to perform additional
-        authorization steps if needed (e.g., token refresh, permission checks).
+        Called once after adaptation, before the server specification fetch
+        when needed (e.g., for token refresh). Local specs are already loaded.
         
         Args:
             client: The requests_openapi.Client instance

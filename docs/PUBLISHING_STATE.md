@@ -23,7 +23,9 @@ OpenAPI has malformed parameter declarations, incomplete page-list/upload
 schemas, and response tables that omit documented 200/204 alternatives and
 the job Location header. Upload prose uses `pageID`, while its curl example
 uses `pageId`; the implementation follows the prose.
-Vendor sources are not bundled in wheel or sdist, nor needed by runtime/tests.
+The locally supplied, Git-ignored `openapi_pub.json` is optionally included in
+wheel and sdist, but is not needed by Publishing at runtime or by offline tests.
+WADL and XSD remain excluded from releases.
 
 The supplied Publishing XSD is self-contained and compiles successfully. It
 confirms unnamespaced XML, optional node/revision fields, direct Publication

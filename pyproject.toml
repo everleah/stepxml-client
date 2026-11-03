@@ -32,5 +32,8 @@ include-package-data = false
 [tool.setuptools.packages.find]
 include = ["stepxmlclient*"]
 
+[tool.setuptools.package-data]
+stepxmlclient = ["openapi.json", "openapi_pub.json"]
+
 [tool.setuptools.exclude-package-data]
-"*" = ["*.json", "*.xsd", "wadl_pub.xml"]
+"*" = ["*.xsd", "wadl_pub.xml"]

@@ -106,6 +106,11 @@ stepxmlclient/rest_client/
 
 ## Integration Points
 - Unified authentication via `StiboStepRestClient` / `BasicAuthorisation`
+- Server OpenAPI bootstrap uses the same authenticated session and TLS/proxy
+  configuration as API calls, with a timeout and no redirects. Explicit local
+  specs, enabled existing caches and optionally bundled `openapi.json` avoid the
+  bootstrap request. The two OpenAPI JSON files are Git-ignored, optional local
+  build inputs. See [specification loading](REST_API_USAGE.md#openapi-specification-loading).
 - Asset upload/download integrated via `upload.py`
 - OIEP download via `StiboStepRestClient.download_oiep_result()`
 - Independent Publishing subclient through lazy `.publishing`; v2 job monitoring
