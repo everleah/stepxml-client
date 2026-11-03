@@ -36,8 +36,8 @@ _OP_PREFIX = {
 _OP_LIST_REF = {
     "products": "ProductReference",
     "assets": "AssetReferences",
-    "classifications": "ClassificationReferences",
-    "entities": "EntityReferences",
+    "classifications": "ClassificationReference",
+    "entities": "EntityReference",
 }
 
 
@@ -92,7 +92,6 @@ class RelationOperations(BaseOperation):
         list_ref = _OP_LIST_REF.get(entity_type)
         if not list_ref:
             raise ValidationError(f"Invalid entity_type: {entity_type!r}. Must be one of {list(_OP_LIST_REF)}")
-        # Spec operationId uses literal braces: e.g. getProductReferenceEntryByReferenceTypeIdAndTargetIdByReferenceTypeId
         op_id = "get" + list_ref + "ByReferenceTypeId"
 
         query_params = self._build_context_params()

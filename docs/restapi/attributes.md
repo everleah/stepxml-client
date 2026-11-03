@@ -6,6 +6,15 @@ Read-only GET access for attributes, List of Values, and STEP type definitions.
 
 > **Important:** The STEP REST API v2 only provides read access for these resources. There is no create, update, or delete for attributes via the REST API.
 
+`AttributeResponse` exposes `validator`, `multivalued`, `calculated`,
+`specification`, `dataTypeGroups`, `listOfValues`, `units`, `defaultUnit`,
+`values` and `validForObjectTypes`. Legacy `type` / `lovId` / `multiValued`
+fields remain optional.
+
+LOV definitions use `/list-of-values/{id}` (`getListOfValues`); `values` is a
+metadata map. Retrieve actual `value` / `valueId` / `unit` entries separately via
+`getListOfValuesEntries` at `/list-of-values/{id}/value-entries`.
+
 ## Operations
 
 ### Attributes
@@ -42,5 +51,4 @@ entries = client.attributes.get_list_of_values_entries("ColorLOV")
 obj_type = client.attributes.get_object_type("SalesItem")
 children = client.attributes.get_object_type_children("SalesItem")
 ```
-
 

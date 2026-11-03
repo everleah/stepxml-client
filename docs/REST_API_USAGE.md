@@ -82,6 +82,12 @@ ops_client = StepRestClient(
 
 The raw client exposes the OpenAPI client as `raw_client.client`. Grouped wrappers are available on `ops_client` (for example `ops_client.products`, `ops_client.assets`, `ops_client.inbound`).
 
+Search wrappers call `queryProducts`, `queryAssets`, `queryClassifications` or
+`queryEntities` and wrap STEP's identifier arrays in the existing list models.
+Search items contain IDs, not full objects; call `get_product`, `get_asset`,
+`get_classification` or `get_entity` when full fields are needed. Compatible
+`{"items": [...], "total": ...}` responses are also accepted.
+
 Both clients also expose lazy `client.publishing` for the separate Publishing API.
 It borrows authentication/session settings and uses a separate v2 adapter for job
 monitoring, without mixing Publishing operations into the v2 OpenAPI client.
@@ -213,6 +219,12 @@ lov = ops_client.attributes.get_list_of_values("LOV_Colors")
 entries = ops_client.attributes.get_list_of_values_entries("LOV_Colors")
 ```
 
+Attribute definitions expose STEP fields such as `validator`, `multivalued`,
+`listOfValues` and `validForObjectTypes`. A legacy `type` field is not required.
+LOV `values` contains metadata keyed by attribute ID; actual entries come from
+`get_list_of_values_entries()` as `value` / `valueId` / optional `unit` dictionaries.
+Legacy attribute fields and LOV entry-list inputs remain accepted.
+
 ---
 
 ### Entity
@@ -227,7 +239,7 @@ entries = ops_client.attributes.get_list_of_values_entries("LOV_Colors")
 - `update_entity(entity_id, updates: EntityUpdateRequest)`
 - `replace_entity(entity_id, data: EntityCreateRequest)`
 - `delete_entity(entity_id)`
-- `get_entity_relationships(entity_id, reference_type_id)`
+- Outgoing references: `ops_client.relations.list_references("entities", entity_id, reference_type_id)`
 - `get_entity_value(entity_id, attribute_id)`
 - `replace_entity_value(entity_id, attribute_id, value)`
 - `delete_entity_value(entity_id, attribute_id)`

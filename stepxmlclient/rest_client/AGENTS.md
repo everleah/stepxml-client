@@ -13,6 +13,9 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 
 ## Local Contracts
 - Keep grouped operation wrappers aligned with the dynamic `requests-openapi` client and the STEP REST API specification supplied by the server or caller.
+- Verify operation IDs and response shapes against an authorized local specification,
+  not unrestricted mocks. Search endpoints are `queryProducts`, `queryAssets`,
+  `queryClassifications` and `queryEntities`; their arrays contain IDs, not hydrated objects.
 - Preserve shared error handling through the base operation layer.
 - Route generated calls through `BaseOperation._call_operation`: check HTTP/STEP
   errors before discarding bodies or constructing models, and decode HTTP JSON.
@@ -44,6 +47,8 @@ Local contract for the STEP REST API v2 wrapper layer under `stepxmlclient/rest_
 - `tests/test_rest_client_oiep_download.py`
 - `tests/test_rest_client_phase8_background_processes.py`
 - `tests/test_publishing_integration.py`
+- `tests/test_rest_client_spec_alignment.py` - independent synthetic contracts and
+  optional authorized local-specification checks, never live requests.
 
 ## Child DOX Index
 - [models/AGENTS.md](models/AGENTS.md) - REST payload and response shape models.

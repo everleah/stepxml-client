@@ -7,8 +7,9 @@ based on the **OpenAPI v1.4.0** specification (200 operationIds across 22 tag gr
 
 ## Overview
 
-The `rest_client` subpackage provides typed, spec-compliant coverage of the STEP REST API v2.
-All operation wrappers map 1:1 to OpenAPI operationIds; no phantom or invented endpoints exist.
+The `rest_client` subpackage provides grouped, typed wrappers for STEP REST API v2.
+The matrix lists implemented areas, not a guarantee of complete endpoint or schema coverage.
+Direct OpenAPI access remains available for operations without a grouped wrapper.
 
 ---
 
@@ -39,7 +40,8 @@ All operation wrappers map 1:1 to OpenAPI operationIds; no phantom or invented e
 | Collection Groups | Collection Groups | `operations/collection_groups.py` | GET, children, collections |
 | Batch | Batch Operations | `operations/batch.py` | executeBatchOperation |
 
-**Total: 22 operation files covering all 200 operationIds from OpenAPI v1.4.0.**
+The reference specification contains 200 operationIds. Complete grouped coverage
+of all 200 operations is not certified.
 
 ---
 
@@ -72,10 +74,19 @@ stepxmlclient/rest_client/
 
 ## Key Design Principles
 
-- **1:1 mapping**: Every method maps directly to an OpenAPI operationId from v1.4.0.
-- **No phantom operations**: Methods that don't exist in the spec were removed.
-- **Pydantic models**: Response types use Pydantic with `ConfigDict(extra="allow")` for STEP's dynamic schemas.
+- **Operation mapping**: Wrappers use specification operationIds; convenience
+  methods delegate to checked wrappers.
+- **Pydantic models**: Response types use Pydantic; dynamic maps are retained in
+  fields such as values/references. Unknown-field handling varies by model.
 - **Convenience wrappers**: `search_by_type()` wraps `query{Type}()` with an `objecttype` condition.
+- **Search responses**: STEP returns arrays of `{id, type}` identifiers, wrapped
+  in the existing list response models without extra GETs. Results are not hydrated
+  entities; totals remain unknown unless supplied by a compatible wrapped payload.
+- **CRUD restoration**: Classification/entity create, update, replace and delete
+  wrappers and classification children use the shared response boundary.
+- **Definitions and exports**: Attributes expose validator-based STEP fields;
+  LOV metadata and entries are separate. ExportSpecification supports `stepUrls`
+  and `processDescription`; import/export triggers return only a process identifier.
 - **Shared response boundary**: Grouped wrappers validate HTTP errors and STEP
   `httpStatus` payloads before converting models, extracting lists or returning
   delete success. JSON HTTP responses become native payloads first; binary
@@ -86,6 +97,10 @@ stepxmlclient/rest_client/
 - **Required reference bodies**: Reference PUTs send `{}` when no values are supplied.
 - **Offline regression coverage**: `tests/test_rest_response_handling.py` exercises
   real `requests.Response` objects and synthetic `requests-openapi` transport.
+- **Specification alignment**: `tests/test_rest_client_spec_alignment.py` checks
+  independent synthetic endpoint contracts. When an authorized local OpenAPI file
+  exists, it also checks operation IDs and runs the same transport scenarios against
+  that file. These checks do not certify every endpoint or replace live STEP validation.
 
 ---
 

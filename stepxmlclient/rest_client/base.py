@@ -340,13 +340,17 @@ class BaseOperation:
         response = self._call_operation(operation_id, **(params or {}))
         
         # Handle different response formats
-        if isinstance(response, dict):
+        if isinstance(response, list):
+            items = response
+            total = None
+        elif isinstance(response, dict):
             items = response.get(item_key, [])
             total = response.get(total_key)
         else:
-            # Handle object responses
-            items = getattr(response, item_key, [])
+            items = getattr(response, item_key, None)
             total = getattr(response, total_key, None)
+        if not isinstance(items, list):
+            raise exc.RestClientError("List response must be an array or an object containing an items array")
         
         return items, total
     

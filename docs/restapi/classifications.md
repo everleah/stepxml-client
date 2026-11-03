@@ -4,6 +4,10 @@
 
 Full CRUD, search, children, linked assets, approval, values, and lifecycle for STEP classifications.
 
+Search results are identifier-only items. Use `get_classification()` to hydrate
+an item. Create/update/replace bodies accept `attributeLinks` as an array of
+objects such as `{"attribute": "Color"}`.
+
 ## Operations
 
 ### CRUD
@@ -63,4 +67,3 @@ children = client.classifications.get_classification_children(created.id)
 ```
 
 > **Note:** `list_classifications()` was removed in v1.4.0. Use `search_by_type()` or `search_classifications()` instead.
-

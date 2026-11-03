@@ -6,21 +6,24 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExportJobCreateRequest(BaseModel):
-    """Request to create an export job."""
+    """Optional ExportSpecification payload; select format in the server configuration.
+
+    Legacy entityType/format/filters/config fields remain accepted for compatibility.
+    """
     
     model_config = ConfigDict(json_schema_extra={
         "example": {
-            "entityType": "Product",
-            "format": "XML",
-            "filters": {"status": "ACTIVE"},
-            "config": {"includeRelations": True}
+            "stepUrls": ["step://product?id=P1"],
+            "processDescription": "Export selected roots"
         }
     })
     
-    entityType: str = Field(..., description="Entity type to export (Product, Asset, Classification, Entity)")
-    format: str | None = Field("XML", description="Export format (XML, JSON, CSV)")
-    filters: Optional[Dict[str, Any]] = Field(None, description="Export filters")
-    config: Optional[Dict[str, Any]] = Field(None, description="Export configuration")
+    stepUrls: Optional[list[str]] = Field(default=None, description="STEP URLs of export roots")
+    processDescription: str | None = Field(default=None, description="Export process description")
+    entityType: str | None = Field(default=None, description="Legacy entity type")
+    format: str | None = Field(default=None, description="Legacy export format")
+    filters: Optional[Dict[str, Any]] = Field(default=None, description="Export filters")
+    config: Optional[Dict[str, Any]] = Field(default=None, description="Export configuration")
 
 
 class BackgroundProcessResponse(BaseModel):
@@ -35,9 +38,8 @@ class BackgroundProcessResponse(BaseModel):
         "example": {"id": "bg-process-0042"}
     })
 
-    id: str | None = Field(None, description="Background process ID")
+    id: str | None = Field(default=None, description="Background process ID")
 
 
 # Backward-compatible alias so existing imports don't break immediately.
 ExportJobResponse = BackgroundProcessResponse
-

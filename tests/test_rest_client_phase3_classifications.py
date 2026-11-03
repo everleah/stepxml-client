@@ -3,6 +3,7 @@
 import unittest
 import logging
 from unittest.mock import MagicMock, Mock, patch
+from requests import HTTPError
 from stepxmlclient.rest_client import exceptions as exc
 
 from stepxmlclient.rest_client.models.classification import (
@@ -12,7 +13,7 @@ from stepxmlclient.rest_client.models.classification import (
     ClassificationUpdateRequest,
 )
 from stepxmlclient.rest_client.operations.classifications import ClassificationOperations
-from stepxmlclient.rest_client import exceptions as exc
+from tests.test_rest_response_handling import json_response
 
 
 class TestClassificationModels(unittest.TestCase):
@@ -154,7 +155,8 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(payload["objectType"], "WebCategory")
 
     def test_create_classification_conflict(self):
-        self.mock_client.createClassification.side_effect = Exception("409 conflict")
+        self.mock_client.createClassification.side_effect = HTTPError(
+            response=json_response({"message": "Classification conflict"}, status=409))
         request = ClassificationCreateRequest(objectType="WebCategory", parent="WebRoot")
         with self.assertRaises(exc.ConflictError):
             self.operations.create_classification(request)
@@ -168,7 +170,8 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_update_classification_not_found(self):
-        self.mock_client.updateClassification.side_effect = Exception("404 not found")
+        self.mock_client.updateClassification.side_effect = HTTPError(
+            response=json_response({"message": "No classification"}, status=404))
         updates = ClassificationUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
             self.operations.update_classification("NONEXISTENT", updates)
@@ -196,7 +199,8 @@ class TestClassificationOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "CLASS1")
 
     def test_delete_classification_not_found(self):
-        self.mock_client.deleteClassification.side_effect = Exception("404 not found")
+        self.mock_client.deleteClassification.side_effect = HTTPError(
+            response=json_response({"message": "No classification"}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_classification("NONEXISTENT")
 
@@ -217,4 +221,3 @@ class TestClassificationOperations(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

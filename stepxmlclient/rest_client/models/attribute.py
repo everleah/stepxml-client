@@ -41,10 +41,9 @@ class ListOfValueItem(BaseModel):
 class ListOfValueResponse(BaseModel):
     """Response containing List of Values (maps to STEP ``ListOfValues`` schema).
 
-    The STEP REST API spec defines ``ListOfValues`` with properties:
-    ``id``, ``name``, ``extendable``, ``usesValueIds``, ``values``.
-    All fields are optional (``required: []`` in spec).
-    The collection field in the spec is ``values``, not ``items``.
+    ``values`` contains metadata keyed by attribute ID, not LOV entries.
+    Entries are retrieved separately through get_list_of_values_entries().
+    Legacy entry lists in ``values`` and ``items`` remain accepted.
     """
 
     model_config = ConfigDict(populate_by_name=True, json_schema_extra={
@@ -53,7 +52,7 @@ class ListOfValueResponse(BaseModel):
             "name": "Color LOV",
             "extendable": False,
             "usesValueIds": True,
-            "values": [{"id": "LOV_ITEM_001", "name": "Red"}]
+            "values": {"Description": {"value": {"value": "Color choices"}}}
         }
     })
 
@@ -61,7 +60,10 @@ class ListOfValueResponse(BaseModel):
     name: str | None = Field(None, description="LOV name")
     extendable: Optional[bool] = Field(None, description="Whether users can extend the LOV")
     usesValueIds: Optional[bool] = Field(None, description="Whether values have explicit IDs")
-    values: Optional[List[ListOfValueItem]] = Field(None, description="List of values (spec field name)")
+    validator: Optional[Dict[str, Any]] = Field(None, description="Value validator")
+    dataTypeGroups: Optional[List[str]] = Field(None, description="Data type group IDs")
+    values: Optional[Dict[str, Any] | List[ListOfValueItem]] = Field(
+        None, description="Metadata keyed by attribute ID (legacy entry lists accepted)")
     # Backward-compatible alias — some callers may have used 'items'
     items: Optional[List[ListOfValueItem]] = Field(None, description="Alias for values (legacy field name)")
     total: Optional[int] = Field(None, description="Total number of items")
@@ -88,25 +90,33 @@ class AttributeMetadata(BaseModel):
 
 
 class AttributeResponse(BaseModel):
-    """Response from attribute GET operation."""
+    """Attribute definition with STEP fields and optional legacy aliases."""
     
     model_config = ConfigDict(json_schema_extra={
         "example": {
             "id": "ATTR_001",
             "name": "Color",
-            "type": "Text",
-            "required": True,
-            "lovId": "LOV_001",
-            "metadata": {"type": "Text"}
+            "validator": {"name": "text"},
+            "multivalued": False,
+            "listOfValues": "LOV_001"
         }
     })
     
     id: str = Field(..., description="Attribute ID")
-    name: str = Field(..., description="Attribute name")
+    name: str | None = Field(None, description="Attribute name")
+    validator: Optional[Dict[str, Any]] = Field(None, description="Attribute validator")
+    multivalued: Optional[bool] = Field(None, description="Supports multiple values")
+    calculated: Optional[bool] = Field(None, description="Whether the attribute is calculated")
+    specification: Optional[bool] = Field(None, description="Whether the attribute is a specification")
+    dataTypeGroups: Optional[List[str]] = Field(None, description="Data type group IDs")
+    listOfValues: str | None = Field(None, description="Associated list of values ID")
+    units: Optional[List[str]] = Field(None, description="Valid unit IDs")
+    defaultUnit: str | None = Field(None, description="Default unit ID")
+    values: Optional[Dict[str, Any]] = Field(None, description="Metadata keyed by attribute ID")
+    validForObjectTypes: Optional[List[str]] = Field(None, description="Valid object type IDs")
     description: str | None = Field(None, description="Attribute description")
-    type: str = Field(..., description="Attribute data type")
+    type: str | None = Field(None, description="Legacy attribute data type")
     lovId: str | None = Field(None, description="Associated List of Values ID")
     required: Optional[bool] = Field(None, description="Is required")
     multiValued: Optional[bool] = Field(None, description="Supports multiple values")
     metadata: Optional[AttributeMetadata] = Field(None, description="Attribute metadata")
-

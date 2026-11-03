@@ -1,167 +1,141 @@
-"""Phase 5: Attribute & Metadata Operations tests for STEP REST API v2."""
+"""Phase 5 - Read-only attribute, LOV and type-definition operations."""
 
 import unittest
-from unittest.mock import Mock, MagicMock
-import logging
+from unittest.mock import Mock
 
-from stepxmlclient.rest_client.operations.attributes import AttributeOperations
+from pydantic import ValidationError as ModelValidationError
+
 from stepxmlclient.rest_client import exceptions as exc
-from stepxmlclient.rest_client.models.attribute import (
-    AttributeResponse,
-    ListOfValueResponse,
-    ListOfValueItem,
-)
-from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError
+from stepxmlclient.rest_client.models.attribute import AttributeResponse, ListOfValueResponse
+from stepxmlclient.rest_client.operations.attributes import AttributeOperations
+from tests.test_rest_response_handling import json_response
 
 
 class TestAttributeModels(unittest.TestCase):
-    """Test Attribute model creation and validation."""
-    
-    def test_attribute_response_creation(self):
-        """Test AttributeResponse model creation."""
-        attr = AttributeResponse(
-            id="ATTR001",
-            name="Color",
-            type="Text",
-            lovId=None,
-            multiValued=None,
-            metadata=None,
-            required=None,
-            description=None
-        )
-        self.assertEqual(attr.id, "ATTR001")
-        self.assertEqual(attr.name, "Color")
-        self.assertEqual(attr.type, "Text")
-    
-    def test_attribute_list_response_creation(self):
-        """Test AttributeListResponse model creation."""
-        response = AttributeListResponse(
-            items=[
-                AttributeResponse(id="ATTR001", name="Color", type="Text", lovId=None, multiValued=None, metadata=None, required=None, description=None),
-                AttributeResponse(id="ATTR002", name="Size", type="Text", lovId=None, multiValued=None, metadata=None, required=None, description=None)
-            ],
-            total=50,
-            limit=20,
-            offset=0,
-            hasMore=None
-        )
-        self.assertEqual(len(response.items), 2)
-        self.assertEqual(response.total, 50)
-    
-    def test_list_of_value_response_creation(self):
-        """Test ListOfValueResponse model creation."""
-        lov = ListOfValueResponse(
-            id="LOV001",
-            name="Colors",
-            items=[
-                ListOfValueItem(id="RED", name="Red", description=None, sequence=None),
-                ListOfValueItem(id="BLUE", name="Blue", description=None, sequence=None)
-            ],
-            total=5
-        )
-        self.assertEqual(lov.id, "LOV001")
-        self.assertEqual(len(lov.items), 2)
-    
-    def test_attribute_create_request(self):
-        """Test dict creation."""
-        req = dict(
-            name="Size",
-            type="Text",
-            lovId=None,
-            multiValued=None,
-            required=True,
-            description=None
-        )
-        self.assertEqual(req.name, "Size")
-        self.assertEqual(req.type, "Text")
-        self.assertTrue(req.required)
-    
-    def test_attribute_update_request(self):
-        """Test dict creation."""
-        req = dict(
-            name=None,
-            description="Product size",
-            required=True,
-            lovId=None
-        )
-        self.assertEqual(req.description, "Product size")
-        self.assertTrue(req.required)
+    def test_spec_attribute_fields_without_legacy_type(self):
+        payload = {
+            "id": "Color", "name": "Color", "validator": {"name": "text"},
+            "multivalued": True, "calculated": False, "specification": True,
+            "dataTypeGroups": ["Technical"], "listOfValues": "Colors",
+            "units": [], "defaultUnit": None, "values": {},
+            "validForObjectTypes": ["SalesItem"],
+        }
+        attribute = AttributeResponse.model_validate(payload)
+        for key, value in payload.items():
+            self.assertEqual(getattr(attribute, key), value)
+        self.assertIsNone(attribute.type)
+
+    def test_legacy_attribute_fields_remain_accepted(self):
+        attribute = AttributeResponse.model_validate({
+            "id": "Color", "name": "Color", "type": "Text",
+            "lovId": "Colors", "multiValued": True,
+        })
+        self.assertEqual(attribute.type, "Text")
+        self.assertEqual(attribute.lovId, "Colors")
+        self.assertTrue(attribute.multiValued)
+
+    def test_attribute_validator_shape_is_checked(self):
+        with self.assertRaises(ModelValidationError):
+            AttributeResponse.model_validate({"id": "Color", "validator": "text"})
+
+    def test_lov_definition_contains_metadata_not_entries(self):
+        payload = {
+            "id": "Colors", "name": "Colors", "extendable": False, "usesValueIds": True,
+            "validator": {"name": "text"}, "dataTypeGroups": ["Technical"],
+            "values": {"Description": {"value": {"value": "Available colors"}}},
+        }
+        lov = ListOfValueResponse.model_validate(payload)
+        for key, value in payload.items():
+            self.assertEqual(getattr(lov, key), value)
+
+    def test_legacy_lov_entry_lists_remain_accepted(self):
+        lov = ListOfValueResponse.model_validate({
+            "id": "Colors", "items": [{"id": "RED", "name": "Red"}],
+            "values": [{"id": "BLUE", "name": "Blue"}],
+        })
+        self.assertIsNotNone(lov.items)
+        assert lov.items is not None
+        self.assertEqual(lov.items[0].id, "RED")
+        self.assertIsInstance(lov.values, list)
+        assert isinstance(lov.values, list)
+        self.assertEqual(lov.values[0].id, "BLUE")
 
 
 class TestAttributeOperations(unittest.TestCase):
     def setUp(self):
-        self.mock_client = Mock()
-        self.logger = logging.getLogger(__name__)
-        self.operations = AttributeOperations(self.mock_client, logger=self.logger)
-
-    def test_initialization(self):
-        self.assertEqual(self.operations.operation_name, "AttributeOperations")
+        self.client = Mock(spec_set=[
+            "getAttribute", "getListOfValues", "getListOfValuesEntries",
+            "getDataContainerType", "getDataTypeGroup", "getObjectType",
+            "getObjectTypeChildren", "getReferenceType", "getUnit", "getUniqueKey",
+        ])
+        self.operations = AttributeOperations(self.client, context="C", workspace="Main")
 
     def test_get_attribute_success(self):
-        self.mock_client.getAttribute.return_value = {"id": "ATTR1", "name": "Color", "type": "Text"}
-        result = self.operations.get_attribute("ATTR1")
-        self.assertEqual(result.id, "ATTR1")
-        call_args = self.mock_client.getAttribute.call_args
-        self.assertEqual(call_args[1]["id"], "ATTR1")
+        self.client.getAttribute.return_value = json_response({
+            "id": "Color", "name": "Color", "validator": {"name": "text"},
+        })
+        result = self.operations.get_attribute("Color")
+        self.assertIsInstance(result, AttributeResponse)
+        self.assertEqual(result.validator, {"name": "text"})
+        self.client.getAttribute.assert_called_once_with(id="Color", context="C", workspace="Main")
 
     def test_get_attribute_not_found(self):
-        self.mock_client.getAttribute.side_effect = Exception("404 not found")
+        self.client.getAttribute.return_value = json_response({"message": "No attribute"}, status=404)
         with self.assertRaises(exc.NotFoundError):
-            self.operations.get_attribute("NONEXISTENT")
+            self.operations.get_attribute("Missing")
 
-    def test_get_attribute_validation(self):
-        with self.assertRaises(exc.ValidationError):
-            self.operations.get_attribute(None)
-
-    def test_search_attributes_success(self):
-        self.mock_client.queryAttributes.return_value = {
-            "items": [{"id": "ATTR1", "name": "Color", "type": "Text"}, {"id": "ATTR2", "name": "Size", "type": "Number"}], "total": 2}
-        condition = {"conditionType": "objecttype", "objectTypeId": "AttributeType"}
-        result = self.operations.search_attributes(condition=condition)
-        self.assertEqual(len(result.items), 2)
-        call_args = self.mock_client.queryAttributes.call_args
-        self.assertEqual(call_args[1]["json"]["condition"], condition)
-
-    def test_search_attributes_requires_condition(self):
-        with self.assertRaises(exc.ValidationError):
-            self.operations.search_attributes(condition=None)
-
-    def test_create_attribute_success(self):
-        self.mock_client.createAttribute.return_value = {"id": "NEWATTR", "name": "New", "type": "Text"}
-        from stepxmlclient.rest_client.models.attribute import dict
-        request = dict(name="New", type="Text")
-        result = self.operations.create_attribute(request)
-        self.assertEqual(result.id, "NEWATTR")
-        self.mock_client.createAttribute.assert_called_once()
-
-    def test_update_attribute_success(self):
-        self.mock_client.patchAttribute.return_value = {"id": "ATTR1", "name": "Updated", "type": "Text"}
-        from stepxmlclient.rest_client.models.attribute import dict
-        updates = dict(name="Updated")
-        result = self.operations.update_attribute("ATTR1", updates)
-        self.assertEqual(result.name, "Updated")
-        call_args = self.mock_client.patchAttribute.call_args
-        self.assertEqual(call_args[1]["id"], "ATTR1")
-
-    def test_delete_attribute_success(self):
-        self.mock_client.deleteAttribute.return_value = None
-        result = self.operations.delete_attribute("ATTR1")
-        self.assertTrue(result)
-        call_args = self.mock_client.deleteAttribute.call_args
-        self.assertEqual(call_args[1]["id"], "ATTR1")
+    def test_required_identifiers_are_validated(self):
+        for method in (self.operations.get_attribute, self.operations.get_list_of_values,
+                       self.operations.get_list_of_values_entries):
+            with self.subTest(method=method.__name__), self.assertRaises(exc.ValidationError):
+                method(None)
+        self.assertEqual(self.client.mock_calls, [])
 
     def test_get_list_of_values_success(self):
-        # Note: singular 'getListOfValue' (not 'getListOfValues')
-        self.mock_client.getListOfValue.return_value = {"id": "LOV1", "name": "Colors", "items": []}
-        result = self.operations.get_list_of_values("LOV1")
-        self.assertIsNotNone(result)
-        call_args = self.mock_client.getListOfValue.call_args
-        self.assertEqual(call_args[1]["id"], "LOV1")
+        self.client.getListOfValues.return_value = json_response({
+            "id": "Colors", "validator": {"name": "text"}, "values": {},
+        })
+        result = self.operations.get_list_of_values("Colors")
+        self.assertIsInstance(result, ListOfValueResponse)
+        self.assertEqual(result.values, {})
+        self.client.getListOfValues.assert_called_once_with(id="Colors", context="C", workspace="Main")
 
     def test_get_list_of_values_not_found(self):
-        self.mock_client.getListOfValue.side_effect = Exception("404 not found")
+        self.client.getListOfValues.return_value = json_response({"message": "No LOV"}, status=404)
         with self.assertRaises(exc.NotFoundError):
-            self.operations.get_list_of_values("NONEXISTENT")
+            self.operations.get_list_of_values("Missing")
+
+    def test_lov_entries_are_retrieved_separately(self):
+        entries = [{"valueId": "RED", "value": "Red"}, {"value": "Blue", "unit": "unit"}]
+        self.client.getListOfValuesEntries.return_value = json_response(entries)
+        self.assertEqual(self.operations.get_list_of_values_entries("Colors"), entries)
+        self.client.getListOfValuesEntries.assert_called_once_with(
+            id="Colors", context="C", workspace="Main")
+
+    def test_type_definitions(self):
+        for method, operation in (
+            ("get_data_container_type", "getDataContainerType"),
+            ("get_data_type_group", "getDataTypeGroup"),
+            ("get_object_type", "getObjectType"),
+            ("get_reference_type", "getReferenceType"),
+            ("get_unit", "getUnit"),
+            ("get_unique_key", "getUniqueKey"),
+        ):
+            with self.subTest(method=method):
+                getattr(self.client, operation).return_value = {"id": "T"}
+                self.assertEqual(getattr(self.operations, method)("T"), {"id": "T"})
+                getattr(self.client, operation).assert_called_once_with(
+                    id="T", context="C", workspace="Main")
+
+    def test_object_type_children(self):
+        self.client.getObjectTypeChildren.return_value = json_response(["Child"])
+        self.assertEqual(self.operations.get_object_type_children("Root"), ["Child"])
+
+    def test_no_unsupported_attribute_write_or_search_wrappers(self):
+        for name in ("create_attribute", "update_attribute", "delete_attribute", "search_attributes"):
+            with self.subTest(method=name):
+                self.assertFalse(hasattr(self.operations, name))
+
 
 if __name__ == "__main__":
     unittest.main()

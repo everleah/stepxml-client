@@ -53,6 +53,8 @@ DELETE_CASES = (
     (ProductOperations, "delete_product_value", ("P", "V"), "deleteProductValueByAttributeId"),
     (ClassificationOperations, "delete_classification_value", ("C", "V"),
      "deleteClassificationValueByAttributeId"),
+    (ClassificationOperations, "delete_classification", ("C",), "deleteClassification"),
+    (EntityOperations, "delete_entity", ("E",), "deleteEntity"),
     (EntityOperations, "delete_entity_value", ("E", "V"), "deleteEntityValueByAttributeId"),
     (CollectionOperations, "delete_collection", ("C",), "deleteCollection"),
     (RelationOperations, "delete_reference", ("assets", "A", "R", "T"),
@@ -126,12 +128,12 @@ class TestResponseNormalization(unittest.TestCase):
 
     def test_search_convenience_methods_normalize_and_propagate_errors(self):
         cases = (
-            (AssetOperations, "search_by_type", ("Type",), "createAssetSearch"),
-            (AssetOperations, "search_modified_since", ("2026-01-01",), "createAssetSearch"),
-            (ProductOperations, "search_by_type", ("Type",), "createProductSearch"),
-            (ProductOperations, "search_by_id", ("P",), "createProductSearch"),
-            (ClassificationOperations, "search_by_type", ("Type",), "createClassificationSearch"),
-            (EntityOperations, "search_by_type", ("Type",), "createEntitySearch"),
+            (AssetOperations, "search_by_type", ("Type",), "queryAssets"),
+            (AssetOperations, "search_modified_since", ("2026-01-01",), "queryAssets"),
+            (ProductOperations, "search_by_type", ("Type",), "queryProducts"),
+            (ProductOperations, "search_by_id", ("P",), "queryProducts"),
+            (ClassificationOperations, "search_by_type", ("Type",), "queryClassifications"),
+            (EntityOperations, "search_by_type", ("Type",), "queryEntities"),
         )
         for cls, method, args, operation in cases:
             with self.subTest(method=method, cls=cls):

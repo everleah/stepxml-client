@@ -45,7 +45,7 @@ client.relations.put_reference(
 ### List all accessories of a product
 ```python
 refs = client.relations.list_references("products", "P123", "Accessory")
-for ref in refs.items:
+for ref in refs.relationships or []:
     print(ref.targetId)
 ```
 
@@ -53,5 +53,4 @@ for ref in refs.items:
 ```python
 incoming = client.relations.get_incoming_references("products", "P456", "Accessory")
 ```
-
 

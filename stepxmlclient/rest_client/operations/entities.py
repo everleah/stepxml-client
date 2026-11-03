@@ -6,8 +6,10 @@ from typing import Any, Optional
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, RestClientError, ValidationError
 from ..models.entity import (
+    EntityCreateRequest,
     EntityListResponse,
     EntityResponse,
+    EntityUpdateRequest,
 )
 
 
@@ -90,13 +92,60 @@ class EntityOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("createEntitySearch", {"condition": condition})
+        self._log_operation("queryEntities", {"condition": condition})
         
-        response = self._call_operation("createEntitySearch", json=body, **self._build_context_params())
-        
-        if isinstance(response, dict):
-            return EntityListResponse(**response)
-        return response
+        response = self._call_operation("queryEntities", json=body, **self._build_context_params())
+        if isinstance(response, list):
+            response = {"items": response}
+        return EntityListResponse.model_validate(response)
+
+    @handle_rest_errors
+    def create_entity(self, data: EntityCreateRequest) -> EntityResponse:
+        """Create an entity with objectType and parent; STEP assigns its ID."""
+        self._validate_required_params(
+            {"objectType": data.objectType, "parent": data.parent}, ["objectType", "parent"])
+        response = self._call_operation(
+            "createEntity", json=data.model_dump(exclude_none=True),
+            **self._build_context_params())
+        return EntityResponse.model_validate(response)
+
+    @handle_rest_errors
+    def update_entity(self, entity_id: str, updates: EntityUpdateRequest,
+                      key_id: str | None = None) -> EntityResponse:
+        """Partially update an entity (PATCH)."""
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        response = self._call_operation(
+            "updateEntity", id=entity_id, json=updates.model_dump(exclude_none=True), **params)
+        return EntityResponse.model_validate(response)
+
+    @handle_rest_errors
+    def replace_entity(self, entity_id: str, data: EntityCreateRequest,
+                       key_id: str | None = None,
+                       allow_overwrite: bool = False) -> EntityResponse:
+        """Create or replace an entity (PUT)."""
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        response = self._call_operation(
+            "createOrReplaceEntity", id=entity_id,
+            json=data.model_dump(exclude_none=True), **params)
+        return EntityResponse.model_validate(response)
+
+    @handle_rest_errors
+    def delete_entity(self, entity_id: str, key_id: str | None = None) -> bool:
+        """Delete an entity; raise on HTTP/STEP errors before returning True."""
+        self._validate_required_params({"entity_id": entity_id}, ["entity_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        self._call_operation("deleteEntity", id=entity_id, **params)
+        return True
     
     def search_by_type(self, entity_type: str,
                        limit: int = 20, offset: int = 0) -> EntityListResponse:
@@ -317,5 +366,3 @@ class EntityOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise NotFoundError(entity_id, "Entity")
             raise
-
-

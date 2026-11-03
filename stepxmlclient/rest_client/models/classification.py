@@ -14,7 +14,8 @@ class ClassificationResponse(BaseModel):
     parent: str | None = Field(None, description="Parent classification ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
-    attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
+    attributeLinks: Optional[List[Dict[str, Any]] | Dict[str, Any]] = Field(
+        None, description="Attribute links array (legacy mappings also accepted)")
     dataContainers: Optional[Dict[str, Any]] = Field(None, description="Data containers")
 
 
@@ -40,7 +41,8 @@ class ClassificationCreateRequest(BaseModel):
     name: str | None = Field(None, description="Classification name")
     values: Optional[Dict[str, Any]] = Field(None, description="Attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="References")
-    attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Attribute links")
+    attributeLinks: Optional[List[Dict[str, Any]] | Dict[str, Any]] = Field(
+        None, description="Attribute links array (legacy mappings also accepted)")
     dataContainers: Optional[Dict[str, Any]] = Field(None, description="Data containers")
 
 
@@ -51,7 +53,7 @@ class ClassificationUpdateRequest(BaseModel):
     parent: str | None = Field(None, description="Updated parent classification ID")
     values: Optional[Dict[str, Any]] = Field(None, description="Updated attribute values")
     references: Optional[Dict[str, Any]] = Field(None, description="Updated references")
-    attributeLinks: Optional[Dict[str, Any]] = Field(None, description="Updated attribute links")
+    attributeLinks: Optional[List[Dict[str, Any]] | Dict[str, Any]] = Field(
+        None, description="Updated attribute links array (legacy mappings also accepted)")
     dataContainers: Optional[Dict[str, Any]] = Field(None, description="Updated data containers")
-
 

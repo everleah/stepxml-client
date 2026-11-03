@@ -75,7 +75,7 @@ class AttributeOperations(BaseOperation):
     def get_list_of_values(self, lov_id: str) -> ListOfValueResponse:
         """Get a List of Values by ID.
 
-        Calls: GET /lists-of-values/{id} → getListOfValuess
+        Calls: GET /lists-of-values/{id} → getListOfValues
 
         Args:
             lov_id: The LOV ID
@@ -91,10 +91,10 @@ class AttributeOperations(BaseOperation):
             {"lov_id": lov_id},
             ["lov_id"]
         )
-        self._log_operation("getListOfValuess", {"id": lov_id})
+        self._log_operation("getListOfValues", {"id": lov_id})
 
         try:
-            response = self._call_operation("getListOfValuess", id=lov_id, **self._build_context_params())
+            response = self._call_operation("getListOfValues", id=lov_id, **self._build_context_params())
         except RestClientError:
             raise
         except Exception as e:
@@ -110,7 +110,7 @@ class AttributeOperations(BaseOperation):
     def get_list_of_values_entries(self, lov_id: str) -> list[dict[str, Any]]:
         """Get the value entries for a List of Values.
 
-        Calls: GET /lists-of-values/{id}/value-entries → getListOfValuessEntries
+        Calls: GET /lists-of-values/{id}/value-entries → getListOfValuesEntries
 
         Args:
             lov_id: The LOV ID
@@ -126,10 +126,10 @@ class AttributeOperations(BaseOperation):
             {"lov_id": lov_id},
             ["lov_id"]
         )
-        self._log_operation("getListOfValuessEntries", {"id": lov_id})
+        self._log_operation("getListOfValuesEntries", {"id": lov_id})
 
         try:
-            response = self._call_operation("getListOfValuessEntries", id=lov_id, **self._build_context_params())
+            response = self._call_operation("getListOfValuesEntries", id=lov_id, **self._build_context_params())
         except RestClientError:
             raise
         except Exception as e:

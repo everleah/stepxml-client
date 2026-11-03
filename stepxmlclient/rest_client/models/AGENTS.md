@@ -21,6 +21,11 @@ Local contract for REST request and response shape helpers under `stepxmlclient/
 - Keep payload shapes aligned with the STEP REST API specification and the repo-level REST alignment notes.
 - Prefer STEP REST fields and nested structures as documented by the API, not legacy STEP XML field names.
 - Keep model helpers minimal and focused on translation between API shapes and wrapper code.
+- Attribute definitions expose STEP's validator/multivalued/listOfValues fields;
+  legacy aliases remain optional. LOV `values` is a metadata map, not the entry array.
+- Classification `attributeLinks` accepts the STEP array shape; legacy maps remain accepted.
+- Export requests use optional `stepUrls` / `processDescription`; import/export
+  triggers return background-process `id`, not job status/progress records.
 
 ## Work Guidance
 - Update model helpers together with the operation that consumes them.

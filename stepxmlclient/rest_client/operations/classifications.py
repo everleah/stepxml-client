@@ -5,7 +5,12 @@ from typing import Any, Optional
 
 from ..base import BaseOperation, handle_rest_errors
 from ..exceptions import NotFoundError, RestClientError, ValidationError
-from ..models.classification import ClassificationListResponse, ClassificationResponse
+from ..models.classification import (
+    ClassificationCreateRequest,
+    ClassificationListResponse,
+    ClassificationResponse,
+    ClassificationUpdateRequest,
+)
 
 
 class ClassificationOperations(BaseOperation):
@@ -87,12 +92,76 @@ class ClassificationOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("createClassificationSearch", {"condition": condition})
+        self._log_operation("queryClassifications", {"condition": condition})
         
-        response = self._call_operation("createClassificationSearch", json=body, **self._build_context_params())
-        
-        if isinstance(response, dict):
-            return ClassificationListResponse(**response)
+        response = self._call_operation("queryClassifications", json=body, **self._build_context_params())
+        if isinstance(response, list):
+            response = {"items": response}
+        return ClassificationListResponse.model_validate(response)
+
+    @handle_rest_errors
+    def create_classification(self, data: ClassificationCreateRequest) -> ClassificationResponse:
+        """Create a classification with objectType and parent; STEP assigns its ID."""
+        self._validate_required_params(
+            {"objectType": data.objectType, "parent": data.parent}, ["objectType", "parent"])
+        response = self._call_operation(
+            "createClassification", json=data.model_dump(exclude_none=True),
+            **self._build_context_params())
+        return ClassificationResponse.model_validate(response)
+
+    @handle_rest_errors
+    def update_classification(self, classification_id: str,
+                              updates: ClassificationUpdateRequest,
+                              key_id: str | None = None) -> ClassificationResponse:
+        """Partially update a classification (PATCH)."""
+        self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        response = self._call_operation(
+            "updateClassification", id=classification_id,
+            json=updates.model_dump(exclude_none=True), **params)
+        return ClassificationResponse.model_validate(response)
+
+    @handle_rest_errors
+    def replace_classification(self, classification_id: str,
+                               data: ClassificationCreateRequest,
+                               key_id: str | None = None,
+                               allow_overwrite: bool = False) -> ClassificationResponse:
+        """Create or replace a classification (PUT)."""
+        self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        if allow_overwrite:
+            params["allow-overwrite"] = allow_overwrite
+        response = self._call_operation(
+            "createOrReplaceClassification", id=classification_id,
+            json=data.model_dump(exclude_none=True), **params)
+        return ClassificationResponse.model_validate(response)
+
+    @handle_rest_errors
+    def delete_classification(self, classification_id: str,
+                              key_id: str | None = None) -> bool:
+        """Delete a classification; raise on HTTP/STEP errors before returning True."""
+        self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        self._call_operation("deleteClassification", id=classification_id, **params)
+        return True
+
+    @handle_rest_errors
+    def get_classification_children(self, classification_id: str,
+                                    key_id: str | None = None) -> list[str]:
+        """Return the IDs of a classification's direct children."""
+        self._validate_required_params({"classification_id": classification_id}, ["classification_id"])
+        params = self._build_context_params()
+        if key_id is not None:
+            params["keyId"] = key_id
+        response = self._call_operation("getClassificationChildren", id=classification_id, **params)
+        if not isinstance(response, list) or not all(isinstance(item, str) for item in response):
+            raise RestClientError("Classification children response must be an array of IDs")
         return response
     
     def search_by_type(self, classification_type: str) -> ClassificationListResponse:

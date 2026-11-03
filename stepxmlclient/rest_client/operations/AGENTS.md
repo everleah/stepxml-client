@@ -20,6 +20,10 @@ Local contract for grouped STEP REST API operations under `stepxmlclient/rest_cl
 
 ## Local Contracts
 - Keep each operation group focused on a single API area and its associated parameter mapping.
+- Classification/entity CRUD and classification children use the existing typed
+  models and `_call_operation`, with context/workspace and optional alternate keys.
+- LOV operations are `getListOfValues` / `getListOfValuesEntries` on
+  `/list-of-values`; definitions contain metadata, entries are a separate resource.
 - Preserve existing shared error handling and response normalization paths.
 - Use `_call_operation` for every generated OpenAPI request, including deletes
   and dynamically selected reference operations. Deletes return `True` only after

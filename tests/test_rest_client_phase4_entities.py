@@ -3,6 +3,7 @@
 import unittest
 from unittest.mock import Mock, MagicMock, patch
 import logging
+from requests import HTTPError
 
 from stepxmlclient.rest_client.operations.entities import EntityOperations
 from stepxmlclient.rest_client.models.entity import (
@@ -14,6 +15,7 @@ from stepxmlclient.rest_client.models.entity import (
 )
 from stepxmlclient.rest_client.exceptions import NotFoundError, ValidationError
 from stepxmlclient.rest_client import exceptions as exc
+from tests.test_rest_response_handling import json_response
 
 
 class TestEntityModels(unittest.TestCase):
@@ -145,7 +147,7 @@ class TestEntityOperations(unittest.TestCase):
     def test_search_entities_success(self):
         self.mock_client.queryEntities.return_value = {
             "items": [{"id": "ENT1", "name": "Entity 1"}, {"id": "ENT2", "name": "Entity 2"}], "total": 2}
-        condition = {"conditionType": "objecttype", "objectTypeId": "EntityType"}
+        condition = {"conditionType": "objecttype", "objectType": "EntityType"}
         result = self.operations.search_entities(condition=condition)
         self.assertEqual(len(result.items), 2)
         call_args = self.mock_client.queryEntities.call_args
@@ -164,7 +166,8 @@ class TestEntityOperations(unittest.TestCase):
         self.mock_client.createEntity.assert_called_once()
 
     def test_create_entity_conflict(self):
-        self.mock_client.createEntity.side_effect = Exception("409 conflict")
+        self.mock_client.createEntity.side_effect = HTTPError(
+            response=json_response({"message": "Entity conflict"}, status=409))
         from stepxmlclient.rest_client.models.entity import EntityCreateRequest
         request = EntityCreateRequest(objectType="Contact", parent="ContactsRoot")
         with self.assertRaises(exc.ConflictError):
@@ -180,7 +183,8 @@ class TestEntityOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "ENT1")
 
     def test_update_entity_not_found(self):
-        self.mock_client.updateEntity.side_effect = Exception("404 not found")
+        self.mock_client.updateEntity.side_effect = HTTPError(
+            response=json_response({"message": "No entity"}, status=404))
         from stepxmlclient.rest_client.models.entity import EntityUpdateRequest
         updates = EntityUpdateRequest(name="Updated")
         with self.assertRaises(exc.NotFoundError):
@@ -211,7 +215,8 @@ class TestEntityOperations(unittest.TestCase):
         self.assertEqual(call_args[1]["id"], "ENT1")
 
     def test_delete_entity_not_found(self):
-        self.mock_client.deleteEntity.side_effect = Exception("404 not found")
+        self.mock_client.deleteEntity.side_effect = HTTPError(
+            response=json_response({"message": "No entity"}, status=404))
         with self.assertRaises(exc.NotFoundError):
             self.operations.delete_entity("NONEXISTENT")
 

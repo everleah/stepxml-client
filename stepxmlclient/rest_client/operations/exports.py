@@ -29,13 +29,13 @@ class ExportOperations(BaseOperation):
 
     @handle_rest_errors
     def create_export_job(self, export_configuration_id: str,
-                          data: Optional[ExportJobCreateRequest] = None,
+                          data: ExportJobCreateRequest | dict[str, Any] | None = None,
                           use_request_context_workspace: Optional[bool] = None) -> BackgroundProcessResponse:
         """Trigger an export using a pre-configured export configuration (POST /export/{exportConfigurationId}).
 
         Args:
             export_configuration_id: The ID of the export configuration to use (required)
-            data: Optional request body with additional export parameters
+            data: Optional ExportSpecification with stepUrls and processDescription
             use_request_context_workspace: If True, use the workspace from the request context
 
         Returns:
@@ -50,13 +50,10 @@ class ExportOperations(BaseOperation):
             ["export_configuration_id"]
         )
 
-        if data is not None:
-            if hasattr(data, 'model_dump'):
-                create_data = data.model_dump(exclude_none=True)
-            else:
-                create_data = dict(data) if not isinstance(data, dict) else data
+        if isinstance(data, ExportJobCreateRequest):
+            create_data = data.model_dump(exclude_none=True)
         else:
-            create_data = None
+            create_data = data
 
         query_params: dict = self._build_context_params()
         if use_request_context_workspace is not None:
@@ -78,10 +75,7 @@ class ExportOperations(BaseOperation):
                 raise ValidationError(f"Export failed: {str(e)}")
             raise
 
-        self._check_for_api_error(response, export_configuration_id, "ExportConfiguration")
-        if isinstance(response, dict):
-            return BackgroundProcessResponse(**response)
-        return response
+        return BackgroundProcessResponse.model_validate(response)
 
     @handle_rest_errors
     def create_import_job(self, import_configuration_id: str,
@@ -134,13 +128,11 @@ class ExportOperations(BaseOperation):
                     data=binary_data,
                     **query_params
                 )
-                response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
             else:
                 response = self._call_operation("startImport",
                     importConfigurationId=import_configuration_id,
                     **query_params
                 )
-                response_dict: dict[str, Any] = response if isinstance(response, dict) else {"success": True}
         except RestClientError:
             raise
         except Exception as e:
@@ -150,8 +142,5 @@ class ExportOperations(BaseOperation):
                 raise ValidationError(f"Import failed: {e!s}")
             raise
 
-        self._check_for_api_error(response_dict, import_configuration_id, "ImportConfiguration")
-        if isinstance(response_dict, dict):
-            return BackgroundProcessResponse(**response_dict)
-        return response_dict
+        return BackgroundProcessResponse.model_validate(response)
     

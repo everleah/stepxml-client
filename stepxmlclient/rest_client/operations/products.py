@@ -108,16 +108,10 @@ class ProductOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("createProductSearch", {"condition": condition})
+        self._log_operation("queryProducts", {"condition": condition})
         
-        response = self._call_operation("createProductSearch", json=body, **self._build_context_params())
-        
-        if isinstance(response, dict):
-            items = response.get("items", [])
-            total = response.get("total")
-        else:
-            items = getattr(response, "items", [])
-            total = getattr(response, "total", None)
+        items, total = self._get_paginated_results(
+            "queryProducts", {"json": body, **self._build_context_params()})
         
         product_items = [
             ProductResponse(**item) if isinstance(item, dict) else item
@@ -517,4 +511,3 @@ class ProductOperations(BaseOperation):
         except Exception as e:
             if "404" in str(e): raise exc.NotFoundError(product_id, "Product")
             raise
-

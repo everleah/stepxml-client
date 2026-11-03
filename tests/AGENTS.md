@@ -20,6 +20,8 @@ All test and validation modules in this directory:
 - `test_rest_client_phase8_background_processes.py` - status/attachment transport used by Publishing.
 - `test_rest_response_handling.py` - real HTTP responses, all delete wrappers,
   typed JSON normalization, empty reference bodies and synthetic OpenAPI transport.
+- `test_rest_client_spec_alignment.py` - independently specified operation IDs,
+  search arrays, CRUD/LOV/reference transport and optional local OpenAPI checks.
 
 ## Local Contracts
 - Tests use `unittest` with `unittest.mock` for client mocking; no live server is required to run the suite.
@@ -31,6 +33,9 @@ All test and validation modules in this directory:
 
 ## Work Guidance
 - Mock `requests_openapi.Client` methods directly when testing operation wrappers; do not mock the wrapper itself.
+- Prefer restricted mock operation sets and real HTTP responses to prevent invented
+  operation names from passing. Keep synthetic endpoint contracts independent of the
+  implementation; optional vendor-spec checks skip only when the spec is unavailable.
 - Prefer `unittest.TestCase` over pytest fixtures to stay consistent with the existing suite.
 - When adding a new phase, use the next available number and document the covered domain in the module docstring.
 

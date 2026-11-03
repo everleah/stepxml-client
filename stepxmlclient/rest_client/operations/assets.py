@@ -107,17 +107,10 @@ class AssetOperations(BaseOperation):
         """
         self._validate_required_params({"condition": condition}, ["condition"])
         body = {"condition": condition}
-        self._log_operation("createAssetSearch", {"condition": condition})
+        self._log_operation("queryAssets", {"condition": condition})
         
         params = self._build_context_params()
-        response = self._call_operation("createAssetSearch", json=body, **params)
-        
-        if isinstance(response, dict):
-            items = response.get("items", [])
-            total = response.get("total")
-        else:
-            items = getattr(response, "items", [])
-            total = getattr(response, "total", None)
+        items, total = self._get_paginated_results("queryAssets", {"json": body, **params})
         
         asset_items = [
             AssetResponse(**item) if isinstance(item, dict) else item

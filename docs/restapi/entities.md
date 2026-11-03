@@ -2,7 +2,9 @@
 
 > **Operation group:** `client.entities` | **Source:** `stepxmlclient/rest_client/operations/entities.py`
 
-Full CRUD, search, find-similar, match-merge, children, data containers, approval, values, and lifecycle for STEP entities.
+CRUD, search, find-similar, match-merge, children, data containers, approval, values, and lifecycle for STEP entities.
+
+Search returns identifier-only items; use `get_entity()` for full data.
 
 ## Operations
 
@@ -28,7 +30,7 @@ Full CRUD, search, find-similar, match-merge, children, data containers, approva
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `get_entity_relationships` | `(entity_id, reference_type_id, key_id=None) -> EntityRelationshipResponse` | Outgoing references by type |
+| `client.relations.list_references` | `("entities", entity_id, reference_type_id, key_id=None) -> RelationshipListResponse` | Outgoing references by type |
 
 ### Children & Data Containers
 
@@ -74,8 +76,7 @@ created = client.entities.create_entity(EntityCreateRequest(
 ))
 
 similar = client.entities.find_similar_entities(created.id)
-rels = client.entities.get_entity_relationships(created.id, "ContactRelation")
+rels = client.relations.list_references("entities", created.id, "ContactRelation")
 ```
 
 > **Note:** `list_entities()` was removed in v1.4.0. Use `search_by_type()` or `search_entities()` instead.
-
